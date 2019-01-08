@@ -1,0 +1,15 @@
+[package]
+name = "joy"
+version = "0.1.0"
+authors = ["yamakaky"]
+edition = "2018"
+
+[dependencies]
+num = "0.2"
+num-traits = "0.2"
+num-derive = "0.2"
+
+[dependencies.hidapi]
+version = "0.5"
+default-features = false
+features = ["linux-static-hidraw"]
