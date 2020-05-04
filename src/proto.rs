@@ -56,6 +56,7 @@ pub enum SubcommandId {
     BluetoothManualPairing = 0x01,
     RequestDeviceInfo = 0x02,
     SetInputReportMode = 0x03,
+    SetPlayerLights = 0x30,
     EnableIMU = 0x40,
 }
 
@@ -291,6 +292,21 @@ impl fmt::Debug for Ack {
 pub union SubcommandRequestData {
     pub nothing: (),
     pub input_report_mode: InputReportMode,
+    pub player_lights: PlayerLights,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+// TODO: debug
+pub struct PlayerLights(u8);
+
+impl PlayerLights {
+    pub fn new(p0: bool, p1: bool, p2: bool, p3: bool, f0: bool, f1: bool, f2: bool, f3: bool) -> PlayerLights {
+        PlayerLights(
+            (p0 as u8) << 0 | (p1 as u8) << 1 | (p2 as u8) << 2 | (p3 as u8) << 3 |
+            (f0 as u8) << 4 | (f1 as u8) << 5 | (f2 as u8) << 6 | (f3 as u8) << 7
+        )
+    }
 }
 
 #[repr(u8)]

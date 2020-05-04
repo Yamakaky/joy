@@ -19,6 +19,7 @@ fn main() {
                 println!("new dev");
                 device.enable_imu();
                 device.set_standard_mode();
+                device.set_player_light(proto::PlayerLights::new(true, false, false, true, false, false, false, false));
                 let mut i = 0;
                 loop {
                     let report = device.recv(&mut buffer);
