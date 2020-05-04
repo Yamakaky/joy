@@ -129,7 +129,7 @@ pub struct NormalInputReportContent {
 #[derive(Copy, Clone)]
 pub struct StandardInputReportContent {
     pub timer: u8,
-    pub info: u8,
+    pub info: DeviceStatus,
     pub buttons: ButtonsStatus,
     pub left_stick: StickStatus,
     pub right_stick: StickStatus,
@@ -176,6 +176,32 @@ impl fmt::Debug for InputReport {
             None => {}
         };
         out.finish()
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct DeviceStatus(u8);
+
+impl fmt::Debug for DeviceStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let battery = self.0 >> 4;
+        f.debug_struct("DeviceInfo")
+        .field("battery", &match battery {
+            8 => "full",
+            6 => "medium",
+            4 => "low",
+            2 => "critical",
+            0 => "empty",
+            _ => "<unknown>",
+        })
+        .field("type", &match (self.0 >> 1) & 3 {
+            0 => "Pro Controller",
+            3 => "JoyCon",
+            _ => "<unknown",
+        })
+        .field("charging", &((self.0 & 1) == 1))
+        .finish()
     }
 }
 
