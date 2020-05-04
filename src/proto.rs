@@ -23,7 +23,7 @@ impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
         if let Some(id) = self.try_into() {
             write!(f, "{:?}", id)
         } else {
-            f.debug_tuple("RawId").field(&self.0).finish()
+            f.debug_tuple("RawId").field(&format!("{:x}", self.0)).finish()
         }
     }
 }
@@ -37,9 +37,9 @@ pub enum OutputReportId {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum InputReportId {
-    // 0x3F not used
+    Normal = 0x3F,
     Standard = 0x21,
     MCUFwUpdate = 0x23,
     StandardFull = 0x30,
@@ -50,19 +50,20 @@ pub enum InputReportId {
 
 // All unused values are a Nop
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum SubcommandId {
     GetOnlyControllerState = 0x00,
     BluetoothManualPairing = 0x01,
     RequestDeviceInfo = 0x02,
     SetInputReportMode = 0x03,
+    EnableIMU = 0x40,
 }
 
 // Console -> Joy-Con
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct OutputReport {
-    pub report_id: RawId<OutputReportId>,
+    pub report_id: OutputReportId,
     pub packet_counter: u8,
     pub rumble_data: RumbleData,
     pub subcmd: SubcommandRequest,
@@ -71,19 +72,18 @@ pub struct OutputReport {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SubcommandRequest {
-    pub subcommand_id: RawId<SubcommandId>,
+    pub subcommand_id: SubcommandId,
     pub u: SubcommandRequestData,
 }
 
 impl fmt::Debug for SubcommandRequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("SubcommandRequest");
-        match self.subcommand_id.try_into() {
-            Some(SubcommandId::SetInputReportMode) => {
+        match self.subcommand_id {
+            SubcommandId::SetInputReportMode => {
                 out.field("subcommand", unsafe { &self.u.input_report_mode })
             }
-            Some(subcmd) => out.field("subcommand", &subcmd),
-            None => out.field("subcommand_id", &self.subcommand_id),
+            subcmd => out.field("subcommand", &subcmd),
         };
         out.finish()
     }
@@ -104,10 +104,30 @@ impl Default for RumbleData {
 }
 
 // Joy-Con -> Console
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct InputReport {
     pub report_id: RawId<InputReportId>,
+    pub u: InputReportContent,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub union InputReportContent {
+    pub normal: NormalInputReportContent,
+    pub standard: StandardInputReportContent,
+}
+#[repr(packed)]
+#[derive(Copy, Clone, Debug)]
+pub struct NormalInputReportContent {
+    pub buttons: [u8; 2],
+    pub stick: u8,
+    _filler: [u8; 8],
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct StandardInputReportContent {
     pub timer: u8,
     pub info: u8,
     pub buttons: ButtonsStatus,
@@ -119,27 +139,41 @@ pub struct InputReport {
 
 impl fmt::Debug for InputReport {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use InputReportId::*;
+
         let mut out = f.debug_struct("InputReport");
-        out.field("report_id", &self.report_id)
-            .field("timer", &self.timer)
-            .field("info", &self.info)
-            .field("buttons", &self.buttons)
-            .field("left_stick", &self.left_stick)
-            .field("right_stick", &self.right_stick)
-            .field("vibrator", &self.vibrator);
+        out.field("report_id", &self.report_id);
         match self.report_id.try_into() {
-            Some(InputReportId::Standard) => {
-                out.field("subcommand_reply", unsafe { &self.u.subcmd_reply })
+            Some(Standard) | Some(StandardFull) | Some(StandardFullMCU) => {
+                let content = unsafe { &self.u.standard };
+                out.field("timer", &content.timer)
+                .field("info", &content.info)
+                .field("buttons", &content.buttons)
+                .field("left_stick", &content.left_stick)
+                .field("right_stick", &content.right_stick)
+                .field("vibrator", &content.vibrator);
             }
-            Some(InputReportId::MCUFwUpdate) => out.field("mcu_fw_update", &"[data]"),
+            _ => {}
+        }
+
+        match self.report_id.try_into() {
+            Some(InputReportId::Normal) => {
+                out.field("pote", unsafe { &self.u.normal });
+            }
+            Some(InputReportId::Standard) => {
+                out.field("subcommand_reply", unsafe { &self.u.standard.u.subcmd_reply });
+            }
+            Some(InputReportId::MCUFwUpdate) => {
+                out.field("mcu_fw_update", &"[data]");
+            }
             // TODO: mask MCU
             Some(InputReportId::StandardFull) => {
-                out.field("subcommand_reply", unsafe { &self.u.gyro_acc_nfc_ir })
+                out.field("subcommand_reply", unsafe { &self.u.standard.u.gyro_acc_nfc_ir });
             }
             Some(InputReportId::StandardFullMCU) => {
-                out.field("subcommand_reply", unsafe { &self.u.gyro_acc_nfc_ir })
+                out.field("subcommand_reply", unsafe { &self.u.standard.u.gyro_acc_nfc_ir });
             }
-            None => &mut out,
+            None => {}
         };
         out.finish()
     }
@@ -187,7 +221,7 @@ pub union ExtraData {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SubcommandReply {
-    pub ack: u8,
+    pub ack: Ack,
     pub subcommand_id: RawId<SubcommandId>,
     pub u: SubcommandReplyData,
 }
@@ -209,13 +243,35 @@ impl fmt::Debug for SubcommandReply {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union SubcommandRequestData {
-    pub input_report_mode: RawInputReportMode,
+pub struct Ack(u8);
+
+impl fmt::Debug for Ack {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.0 == 0 {
+            f.debug_tuple("NAck").finish()
+        } else {
+            let data = self.0 & 0x7f;
+            if data != 0 {
+                f.debug_tuple("Ack").field(&data).finish()
+            } else {
+                f.debug_tuple("Ack").finish()
+            }
+        }
+    }
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
+pub union SubcommandRequestData {
+    pub nothing: (),
+    pub input_report_mode: InputReportMode,
+}
+
+#[repr(u8)]
 #[derive(Copy, Clone, Debug)]
-pub struct RawInputReportMode(u8);
+pub enum InputReportMode {
+    StandardFull = 0x30,
+}
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -229,7 +285,7 @@ pub struct DeviceInfo {
     pub firmware_version: [u8; 2],
     // 1=Left Joy-Con, 2=Right Joy-Con, 3=Pro Controller
     pub which_controller: u8,
-    // Unknown. Seems to be always 02
+    // Unknown. Seems to be always 02 
     _something: u8,
     // Big endian
     pub mac_address: [u8; 6],

@@ -5,11 +5,8 @@ authors = ["yamakaky"]
 edition = "2018"
 
 [dependencies]
+enigo = "0.0.14"
+hidapi = "1.2"
 num = "0.2"
 num-traits = "0.2"
 num-derive = "0.2"
-
-[dependencies.hidapi]
-version = "0.5"
-default-features = false
-features = ["linux-static-hidraw"]
