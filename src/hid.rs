@@ -2,13 +2,15 @@ use crate::proto;
 
 pub struct JoyCon {
     device: hidapi::HidDevice,
+    info: hidapi::DeviceInfo,
     counter: u8,
 }
 
 impl JoyCon {
-    pub fn new(hid_device: hidapi::HidDevice) -> JoyCon {
+    pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> JoyCon {
         JoyCon {
-            device: hid_device,
+            device,
+            info,
             counter: 42,
         }
     }
@@ -85,5 +87,15 @@ impl JoyCon {
                 }
             }
         }
+    }
+}
+
+impl std::fmt::Debug for JoyCon {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("JoyCon")
+            .field("manufacturer", &self.info.manufacturer_string())
+            .field("product", &self.info.product_string())
+            .field("serial", &self.info.serial_number())
+            .finish()
     }
 }

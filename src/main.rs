@@ -11,12 +11,11 @@ const _JOYCON_L_BT: u16 = 0x2007;
 
 fn main() {
     let mut buffer = [0u8; 5999];
-    println!("stop");
     match HidApi::new() {
         Ok(api) => {
             for device in api.device_list().filter(|x| x.vendor_id() == NINTENDO_VENDOR_ID) {
-                let mut device = hid::JoyCon::new(device.open_device(&api).expect("open"));
-                println!("new dev");
+                let mut device = hid::JoyCon::new(device.open_device(&api).expect("open"), device.clone());
+                println!("new dev {:?}", device);
                 device.enable_imu();
                 device.set_standard_mode();
                 device.set_player_light(proto::PlayerLights::new(true, false, false, true, false, false, false, false));
@@ -35,5 +34,4 @@ fn main() {
             eprintln!("Error: {}", e);
         },
     }
-    println!("done");
 }
