@@ -13,12 +13,18 @@ fn main() {
     let mut buffer = [0u8; 5999];
     match HidApi::new() {
         Ok(api) => {
-            for device in api.device_list().filter(|x| x.vendor_id() == NINTENDO_VENDOR_ID) {
-                let mut device = hid::JoyCon::new(device.open_device(&api).expect("open"), device.clone());
+            for device in api
+                .device_list()
+                .filter(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
+            {
+                let mut device =
+                    hid::JoyCon::new(device.open_device(&api).expect("open"), device.clone());
                 println!("new dev {:?}", device);
                 device.enable_imu();
                 device.set_standard_mode();
-                device.set_player_light(proto::PlayerLights::new(true, false, false, true, false, false, false, false));
+                device.set_player_light(proto::PlayerLights::new(
+                    true, false, false, true, false, false, false, false,
+                ));
                 let mut i = 0;
                 loop {
                     let report = device.recv(&mut buffer);
@@ -29,9 +35,9 @@ fn main() {
                     }
                 }
             }
-        },
+        }
         Err(e) => {
             eprintln!("Error: {}", e);
-        },
+        }
     }
 }

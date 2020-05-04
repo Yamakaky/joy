@@ -28,19 +28,17 @@ impl JoyCon {
 
     pub fn recv(&self, buffer: &mut [u8]) -> &proto::InputReport {
         let size = self.device.read(buffer).expect("read");
-        let buf = &buffer[..size];
-        let response = unsafe { std::mem::transmute(&buf[0]) };
-        response
+        unsafe { &*(&buffer[..size] as *const _ as *const proto::InputReport) }
     }
 
     pub fn enable_imu(&mut self) {
         // enable IMU
         self.send_subcmd_wait(proto::OutputReport {
             packet_counter: 0,
-            report_id: proto::OutputReportId::RumbleSubcmd.into(),
+            report_id: proto::OutputReportId::RumbleSubcmd,
             rumble_data: proto::RumbleData::default(),
             subcmd: proto::SubcommandRequest {
-                subcommand_id: proto::SubcommandId::EnableIMU.into(),
+                subcommand_id: proto::SubcommandId::EnableIMU,
                 u: proto::SubcommandRequestData { nothing: () },
             },
         })
@@ -55,8 +53,8 @@ impl JoyCon {
                 subcommand_id: proto::SubcommandId::SetInputReportMode,
                 u: proto::SubcommandRequestData {
                     input_report_mode: proto::InputReportMode::StandardFull,
-                }
-            }
+                },
+            },
         })
     }
 
@@ -67,10 +65,8 @@ impl JoyCon {
             rumble_data: proto::RumbleData::default(),
             subcmd: proto::SubcommandRequest {
                 subcommand_id: proto::SubcommandId::SetPlayerLights,
-                u: proto::SubcommandRequestData {
-                    player_lights
-                } 
-            }
+                u: proto::SubcommandRequestData { player_lights },
+            },
         })
     }
 
@@ -81,8 +77,17 @@ impl JoyCon {
         loop {
             let in_report = self.recv(&mut buffer);
             unsafe {
-                if in_report.report_id.try_into().unwrap() == proto::InputReportId::Standard &&
-                in_report.u.standard.u.subcmd_reply.subcommand_id.try_into().unwrap() == out_report.subcmd.subcommand_id {
+                if in_report.report_id.try_into().unwrap() == proto::InputReportId::Standard
+                    && in_report
+                        .u
+                        .standard
+                        .u
+                        .subcmd_reply
+                        .subcommand_id
+                        .try_into()
+                        .unwrap()
+                        == out_report.subcmd.subcommand_id
+                {
                     break;
                 }
             }

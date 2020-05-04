@@ -23,7 +23,9 @@ impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
         if let Some(id) = self.try_into() {
             write!(f, "{:?}", id)
         } else {
-            f.debug_tuple("RawId").field(&format!("{:x}", self.0)).finish()
+            f.debug_tuple("RawId")
+                .field(&format!("{:x}", self.0))
+                .finish()
         }
     }
 }
@@ -148,11 +150,11 @@ impl fmt::Debug for InputReport {
             Some(Standard) | Some(StandardFull) | Some(StandardFullMCU) => {
                 let content = unsafe { &self.u.standard };
                 out.field("timer", &content.timer)
-                .field("info", &content.info)
-                .field("buttons", &content.buttons)
-                .field("left_stick", &content.left_stick)
-                .field("right_stick", &content.right_stick)
-                .field("vibrator", &content.vibrator);
+                    .field("info", &content.info)
+                    .field("buttons", &content.buttons)
+                    .field("left_stick", &content.left_stick)
+                    .field("right_stick", &content.right_stick)
+                    .field("vibrator", &content.vibrator);
             }
             _ => {}
         }
@@ -162,17 +164,23 @@ impl fmt::Debug for InputReport {
                 out.field("pote", unsafe { &self.u.normal });
             }
             Some(InputReportId::Standard) => {
-                out.field("subcommand_reply", unsafe { &self.u.standard.u.subcmd_reply });
+                out.field("subcommand_reply", unsafe {
+                    &self.u.standard.u.subcmd_reply
+                });
             }
             Some(InputReportId::MCUFwUpdate) => {
                 out.field("mcu_fw_update", &"[data]");
             }
             // TODO: mask MCU
             Some(InputReportId::StandardFull) => {
-                out.field("subcommand_reply", unsafe { &self.u.standard.u.gyro_acc_nfc_ir });
+                out.field("subcommand_reply", unsafe {
+                    &self.u.standard.u.gyro_acc_nfc_ir
+                });
             }
             Some(InputReportId::StandardFullMCU) => {
-                out.field("subcommand_reply", unsafe { &self.u.standard.u.gyro_acc_nfc_ir });
+                out.field("subcommand_reply", unsafe {
+                    &self.u.standard.u.gyro_acc_nfc_ir
+                });
             }
             None => {}
         };
@@ -188,21 +196,27 @@ impl fmt::Debug for DeviceStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let battery = self.0 >> 4;
         f.debug_struct("DeviceInfo")
-        .field("battery", &match battery {
-            8 => "full",
-            6 => "medium",
-            4 => "low",
-            2 => "critical",
-            0 => "empty",
-            _ => "<unknown>",
-        })
-        .field("type", &match (self.0 >> 1) & 3 {
-            0 => "Pro Controller",
-            3 => "JoyCon",
-            _ => "<unknown",
-        })
-        .field("charging", &((self.0 & 1) == 1))
-        .finish()
+            .field(
+                "battery",
+                &match battery {
+                    8 => "full",
+                    6 => "medium",
+                    4 => "low",
+                    2 => "critical",
+                    0 => "empty",
+                    _ => "<unknown>",
+                },
+            )
+            .field(
+                "type",
+                &match (self.0 >> 1) & 3 {
+                    0 => "Pro Controller",
+                    3 => "JoyCon",
+                    _ => "<unknown",
+                },
+            )
+            .field("charging", &((self.0 & 1) == 1))
+            .finish()
     }
 }
 
@@ -301,10 +315,26 @@ pub union SubcommandRequestData {
 pub struct PlayerLights(u8);
 
 impl PlayerLights {
-    pub fn new(p0: bool, p1: bool, p2: bool, p3: bool, f0: bool, f1: bool, f2: bool, f3: bool) -> PlayerLights {
+    #[allow(clippy::identity_op, clippy::too_many_arguments)]
+    pub fn new(
+        p0: bool,
+        p1: bool,
+        p2: bool,
+        p3: bool,
+        f0: bool,
+        f1: bool,
+        f2: bool,
+        f3: bool,
+    ) -> PlayerLights {
         PlayerLights(
-            (p0 as u8) << 0 | (p1 as u8) << 1 | (p2 as u8) << 2 | (p3 as u8) << 3 |
-            (f0 as u8) << 4 | (f1 as u8) << 5 | (f2 as u8) << 6 | (f3 as u8) << 7
+            (p0 as u8) << 0
+                | (p1 as u8) << 1
+                | (p2 as u8) << 2
+                | (p3 as u8) << 3
+                | (f0 as u8) << 4
+                | (f1 as u8) << 5
+                | (f2 as u8) << 6
+                | (f3 as u8) << 7,
         )
     }
 }
@@ -327,7 +357,7 @@ pub struct DeviceInfo {
     pub firmware_version: [u8; 2],
     // 1=Left Joy-Con, 2=Right Joy-Con, 3=Pro Controller
     pub which_controller: u8,
-    // Unknown. Seems to be always 02 
+    // Unknown. Seems to be always 02
     _something: u8,
     // Big endian
     pub mac_address: [u8; 6],
