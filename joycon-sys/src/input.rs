@@ -172,7 +172,69 @@ impl fmt::Debug for DeviceStatus {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct ButtonsStatus {
-    pub data: [u8; 3],
+    pub right: RightButtons,
+    pub middle: MiddleButtons,
+    pub left: LeftButtons,
+}
+
+bitfield::bitfield! {
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    pub struct RightButtons(u8);
+    impl Debug;
+    pub y, _: 0;
+    pub x, _: 1;
+    pub b, _: 2;
+    pub a, _: 3;
+    pub sr, _: 4;
+    pub sl, _: 5;
+    pub r, _: 6;
+    pub zr, _: 7;
+}
+bitfield::bitfield! {
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    pub struct MiddleButtons(u8);
+    impl Debug;
+    pub minus, _: 0;
+    pub plus, _: 1;
+    pub rstick, _: 2;
+    pub lstick, _: 3;
+    pub home, _: 4;
+    pub capture, _: 5;
+    pub _unused, _: 6;
+    pub charging_grip, _: 7;
+}
+
+bitfield::bitfield! {
+    #[derive(Copy, Clone)]
+    pub struct LeftButtons(u8);
+    impl Debug;
+    pub down, _: 0;
+    pub up, _: 1;
+    pub right, _: 2;
+    pub left, _: 3;
+    pub sr, _: 4;
+    pub sl, _: 5;
+    pub l, _: 6;
+    pub zl, _: 7;
+}
+
+pub enum Button {
+    N,
+    S,
+    E,
+    W,
+    L,
+    R,
+    ZL,
+    ZR,
+    L3,
+    R3,
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT,
 }
 
 #[repr(C)]
