@@ -5,6 +5,7 @@ authors = ["yamakaky"]
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0"
 enigo = "0.0.14"
 hidapi = "1.2"
 num = "0.2"

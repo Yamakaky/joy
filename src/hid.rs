@@ -1,4 +1,5 @@
 use crate::proto;
+use anyhow::Result;
 
 pub struct JoyCon {
     device: hidapi::HidDevice,
@@ -14,7 +15,7 @@ impl JoyCon {
             counter: 42,
         }
     }
-    pub fn send(&mut self, report: &mut proto::OutputReport) {
+    pub fn send(&mut self, report: &mut proto::OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter += 1;
         let raw_data = unsafe {
@@ -23,15 +24,17 @@ impl JoyCon {
                 std::mem::size_of_val(report),
             )
         };
-        self.device.write(raw_data).expect("write");
+        // TODO: check ret value
+        let _written = self.device.write(raw_data)?;
+        Ok(())
     }
 
-    pub fn recv(&self, buffer: &mut [u8]) -> &proto::InputReport {
-        let size = self.device.read(buffer).expect("read");
-        unsafe { &*(&buffer[..size] as *const _ as *const proto::InputReport) }
+    pub fn recv(&self, buffer: &mut [u8]) -> Result<&proto::InputReport> {
+        let size = self.device.read(buffer)?;
+        Ok(unsafe { &*(&buffer[..size] as *const _ as *const proto::InputReport) })
     }
 
-    pub fn enable_imu(&mut self) {
+    pub fn enable_imu(&mut self) -> Result<()> {
         // enable IMU
         self.send_subcmd_wait(proto::OutputReport {
             packet_counter: 0,
@@ -44,7 +47,7 @@ impl JoyCon {
         })
     }
 
-    pub fn set_standard_mode(&mut self) {
+    pub fn set_standard_mode(&mut self) -> Result<()> {
         self.send_subcmd_wait(proto::OutputReport {
             packet_counter: 0,
             report_id: proto::OutputReportId::RumbleSubcmd,
@@ -58,7 +61,7 @@ impl JoyCon {
         })
     }
 
-    pub fn set_player_light(&mut self, player_lights: proto::PlayerLights) {
+    pub fn set_player_light(&mut self, player_lights: proto::PlayerLights) -> Result<()> {
         self.send_subcmd_wait(proto::OutputReport {
             packet_counter: 0,
             report_id: proto::OutputReportId::RumbleSubcmd,
@@ -70,12 +73,12 @@ impl JoyCon {
         })
     }
 
-    fn send_subcmd_wait(&mut self, mut out_report: proto::OutputReport) {
-        self.send(&mut out_report);
+    fn send_subcmd_wait(&mut self, mut out_report: proto::OutputReport) -> Result<()> {
+        self.send(&mut out_report)?;
         let mut buffer = [0u8; 5999];
         // TODO: loop limit
         loop {
-            let in_report = self.recv(&mut buffer);
+            let in_report = self.recv(&mut buffer)?;
             unsafe {
                 if in_report.report_id.try_into().unwrap() == proto::InputReportId::Standard
                     && in_report
@@ -92,6 +95,7 @@ impl JoyCon {
                 }
             }
         }
+        Ok(())
     }
 }
 
