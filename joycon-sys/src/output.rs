@@ -1,3 +1,7 @@
+//! Structs binary compatible with the HID output reports
+//!
+//! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
+
 use crate::common::*;
 use std::fmt;
 
@@ -9,7 +13,9 @@ pub enum OutputReportId {
     RumbleOnly = 0x10,
 }
 
-// Console -> Joy-Con
+/// Describes a HID report sent to the JoyCon.
+///
+/// It is binary compatible and can be directly casted from the raw HID bytes.
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct OutputReport {

@@ -1,4 +1,6 @@
 use anyhow::Result;
+use joycon_sys::input::*;
+use joycon_sys::output::*;
 use joycon_sys::*;
 use std::mem::{size_of, size_of_val};
 

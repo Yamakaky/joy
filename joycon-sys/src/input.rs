@@ -1,3 +1,7 @@
+//! Structs binary compatible with the HID input reports
+//!
+//! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
+
 use crate::common::*;
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
@@ -43,7 +47,15 @@ pub enum InputReportId {
     // 0x33 not used
 }
 
-// Joy-Con -> Console
+/// Describes a HID report from the JoyCon.
+///
+/// It is binary compatible and can be directly casted from the raw HID bytes.
+///
+/// ```
+/// let mut buffer = [0u8; size_of::<InputReport>()];
+/// read_hid_report(&mut buffer);
+/// let report = unsafe { &*(&buffer as *const _ as *const InputReport)}
+/// ```
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct InputReport {

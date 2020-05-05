@@ -15,7 +15,7 @@ fn main() -> anyhow::Result<()> {
         println!("new dev {:?}", device);
         device.enable_imu()?;
         device.set_standard_mode()?;
-        device.set_player_light(joycon_sys::PlayerLights::new(
+        device.set_player_light(joycon_sys::output::PlayerLights::new(
             true, false, false, true, false, false, false, false,
         ))?;
         for _ in 0..3 {
