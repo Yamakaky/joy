@@ -229,11 +229,11 @@ impl fmt::Debug for Ack {
             f.debug_tuple("NAck").finish()
         } else {
             let data = self.0 & 0x7f;
+            let mut out = f.debug_tuple("Ack");
             if data != 0 {
-                f.debug_tuple("Ack").field(&data).finish()
-            } else {
-                f.debug_tuple("Ack").finish()
+                out.field(&data);
             }
+            out.finish()
         }
     }
 }
