@@ -1,5 +1,5 @@
 use crate::common::*;
-use crate::rawid::RawId;
+use crate::RawId;
 use std::fmt;
 
 #[repr(u8)]
