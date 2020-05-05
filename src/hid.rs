@@ -1,5 +1,5 @@
-use crate::proto;
 use anyhow::Result;
+use joycon_sys::*;
 use std::mem::{size_of, size_of_val};
 
 pub struct JoyCon {
@@ -16,12 +16,12 @@ impl JoyCon {
             counter: 42,
         }
     }
-    pub fn send(&mut self, report: &mut proto::OutputReport) -> Result<()> {
+    pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter += 1;
         let raw_data = unsafe {
             std::slice::from_raw_parts(
-                (report as *const proto::OutputReport).cast::<u8>(),
+                (report as *const OutputReport).cast::<u8>(),
                 size_of_val(report),
             )
         };
@@ -31,61 +31,61 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn recv(&self, buffer: &mut [u8]) -> Result<&proto::InputReport> {
-        let mem_size = size_of::<proto::InputReport>();
+    pub fn recv(&self, buffer: &mut [u8]) -> Result<&InputReport> {
+        let mem_size = size_of::<InputReport>();
         assert!(mem_size < buffer.len());
         let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, mem_size);
-        Ok(unsafe { &*(buffer as *const _ as *const proto::InputReport) })
+        Ok(unsafe { &*(buffer as *const _ as *const InputReport) })
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
         // enable IMU
-        self.send_subcmd_wait(proto::OutputReport {
+        self.send_subcmd_wait(OutputReport {
             packet_counter: 0,
-            report_id: proto::OutputReportId::RumbleSubcmd,
-            rumble_data: proto::RumbleData::default(),
-            subcmd: proto::SubcommandRequest {
-                subcommand_id: proto::SubcommandId::EnableIMU,
-                u: proto::SubcommandRequestData { nothing: () },
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::EnableIMU,
+                u: SubcommandRequestData { nothing: () },
             },
         })
     }
 
     pub fn set_standard_mode(&mut self) -> Result<()> {
-        self.send_subcmd_wait(proto::OutputReport {
+        self.send_subcmd_wait(OutputReport {
             packet_counter: 0,
-            report_id: proto::OutputReportId::RumbleSubcmd,
-            rumble_data: proto::RumbleData::default(),
-            subcmd: proto::SubcommandRequest {
-                subcommand_id: proto::SubcommandId::SetInputReportMode,
-                u: proto::SubcommandRequestData {
-                    input_report_mode: proto::InputReportMode::StandardFull,
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::SetInputReportMode,
+                u: SubcommandRequestData {
+                    input_report_mode: InputReportMode::StandardFull,
                 },
             },
         })
     }
 
-    pub fn set_player_light(&mut self, player_lights: proto::PlayerLights) -> Result<()> {
-        self.send_subcmd_wait(proto::OutputReport {
+    pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
+        self.send_subcmd_wait(OutputReport {
             packet_counter: 0,
-            report_id: proto::OutputReportId::RumbleSubcmd,
-            rumble_data: proto::RumbleData::default(),
-            subcmd: proto::SubcommandRequest {
-                subcommand_id: proto::SubcommandId::SetPlayerLights,
-                u: proto::SubcommandRequestData { player_lights },
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::SetPlayerLights,
+                u: SubcommandRequestData { player_lights },
             },
         })
     }
 
-    fn send_subcmd_wait(&mut self, mut out_report: proto::OutputReport) -> Result<()> {
+    fn send_subcmd_wait(&mut self, mut out_report: OutputReport) -> Result<()> {
         self.send(&mut out_report)?;
         let mut buffer = [0u8; 5999];
         // TODO: loop limit
         loop {
             let in_report = self.recv(&mut buffer)?;
             unsafe {
-                if in_report.report_id.try_into().unwrap() == proto::InputReportId::Standard
+                if in_report.report_id.try_into().unwrap() == InputReportId::Standard
                     && in_report
                         .u
                         .standard
