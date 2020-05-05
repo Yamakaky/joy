@@ -10,6 +10,13 @@ pub struct JoyCon {
 
 impl JoyCon {
     pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> JoyCon {
+        assert!([
+            JOYCON_L_BT,
+            JOYCON_R_BT,
+            PRO_CONTROLLER,
+            JOYCON_CHARGING_GRIP,
+        ]
+        .contains(&info.product_id()));
         JoyCon {
             device,
             info,

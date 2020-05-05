@@ -2,6 +2,13 @@ use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
 use std::marker::PhantomData;
 
+pub const NINTENDO_VENDOR_ID: u16 = 1406;
+
+pub const JOYCON_L_BT: u16 = 0x2006;
+pub const JOYCON_R_BT: u16 = 0x2007;
+pub const PRO_CONTROLLER: u16 = 0x2009;
+pub const JOYCON_CHARGING_GRIP: u16 = 0x200e;
+
 // All unused values are a Nop
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
