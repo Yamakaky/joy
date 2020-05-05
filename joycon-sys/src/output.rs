@@ -105,28 +105,6 @@ pub enum InputReportMode {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union SubcommandReplyData {
-    pub device_info: DeviceInfo,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-pub struct DeviceInfo {
-    pub firmware_version: [u8; 2],
-    // 1=Left Joy-Con, 2=Right Joy-Con, 3=Pro Controller
-    pub which_controller: u8,
-    // Unknown. Seems to be always 02
-    _something: u8,
-    // Big endian
-    pub mac_address: [u8; 6],
-    // Unknown. Seems to be always 01
-    _somethingelse: u8,
-    // bool
-    pub use_spi_colors: u8,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
     pub gyro_acc_frames: [[u8; 12]; 3],
     pub nfc_ir_data: [u8; 313],

@@ -323,7 +323,7 @@ pub union SubcommandReplyData {
 pub struct DeviceInfo {
     pub firmware_version: [u8; 2],
     // 1=Left Joy-Con, 2=Right Joy-Con, 3=Pro Controller
-    pub which_controller: u8,
+    pub which_controller: RawId<WhichController>,
     // Unknown. Seems to be always 02
     _something: u8,
     // Big endian
@@ -332,6 +332,14 @@ pub struct DeviceInfo {
     _somethingelse: u8,
     // bool
     pub use_spi_colors: u8,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
+pub enum WhichController {
+    LeftJoyCon = 1,
+    RightJoyCon = 2,
+    ProController = 3,
 }
 
 #[repr(C)]

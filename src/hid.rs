@@ -48,6 +48,20 @@ impl JoyCon {
         Ok(unsafe { std::mem::transmute(buffer) })
     }
 
+    pub fn print_dev_info(&mut self) -> Result<DeviceInfo> {
+        // enable IMU
+        let info = self.send_subcmd_wait(OutputReport {
+            packet_counter: 0,
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::RequestDeviceInfo,
+                u: SubcommandRequestData { nothing: () },
+            },
+        })?;
+        Ok(unsafe { info.u.device_info })
+    }
+
     pub fn enable_imu(&mut self) -> Result<()> {
         // enable IMU
         self.send_subcmd_wait(OutputReport {
@@ -58,7 +72,8 @@ impl JoyCon {
                 subcommand_id: SubcommandId::EnableIMU,
                 u: SubcommandRequestData { nothing: () },
             },
-        })
+        })?;
+        Ok(())
     }
 
     pub fn set_standard_mode(&mut self) -> Result<()> {
@@ -72,7 +87,8 @@ impl JoyCon {
                     input_report_mode: InputReportMode::StandardFull,
                 },
             },
-        })
+        })?;
+        Ok(())
     }
 
     pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
@@ -84,31 +100,26 @@ impl JoyCon {
                 subcommand_id: SubcommandId::SetPlayerLights,
                 u: SubcommandRequestData { player_lights },
             },
-        })
+        })?;
+        Ok(())
     }
 
-    fn send_subcmd_wait(&mut self, mut out_report: OutputReport) -> Result<()> {
+    fn send_subcmd_wait(&mut self, mut out_report: OutputReport) -> Result<SubcommandReply> {
         self.send(&mut out_report)?;
         // TODO: loop limit
         loop {
             let in_report = self.recv()?;
             unsafe {
-                if in_report.report_id.try_into().unwrap() == InputReportId::Standard
-                    && in_report
-                        .u
-                        .standard
-                        .u
-                        .subcmd_reply
-                        .subcommand_id
-                        .try_into()
-                        .unwrap()
+                if in_report.report_id.try_into().unwrap() == InputReportId::Standard {
+                    let subcmd_reply = in_report.u.standard.u.subcmd_reply;
+                    if subcmd_reply.subcommand_id.try_into().unwrap()
                         == out_report.subcmd.subcommand_id
-                {
-                    break;
+                    {
+                        return Ok(subcmd_reply);
+                    }
                 }
             }
         }
-        Ok(())
     }
 }
 

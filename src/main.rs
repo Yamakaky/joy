@@ -11,6 +11,7 @@ fn main() -> anyhow::Result<()> {
     {
         let mut device = hid::JoyCon::new(device.open_device(&api)?, device.clone());
         println!("new dev {:?}", device);
+        println!("info: {:?}", device.print_dev_info()?);
         device.enable_imu()?;
         device.set_standard_mode()?;
         device.set_player_light(joycon_sys::output::PlayerLights::new(
