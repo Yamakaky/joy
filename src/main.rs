@@ -25,14 +25,9 @@ fn main() -> anyhow::Result<()> {
         device.set_player_light(proto::PlayerLights::new(
             true, false, false, true, false, false, false, false,
         ))?;
-        let mut i = 0;
-        loop {
+        for _ in 0..3 {
             let report = device.recv(&mut buffer)?;
             println!("{:?}", report);
-            i += 1;
-            if i > 4 {
-                break;
-            }
         }
     }
     Ok(())
