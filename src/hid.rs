@@ -36,16 +36,16 @@ impl JoyCon {
         };
         let nb_written = self.device.write(raw_data)?;
         // TODO: check that, always true
+        assert_ne!(size_of::<InputReport>(), 49);
         assert_eq!(nb_written, 49);
         Ok(())
     }
 
-    pub fn recv(&self, buffer: &mut [u8]) -> Result<&InputReport> {
-        let mem_size = size_of::<InputReport>();
-        assert!(mem_size < buffer.len());
-        let nb_read = self.device.read(buffer)?;
-        assert_eq!(nb_read, mem_size);
-        Ok(unsafe { &*(buffer as *const _ as *const InputReport) })
+    pub fn recv(&self) -> Result<InputReport> {
+        let mut buffer = [0u8; size_of::<InputReport>()];
+        let nb_read = self.device.read(&mut buffer)?;
+        assert_eq!(nb_read, buffer.len());
+        Ok(unsafe { std::mem::transmute(buffer) })
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
@@ -89,10 +89,9 @@ impl JoyCon {
 
     fn send_subcmd_wait(&mut self, mut out_report: OutputReport) -> Result<()> {
         self.send(&mut out_report)?;
-        let mut buffer = [0u8; 5999];
         // TODO: loop limit
         loop {
-            let in_report = self.recv(&mut buffer)?;
+            let in_report = self.recv()?;
             unsafe {
                 if in_report.report_id.try_into().unwrap() == InputReportId::Standard
                     && in_report

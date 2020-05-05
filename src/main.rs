@@ -3,8 +3,6 @@ use hidapi::HidApi;
 mod hid;
 
 fn main() -> anyhow::Result<()> {
-    // Bigger buffer than needed to detect partial reads
-    let mut buffer = [0u8; 1 + std::mem::size_of::<joycon_sys::InputReport>()];
     let api = HidApi::new()?;
 
     for device in api
@@ -19,7 +17,7 @@ fn main() -> anyhow::Result<()> {
             true, false, false, true, false, false, false, false,
         ))?;
         for _ in 0..3 {
-            let report = device.recv(&mut buffer)?;
+            let report = device.recv()?;
             println!("{:?}", report);
         }
     }
