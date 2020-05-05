@@ -10,7 +10,8 @@ const NINTENDO_VENDOR_ID: u16 = 1406;
 const _JOYCON_L_BT: u16 = 0x2007;
 
 fn main() -> anyhow::Result<()> {
-    let mut buffer = [0u8; 5999];
+    // Bigger buffer than needed to detect partial reads
+    let mut buffer = [0u8; 1 + std::mem::size_of::<proto::InputReport>()];
     let api = HidApi::new()?;
 
     for device in api

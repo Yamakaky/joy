@@ -1,5 +1,6 @@
 use crate::proto;
 use anyhow::Result;
+use std::mem::{size_of, size_of_val};
 
 pub struct JoyCon {
     device: hidapi::HidDevice,
@@ -21,17 +22,21 @@ impl JoyCon {
         let raw_data = unsafe {
             std::slice::from_raw_parts(
                 (report as *const proto::OutputReport).cast::<u8>(),
-                std::mem::size_of_val(report),
+                size_of_val(report),
             )
         };
-        // TODO: check ret value
-        let _written = self.device.write(raw_data)?;
+        let nb_written = self.device.write(raw_data)?;
+        // TODO: check that, always true
+        assert_eq!(nb_written, 49);
         Ok(())
     }
 
     pub fn recv(&self, buffer: &mut [u8]) -> Result<&proto::InputReport> {
-        let size = self.device.read(buffer)?;
-        Ok(unsafe { &*(&buffer[..size] as *const _ as *const proto::InputReport) })
+        let mem_size = size_of::<proto::InputReport>();
+        assert!(mem_size < buffer.len());
+        let nb_read = self.device.read(buffer)?;
+        assert_eq!(nb_read, mem_size);
+        Ok(unsafe { &*(buffer as *const _ as *const proto::InputReport) })
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
