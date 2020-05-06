@@ -14,17 +14,15 @@ fn main() -> anyhow::Result<()> {
         println!("new dev {:?}", device);
         println!("info: {:?}", device.get_dev_info()?);
 
-        device.set_nfc_ir_mode()?;
-        device.enable_mcu()?;
-        device.disable_mcu()?;
-
         device.enable_imu()?;
         device.set_standard_mode()?;
         device.set_player_light(joycon_sys::output::PlayerLights::new(
             true, false, false, true, false, false, false, false,
         ))?;
 
-        for _ in 0..3 {
+        device.reset_calibration()?;
+
+        for _ in 0..10 {
             let report = device.get_calibrated_gyro()?;
             println!("{:?}", report);
         }

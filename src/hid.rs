@@ -1,5 +1,5 @@
 use crate::calibration::Calibration;
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use joycon_sys::input::*;
 use joycon_sys::output::*;
 use joycon_sys::*;
@@ -25,7 +25,8 @@ impl JoyCon {
             device,
             info,
             counter: 42,
-            calibration: Calibration::new(100),
+            // 10s with 3 reports at 60Hz
+            calibration: Calibration::new(10 * 60 * 3),
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -149,6 +150,7 @@ impl JoyCon {
         };
         self.send(&mut out_report)?;
         // TODO: loop limit
+        // TODO: check ACK
         loop {
             let in_report = self.recv()?;
             unsafe {
@@ -205,6 +207,12 @@ impl JoyCon {
             self.calibration.push(frame.gyro_dps(2000));
         }
         Ok(gyro_frames[0].gyro_dps(2000) - self.calibration.get_average())
+    }
+
+    pub fn reset_calibration(&mut self) -> Result<()> {
+        self.get_calibrated_gyro()?;
+        self.calibration.reset();
+        Ok(())
     }
 }
 
