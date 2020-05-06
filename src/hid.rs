@@ -1,3 +1,4 @@
+use crate::calibration::Calibration;
 use anyhow::Result;
 use joycon_sys::input::*;
 use joycon_sys::output::*;
@@ -8,6 +9,7 @@ pub struct JoyCon {
     device: hidapi::HidDevice,
     info: hidapi::DeviceInfo,
     counter: u8,
+    calibration: Calibration,
 }
 
 impl JoyCon {
@@ -23,6 +25,7 @@ impl JoyCon {
             device,
             info,
             counter: 42,
+            calibration: Calibration::new(100),
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -159,6 +162,23 @@ impl JoyCon {
                 }
             }
         }
+    }
+
+    pub fn get_calibrated_gyro(&mut self) -> Result<Vector3> {
+        let report = self.recv()?;
+
+        anyhow::ensure!(
+            report.report_id == InputReportId::StandardFull,
+            "expected StandardFull, got {:?}",
+            report.report_id
+        );
+
+        let report = unsafe { report.u.standard };
+        let gyro_frames = unsafe { report.u.gyro_acc_nfc_ir.gyro_acc_frames };
+        for frame in &gyro_frames {
+            self.calibration.push(frame.gyro_dps(2000));
+        }
+        Ok(gyro_frames[0].gyro_dps(2000) - self.calibration.get_average())
     }
 }
 

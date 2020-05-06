@@ -4,6 +4,7 @@
 
 use crate::common::*;
 use byteorder::{ByteOrder, LittleEndian};
+use derive_more::{Add, Div, Mul, Sub};
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
 use std::marker::PhantomData;
@@ -33,6 +34,12 @@ impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
                 .field(&format!("{:x}", self.0))
                 .finish()
         }
+    }
+}
+
+impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
+    fn eq(&self, other: &Id) -> bool {
+        self.try_into().map(|x| x == *other).unwrap_or(false)
     }
 }
 
@@ -380,10 +387,10 @@ impl RawGyroAccFrame {
     }
 
     /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
-    pub fn accel(&self, sensitivity_mg: u16) -> (f32, f32, f32) {
+    pub fn accel(&self, sensitivity_mg: u16) -> Vector3 {
         let raw = self.raw_accel();
         let factor = (sensitivity_mg as f32) * 2. / 65535. / 1000.;
-        (
+        Vector3(
             raw.0 as f32 * factor,
             raw.1 as f32 * factor,
             raw.2 as f32 * factor,
@@ -399,19 +406,19 @@ impl RawGyroAccFrame {
     }
 
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope---rotation-in-degreess---dps
-    pub fn gyro_dps(&self, sensitivity_dps: u16) -> (f32, f32, f32) {
+    pub fn gyro_dps(&self, sensitivity_dps: u16) -> Vector3 {
         let raw = self.raw_gyro();
         let factor = (sensitivity_dps as f32) * 2. * 1.15 / 65535.;
-        (
+        Vector3(
             raw.0 as f32 * factor,
             raw.1 as f32 * factor,
             raw.2 as f32 * factor,
         )
     }
 
-    pub fn gyro_rps(&self, sensitivity_dps: u16) -> (f32, f32, f32) {
+    pub fn gyro_rps(&self, sensitivity_dps: u16) -> Vector3 {
         let dps = self.gyro_dps(sensitivity_dps);
-        (dps.0 / 360., dps.1 / 360., dps.2 / 360.)
+        Vector3(dps.0 / 360., dps.1 / 360., dps.2 / 360.)
     }
 }
 
@@ -423,3 +430,6 @@ impl fmt::Debug for RawGyroAccFrame {
             .finish()
     }
 }
+
+#[derive(Copy, Clone, Debug, Add, Sub, Div, Mul)]
+pub struct Vector3(pub f32, pub f32, pub f32);

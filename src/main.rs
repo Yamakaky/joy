@@ -1,5 +1,6 @@
 use hidapi::HidApi;
 
+mod calibration;
 mod hid;
 
 fn main() -> anyhow::Result<()> {
@@ -24,7 +25,7 @@ fn main() -> anyhow::Result<()> {
         ))?;
 
         for _ in 0..3 {
-            let report = device.recv()?;
+            let report = device.get_calibrated_gyro()?;
             println!("{:?}", report);
         }
     }
