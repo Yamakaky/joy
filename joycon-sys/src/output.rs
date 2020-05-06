@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
 use crate::common::*;
+use byteorder::{ByteOrder, LittleEndian};
 use std::fmt;
 
 #[repr(u8)]
@@ -68,6 +69,23 @@ pub union SubcommandRequestData {
     pub player_lights: PlayerLights,
     pub mcu_state: MCUState,
     pub mcu_cmd: MCUCmd,
+    pub spi_read: SPIReadRequest,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct SPIReadRequest {
+    pub offset: [u8; 4],
+    pub size: u8,
+}
+
+impl SPIReadRequest {
+    pub fn new(offset: u32, size: u8) -> SPIReadRequest {
+        assert!(size <= 0x1d);
+        let mut buf = [0; 4];
+        LittleEndian::write_u32(&mut buf, offset);
+        SPIReadRequest { offset: buf, size }
+    }
 }
 
 #[repr(C)]

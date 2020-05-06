@@ -164,6 +164,32 @@ impl JoyCon {
         }
     }
 
+    fn read_spi(&mut self, offset: u32, buf: &mut [u8]) -> Result<()> {
+        ensure!(buf.len() <= 0x1d, "requested size too big");
+        let reply = self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
+                subcommand_id: SubcommandId::SPIRead,
+                u: SubcommandRequestData {
+                    spi_read: SPIReadRequest::new(offset, buf.len() as u8),
+                },
+            },
+        )?;
+        let result = unsafe { reply.u.spi_read };
+        ensure!(
+            buf.len() == result.size() as usize,
+            "invalid len {}",
+            result.size()
+        );
+        ensure!(
+            offset == result.address(),
+            "invalid address {}",
+            result.address()
+        );
+        buf.copy_from_slice(result.data());
+        Ok(())
+    }
+
     pub fn get_calibrated_gyro(&mut self) -> Result<Vector3> {
         let report = self.recv()?;
 

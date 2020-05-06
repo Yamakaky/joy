@@ -13,6 +13,7 @@ pub enum SubcommandId {
     BluetoothManualPairing = 0x01,
     RequestDeviceInfo = 0x02,
     SetInputReportMode = 0x03,
+    SPIRead = 0x10,
     SetMCUConf = 0x21,
     SetMCUState = 0x22,
     SetPlayerLights = 0x30,

@@ -324,6 +324,29 @@ impl fmt::Debug for Ack {
 #[derive(Copy, Clone)]
 pub union SubcommandReplyData {
     pub device_info: DeviceInfo,
+    pub spi_read: SPIReadResult,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct SPIReadResult {
+    address: [u8; 4],
+    size: u8,
+    data: [u8; 0x1d],
+}
+
+impl SPIReadResult {
+    pub fn address(&self) -> u32 {
+        LittleEndian::read_u32(&self.address)
+    }
+
+    pub fn size(&self) -> u8 {
+        self.size
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data[..self.size as usize]
+    }
 }
 
 #[repr(C)]
