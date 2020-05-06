@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
 use crate::common::*;
+use byteorder::{ByteOrder, LittleEndian};
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
 use std::marker::PhantomData;
@@ -345,7 +346,7 @@ pub enum WhichController {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
-    pub gyro_acc_frames: [[u8; 12]; 3],
+    pub gyro_acc_frames: [RawGyroAccFrame; 3],
     pub nfc_ir_data: [u8; 313],
 }
 
@@ -354,6 +355,71 @@ impl fmt::Debug for GyroAccNFCIR {
         f.debug_struct("GyroAccNFCIR")
             .field("gyro_acc_frames", &self.gyro_acc_frames)
             .field("nfc_ir_data", &"[data]")
+            .finish()
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct RawGyroAccFrame {
+    raw_gyro_1: [u8; 2],
+    raw_gyro_2: [u8; 2],
+    raw_gyro_3: [u8; 2],
+    raw_accel_x: [u8; 2],
+    raw_accel_y: [u8; 2],
+    raw_accel_z: [u8; 2],
+}
+
+impl RawGyroAccFrame {
+    pub fn raw_accel(&self) -> (i16, i16, i16) {
+        (
+            LittleEndian::read_i16(&self.raw_accel_x),
+            LittleEndian::read_i16(&self.raw_accel_y),
+            LittleEndian::read_i16(&self.raw_accel_z),
+        )
+    }
+
+    /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
+    pub fn accel(&self, sensitivity_mg: u16) -> (f32, f32, f32) {
+        let raw = self.raw_accel();
+        let factor = (sensitivity_mg as f32) * 2. / 65535. / 1000.;
+        (
+            raw.0 as f32 * factor,
+            raw.1 as f32 * factor,
+            raw.2 as f32 * factor,
+        )
+    }
+
+    pub fn raw_gyro(&self) -> (i16, i16, i16) {
+        (
+            LittleEndian::read_i16(&self.raw_gyro_1),
+            LittleEndian::read_i16(&self.raw_gyro_2),
+            LittleEndian::read_i16(&self.raw_gyro_3),
+        )
+    }
+
+    /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope---rotation-in-degreess---dps
+    pub fn gyro_dps(&self, sensitivity_dps: u16) -> (f32, f32, f32) {
+        let raw = self.raw_gyro();
+        let factor = (sensitivity_dps as f32) * 2. * 1.15 / 65535.;
+        (
+            raw.0 as f32 * factor,
+            raw.1 as f32 * factor,
+            raw.2 as f32 * factor,
+        )
+    }
+
+    pub fn gyro_rps(&self, sensitivity_dps: u16) -> (f32, f32, f32) {
+        let dps = self.gyro_dps(sensitivity_dps);
+        (dps.0 / 360., dps.1 / 360., dps.2 / 360.)
+    }
+}
+
+impl fmt::Debug for RawGyroAccFrame {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("RawGyroAccFrame")
+            .field("accel", &self.raw_accel())
+            .field("gyro", &self.raw_gyro())
             .finish()
     }
 }
