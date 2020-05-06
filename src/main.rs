@@ -11,7 +11,7 @@ fn main() -> anyhow::Result<()> {
     {
         let mut device = hid::JoyCon::new(device.open_device(&api)?, device.clone());
         println!("new dev {:?}", device);
-        println!("info: {:?}", device.print_dev_info()?);
+        println!("info: {:?}", device.get_dev_info()?);
 
         device.set_nfc_ir_mode()?;
         device.enable_mcu()?;

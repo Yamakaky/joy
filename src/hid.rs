@@ -48,108 +48,102 @@ impl JoyCon {
         Ok(unsafe { std::mem::transmute(buffer) })
     }
 
-    pub fn print_dev_info(&mut self) -> Result<DeviceInfo> {
-        // enable IMU
-        let info = self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+    pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
+        let info = self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::RequestDeviceInfo,
                 u: SubcommandRequestData { nothing: () },
             },
-        })?;
+        )?;
         Ok(unsafe { info.u.device_info })
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
-        // enable IMU
-        self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::EnableIMU,
                 u: SubcommandRequestData { nothing: () },
             },
-        })?;
+        )?;
         Ok(())
     }
 
     pub fn set_standard_mode(&mut self) -> Result<()> {
-        self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::SetInputReportMode,
                 u: SubcommandRequestData {
                     input_report_mode: InputReportMode::StandardFull,
                 },
             },
-        })?;
+        )?;
         Ok(())
     }
 
     pub fn set_nfc_ir_mode(&mut self) -> Result<()> {
-        self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::SetInputReportMode,
                 u: SubcommandRequestData {
                     input_report_mode: InputReportMode::NFCIR,
                 },
             },
-        })?;
+        )?;
         Ok(())
     }
 
     pub fn enable_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
                     mcu_state: MCUState::Resume,
                 },
             },
-        })?;
+        )?;
         Ok(())
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
                     mcu_state: MCUState::Suspend,
                 },
             },
-        })?;
+        )?;
         Ok(())
     }
 
     pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
-        self.send_subcmd_wait(OutputReport {
-            packet_counter: 0,
-            report_id: OutputReportId::RumbleSubcmd,
-            rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
                 subcommand_id: SubcommandId::SetPlayerLights,
                 u: SubcommandRequestData { player_lights },
             },
-        })?;
+        )?;
         Ok(())
     }
 
-    fn send_subcmd_wait(&mut self, mut out_report: OutputReport) -> Result<SubcommandReply> {
+    fn send_subcmd_wait(
+        &mut self,
+        report_id: OutputReportId,
+        subcmd: SubcommandRequest,
+    ) -> Result<SubcommandReply> {
+        let mut out_report = OutputReport {
+            packet_counter: 0,
+            report_id,
+            rumble_data: RumbleData::default(),
+            subcmd,
+        };
         self.send(&mut out_report)?;
         // TODO: loop limit
         loop {
