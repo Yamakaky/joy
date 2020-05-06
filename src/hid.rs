@@ -91,6 +91,51 @@ impl JoyCon {
         Ok(())
     }
 
+    pub fn set_nfc_ir_mode(&mut self) -> Result<()> {
+        self.send_subcmd_wait(OutputReport {
+            packet_counter: 0,
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::SetInputReportMode,
+                u: SubcommandRequestData {
+                    input_report_mode: InputReportMode::NFCIR,
+                },
+            },
+        })?;
+        Ok(())
+    }
+
+    pub fn enable_mcu(&mut self) -> Result<()> {
+        self.send_subcmd_wait(OutputReport {
+            packet_counter: 0,
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::SetMCUState,
+                u: SubcommandRequestData {
+                    mcu_state: MCUState::Resume,
+                },
+            },
+        })?;
+        Ok(())
+    }
+
+    pub fn disable_mcu(&mut self) -> Result<()> {
+        self.send_subcmd_wait(OutputReport {
+            packet_counter: 0,
+            report_id: OutputReportId::RumbleSubcmd,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::SetMCUState,
+                u: SubcommandRequestData {
+                    mcu_state: MCUState::Suspend,
+                },
+            },
+        })?;
+        Ok(())
+    }
+
     pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
         self.send_subcmd_wait(OutputReport {
             packet_counter: 0,

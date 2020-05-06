@@ -11,6 +11,7 @@ pub enum OutputReportId {
     RumbleSubcmd = 0x01,
     MCUFwUpdate = 0x03,
     RumbleOnly = 0x10,
+    RequestMCUData = 0x11,
 }
 
 /// Describes a HID report sent to the JoyCon.
@@ -65,6 +66,47 @@ pub union SubcommandRequestData {
     pub nothing: (),
     pub input_report_mode: InputReportMode,
     pub player_lights: PlayerLights,
+    pub mcu_state: MCUState,
+    pub mcu_cmd: MCUCmd,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct MCUCmd {
+    pub cmd_id: MCUCmdId,
+    pub subcmd_id: MCUSubCmdId,
+    pub mode: MCUMode,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+// TODO: debug
+pub enum MCUState {
+    Suspend = 0,
+    Resume = 1,
+    ResumeForUpdate = 2,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum MCUMode {
+    Standby = 1,
+    NFC = 4,
+    IR = 5,
+    MaybeFWUpdate = 6,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+//TODO: unknown values
+pub enum MCUCmdId {
+    SetMCUMode = 0x21,
+}
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+//TODO: unknown values
+pub enum MCUSubCmdId {
+    SetMCUMode = 0,
 }
 
 #[repr(C)]
@@ -101,6 +143,7 @@ impl PlayerLights {
 #[derive(Copy, Clone, Debug)]
 pub enum InputReportMode {
     StandardFull = 0x30,
+    NFCIR = 0x31,
 }
 
 #[repr(C)]

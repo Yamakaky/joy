@@ -12,11 +12,17 @@ fn main() -> anyhow::Result<()> {
         let mut device = hid::JoyCon::new(device.open_device(&api)?, device.clone());
         println!("new dev {:?}", device);
         println!("info: {:?}", device.print_dev_info()?);
+
+        device.set_nfc_ir_mode()?;
+        device.enable_mcu()?;
+        device.disable_mcu()?;
+
         device.enable_imu()?;
         device.set_standard_mode()?;
         device.set_player_light(joycon_sys::output::PlayerLights::new(
             true, false, false, true, false, false, false, false,
         ))?;
+
         for _ in 0..3 {
             let report = device.recv()?;
             println!("{:?}", report);
