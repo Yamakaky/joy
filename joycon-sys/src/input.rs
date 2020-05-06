@@ -371,51 +371,31 @@ impl fmt::Debug for GyroAccNFCIR {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct RawGyroAccFrame {
-    raw_gyro_1: [u8; 2],
-    raw_gyro_2: [u8; 2],
-    raw_gyro_3: [u8; 2],
-    raw_accel_x: [u8; 2],
-    raw_accel_y: [u8; 2],
-    raw_accel_z: [u8; 2],
+    raw_gyro: [[u8; 2]; 3],
+    raw_accel: [[u8; 2]; 3],
 }
 
 impl RawGyroAccFrame {
-    pub fn raw_accel(&self) -> (i16, i16, i16) {
-        (
-            LittleEndian::read_i16(&self.raw_accel_x),
-            LittleEndian::read_i16(&self.raw_accel_y),
-            LittleEndian::read_i16(&self.raw_accel_z),
-        )
+    pub fn raw_accel(&self) -> Vector3 {
+        Vector3::from_raw(self.raw_accel)
+    }
+
+    pub fn raw_gyro(&self) -> Vector3 {
+        Vector3::from_raw(self.raw_gyro)
     }
 
     /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
     pub fn accel(&self, sensitivity_mg: u16) -> Vector3 {
         let raw = self.raw_accel();
         let factor = (sensitivity_mg as f32) * 2. / 65535. / 1000.;
-        Vector3(
-            raw.0 as f32 * factor,
-            raw.1 as f32 * factor,
-            raw.2 as f32 * factor,
-        )
-    }
-
-    pub fn raw_gyro(&self) -> (i16, i16, i16) {
-        (
-            LittleEndian::read_i16(&self.raw_gyro_1),
-            LittleEndian::read_i16(&self.raw_gyro_2),
-            LittleEndian::read_i16(&self.raw_gyro_3),
-        )
+        Vector3(raw.0 * factor, raw.1 * factor, raw.2 * factor)
     }
 
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope---rotation-in-degreess---dps
     pub fn gyro_dps(&self, sensitivity_dps: u16) -> Vector3 {
         let raw = self.raw_gyro();
         let factor = (sensitivity_dps as f32) * 2. * 1.15 / 65535.;
-        Vector3(
-            raw.0 as f32 * factor,
-            raw.1 as f32 * factor,
-            raw.2 as f32 * factor,
-        )
+        Vector3(raw.0 * factor, raw.1 * factor, raw.2 * factor)
     }
 
     pub fn gyro_rps(&self, sensitivity_dps: u16) -> Vector3 {
@@ -435,3 +415,13 @@ impl fmt::Debug for RawGyroAccFrame {
 
 #[derive(Copy, Clone, Debug, Add, Sub, Div, Mul)]
 pub struct Vector3(pub f32, pub f32, pub f32);
+
+impl Vector3 {
+    pub fn from_raw(raw: [[u8; 2]; 3]) -> Vector3 {
+        Vector3(
+            LittleEndian::read_i16(&raw[0]) as f32,
+            LittleEndian::read_i16(&raw[1]) as f32,
+            LittleEndian::read_i16(&raw[2]) as f32,
+        )
+    }
+}
