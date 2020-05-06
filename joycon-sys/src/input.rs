@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
 use crate::common::*;
+use crate::spi::*;
 use byteorder::{ByteOrder, LittleEndian};
 use derive_more::{Add, Div, Mul, Sub};
 use num::{FromPrimitive, ToPrimitive};
@@ -325,28 +326,6 @@ impl fmt::Debug for Ack {
 pub union SubcommandReplyData {
     pub device_info: DeviceInfo,
     pub spi_read: SPIReadResult,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-pub struct SPIReadResult {
-    address: [u8; 4],
-    size: u8,
-    data: [u8; 0x1d],
-}
-
-impl SPIReadResult {
-    pub fn address(&self) -> u32 {
-        LittleEndian::read_u32(&self.address)
-    }
-
-    pub fn size(&self) -> u8 {
-        self.size
-    }
-
-    pub fn data(&self) -> &[u8] {
-        &self.data[..self.size as usize]
-    }
 }
 
 #[repr(C)]

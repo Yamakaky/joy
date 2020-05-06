@@ -9,6 +9,7 @@ extern crate num_derive;
 mod common;
 pub mod input;
 pub mod output;
+pub mod spi;
 
 pub use common::*;
 pub use input::InputReport;

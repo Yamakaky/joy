@@ -2,6 +2,7 @@ use crate::calibration::Calibration;
 use anyhow::{ensure, Result};
 use joycon_sys::input::*;
 use joycon_sys::output::*;
+use joycon_sys::spi::*;
 use joycon_sys::*;
 use std::mem::{size_of, size_of_val};
 
@@ -166,30 +167,23 @@ impl JoyCon {
         }
     }
 
-    fn read_spi(&mut self, offset: u32, buf: &mut [u8]) -> Result<()> {
-        ensure!(buf.len() <= 0x1d, "requested size too big");
+    fn read_spi(&mut self, range: SPIRange) -> Result<SPIResultData> {
         let reply = self.send_subcmd_wait(
             OutputReportId::RumbleSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SPIRead,
                 u: SubcommandRequestData {
-                    spi_read: SPIReadRequest::new(offset, buf.len() as u8),
+                    spi_read: SPIReadRequest::new(range),
                 },
             },
         )?;
         let result = unsafe { reply.u.spi_read };
         ensure!(
-            buf.len() == result.size() as usize,
-            "invalid len {}",
-            result.size()
+            range == result.range(),
+            "invalid range {:?}",
+            result.range()
         );
-        ensure!(
-            offset == result.address(),
-            "invalid address {}",
-            result.address()
-        );
-        buf.copy_from_slice(result.data());
-        Ok(())
+        Ok(result.data)
     }
 
     pub fn get_calibrated_gyro(&mut self) -> Result<Vector3> {
