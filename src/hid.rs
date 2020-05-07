@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::calibration::Calibration;
 use anyhow::{ensure, Result};
 use joycon_sys::input::*;
