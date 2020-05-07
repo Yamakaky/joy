@@ -401,8 +401,7 @@ impl RawGyroAccFrame {
     }
 
     pub fn gyro_rps(&self, offset: Vector3, sens_coeff: Vector3) -> Vector3 {
-        let dps = self.gyro_dps(offset, sens_coeff);
-        Vector3(dps.0 / 360., dps.1 / 360., dps.2 / 360.)
+        self.gyro_dps(offset, sens_coeff) / 360.
     }
 }
 
