@@ -371,8 +371,8 @@ impl fmt::Debug for GyroAccNFCIR {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct RawGyroAccFrame {
-    raw_gyro: [[u8; 2]; 3],
     raw_accel: [[u8; 2]; 3],
+    raw_gyro: [[u8; 2]; 3],
 }
 
 impl RawGyroAccFrame {
