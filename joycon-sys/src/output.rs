@@ -65,11 +65,54 @@ impl Default for RumbleData {
 #[derive(Copy, Clone)]
 pub union SubcommandRequestData {
     pub nothing: (),
+    pub imu_enabled: bool,
     pub input_report_mode: InputReportMode,
     pub player_lights: PlayerLights,
     pub mcu_state: MCUState,
     pub mcu_cmd: MCUCmd,
     pub spi_read: SPIReadRequest,
+    pub imu_sensitivity: IMUSensitivity,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct IMUSensitivity {
+    pub gyro_sens: GyroSens,
+    pub acc_sens: AccSens,
+    pub gyro_perf_rate: GyroPerfRate,
+    pub acc_anti_aliasing: AccAntiAliasing,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum GyroSens {
+    DPS250 = 0,
+    DPS500 = 1,
+    DPS1000 = 2,
+    DPS2000 = 3,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum AccSens {
+    G8 = 0,
+    G4 = 1,
+    G2 = 2,
+    G16 = 3,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum GyroPerfRate {
+    Hz833 = 0,
+    Hz208 = 1,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
+pub enum AccAntiAliasing {
+    Hz200 = 0,
+    Hz100 = 1,
 }
 
 #[repr(C)]

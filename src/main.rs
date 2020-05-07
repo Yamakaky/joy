@@ -15,13 +15,14 @@ fn main() -> anyhow::Result<()> {
         println!("new dev {:?}", device);
         println!("info: {:?}", device.get_dev_info()?);
 
+        device.set_imu_sens()?;
         device.enable_imu()?;
         device.set_standard_mode()?;
         device.set_player_light(joycon_sys::output::PlayerLights::new(
             true, false, false, true, false, false, false, false,
         ))?;
 
-        device.load_calibration()?;
+        dbg!(device.load_calibration()?);
         device.reset_calibration()?;
 
         let mut rotation = Vector3::default();

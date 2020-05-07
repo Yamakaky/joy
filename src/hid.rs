@@ -65,6 +65,24 @@ impl JoyCon {
         Ok(&self.calib_gyro)
     }
 
+    pub fn set_imu_sens(&mut self) -> Result<()> {
+        self.send_subcmd_wait(
+            OutputReportId::RumbleSubcmd,
+            SubcommandRequest {
+                subcommand_id: SubcommandId::SetIMUSens,
+                u: SubcommandRequestData {
+                    imu_sensitivity: IMUSensitivity {
+                        gyro_sens: GyroSens::DPS1000,
+                        acc_sens: AccSens::G8,
+                        gyro_perf_rate: GyroPerfRate::Hz833,
+                        acc_anti_aliasing: AccAntiAliasing::Hz100,
+                    },
+                },
+            },
+        )?;
+        Ok(())
+    }
+
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
         let info = self.send_subcmd_wait(
             OutputReportId::RumbleSubcmd,
@@ -81,7 +99,7 @@ impl JoyCon {
             OutputReportId::RumbleSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::EnableIMU,
-                u: SubcommandRequestData { nothing: () },
+                u: SubcommandRequestData { imu_enabled: true },
             },
         )?;
         Ok(())
