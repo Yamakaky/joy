@@ -92,6 +92,17 @@ pub enum GyroSens {
     DPS2000 = 3,
 }
 
+impl GyroSens {
+    pub fn range(self) -> u16 {
+        match self {
+            GyroSens::DPS250 => 600,
+            GyroSens::DPS500 => 1000,
+            GyroSens::DPS1000 => 2000,
+            GyroSens::DPS2000 => 4000,
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum AccSens {

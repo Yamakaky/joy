@@ -6,6 +6,8 @@ use joycon_sys::spi::*;
 use joycon_sys::*;
 use std::mem::{size_of, size_of_val};
 
+const GYRO_SAMPLES_PER_SECOND: f32 = 60. * 3.;
+
 pub struct JoyCon {
     device: hidapi::HidDevice,
     info: hidapi::DeviceInfo,
@@ -66,13 +68,14 @@ impl JoyCon {
     }
 
     pub fn set_imu_sens(&mut self) -> Result<()> {
+        let gyro_sens = GyroSens::DPS2000;
         self.send_subcmd_wait(
             OutputReportId::RumbleSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetIMUSens,
                 u: SubcommandRequestData {
                     imu_sensitivity: IMUSensitivity {
-                        gyro_sens: GyroSens::DPS1000,
+                        gyro_sens,
                         acc_sens: AccSens::G8,
                         gyro_perf_rate: GyroPerfRate::Hz833,
                         acc_anti_aliasing: AccAntiAliasing::Hz100,
@@ -216,7 +219,7 @@ impl JoyCon {
         Ok(result.data)
     }
 
-    pub fn get_gyro(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
+    pub fn get_gyro_rot_delta(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
         let report = self.recv()?;
 
         ensure!(
@@ -238,7 +241,7 @@ impl JoyCon {
         let mut out = [Vector3::default(); 3];
         // frames are from newest to oldest so we iter backward
         for (frame, out) in gyro_frames.iter().rev().zip(out.iter_mut()) {
-            let gyro_rps = frame.gyro_rps(offset, factor);
+            let gyro_rps = frame.gyro_rps(offset, factor) / GYRO_SAMPLES_PER_SECOND;
             *out = if apply_calibration {
                 gyro_rps - self.calib_gyro.get_average()
             } else {
@@ -250,10 +253,10 @@ impl JoyCon {
 
     pub fn reset_calibration(&mut self) -> Result<()> {
         // seems needed
-        self.get_gyro(false)?;
+        self.get_gyro_rot_delta(false)?;
         self.calib_gyro.reset();
         for _ in 0..60 {
-            for frame in &self.get_gyro(false)? {
+            for frame in &self.get_gyro_rot_delta(false)? {
                 self.calib_gyro.push(*frame);
             }
         }

@@ -26,11 +26,9 @@ fn main() -> anyhow::Result<()> {
         device.reset_calibration()?;
 
         let mut rotation = Vector3::default();
-        //const delta: f32 = (1. / 60.) / 3.;
-        const delta: f32 = 1.;
         for i in 0..1000 {
-            for rps in &device.get_gyro(true)? {
-                rotation = Vector3(rps.0 * delta, rps.1 * delta, rps.2 * delta);
+            for delta in &device.get_gyro_rot_delta(true)? {
+                rotation += *delta;
             }
 
             if i % 60 == 0 {
