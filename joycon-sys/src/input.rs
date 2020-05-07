@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
 use crate::common::*;
+use crate::output::*;
 use crate::spi::*;
 use byteorder::{ByteOrder, LittleEndian};
 use derive_more::{Add, AddAssign, Div, Mul, Sub};
@@ -392,16 +393,12 @@ impl RawGyroAccFrame {
     }
 
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
-    // TODO: remove magic values
-    pub fn gyro_dps(&self, offset: Vector3, sens_coeff: Vector3) -> Vector3 {
-        let raw = self.raw_gyro();
-        let x = sens_coeff - offset;
-        let coeff: Vector3 = Vector3(936. / x.0, 936. / x.1, 936. / x.2);
-        (raw - offset) * coeff
+    pub fn gyro_dps(&self, offset: Vector3, sens: GyroSens) -> Vector3 {
+        (self.raw_gyro() - offset) / (u16::MAX as f32 / sens.range() as f32)
     }
 
-    pub fn gyro_rps(&self, offset: Vector3, sens_coeff: Vector3) -> Vector3 {
-        self.gyro_dps(offset, sens_coeff) / 360.
+    pub fn gyro_rps(&self, offset: Vector3, sens: GyroSens) -> Vector3 {
+        self.gyro_dps(offset, sens) / 360.
     }
 }
 

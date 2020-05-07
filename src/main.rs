@@ -26,8 +26,8 @@ fn main() -> anyhow::Result<()> {
         device.reset_calibration()?;
 
         let mut rotation = Vector3::default();
-        for i in 0..1000 {
-            for delta in &device.get_gyro_rot_delta(true)? {
+        for i in 0..600 {
+            for delta in &device.get_gyro_rot_delta(false)? {
                 rotation += *delta;
             }
 
@@ -35,6 +35,7 @@ fn main() -> anyhow::Result<()> {
                 println!("{:?}", rotation);
             }
         }
+        println!("{:?}", device.max_raw);
     }
     Ok(())
 }

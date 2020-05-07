@@ -13,6 +13,8 @@ pub struct JoyCon {
     info: hidapi::DeviceInfo,
     counter: u8,
     calib_gyro: Calibration,
+    gyro_sens: GyroSens,
+    pub max_raw: i16,
 }
 
 impl JoyCon {
@@ -30,6 +32,8 @@ impl JoyCon {
             counter: 42,
             // 10s with 3 reports at 60Hz
             calib_gyro: Calibration::new(10 * 60 * 3),
+            gyro_sens: GyroSens::DPS2000,
+            max_raw: 0,
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -83,6 +87,7 @@ impl JoyCon {
                 },
             },
         )?;
+        self.gyro_sens = gyro_sens;
         Ok(())
     }
 
@@ -234,14 +239,24 @@ impl JoyCon {
             .calib_gyro
             .user_offset
             .unwrap_or(self.calib_gyro.factory_offset);
-        let factor = self
-            .calib_gyro
-            .user_factor
-            .unwrap_or(self.calib_gyro.factory_factor);
         let mut out = [Vector3::default(); 3];
         // frames are from newest to oldest so we iter backward
         for (frame, out) in gyro_frames.iter().rev().zip(out.iter_mut()) {
-            let gyro_rps = frame.gyro_rps(offset, factor) / GYRO_SAMPLES_PER_SECOND;
+            let max = [
+                frame.raw_gyro().0.abs() as i16,
+                frame.raw_gyro().1.abs() as i16,
+                frame.raw_gyro().2.abs() as i16,
+            ]
+            .iter()
+            .cloned()
+            .max()
+            .unwrap();
+            self.max_raw = self.max_raw.max(max);
+            if max > i16::MAX - 1000 {
+                println!("saturation");
+            }
+
+            let gyro_rps = frame.gyro_rps(offset, self.gyro_sens) / GYRO_SAMPLES_PER_SECOND;
             *out = if apply_calibration {
                 gyro_rps - self.calib_gyro.get_average()
             } else {
