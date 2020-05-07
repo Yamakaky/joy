@@ -14,7 +14,10 @@ pub struct JoyCon {
     counter: u8,
     calib_gyro: Calibration,
     gyro_sens: GyroSens,
-    pub max_raw: i16,
+    calib_accel: Calibration,
+    accel_sens: AccSens,
+    pub max_raw_gyro: i16,
+    pub max_raw_accel: i16,
 }
 
 impl JoyCon {
@@ -33,7 +36,10 @@ impl JoyCon {
             // 10s with 3 reports at 60Hz
             calib_gyro: Calibration::new(10 * 60 * 3),
             gyro_sens: GyroSens::DPS2000,
-            max_raw: 0,
+            calib_accel: Calibration::new(10 * 60 * 3),
+            accel_sens: AccSens::G8,
+            max_raw_gyro: 0,
+            max_raw_accel: 0,
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -59,20 +65,21 @@ impl JoyCon {
         Ok(unsafe { std::mem::transmute(buffer) })
     }
 
-    pub fn load_calibration(&mut self) -> Result<&Calibration> {
+    pub fn load_calibration(&mut self) -> Result<(&Calibration, &Calibration)> {
         let factory = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
         let factory_settings = unsafe { factory.factory_calib };
-        self.calib_gyro.factory_factor = factory_settings.gyro_factor();
+        self.calib_accel.factory_offset = factory_settings.acc_offset();
         self.calib_gyro.factory_offset = factory_settings.gyro_offset();
         let user = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
         let user_settings = unsafe { user.user_calib };
-        self.calib_gyro.user_factor = user_settings.gyro_factor();
+        self.calib_accel.user_offset = user_settings.acc_offset();
         self.calib_gyro.user_offset = user_settings.gyro_offset();
-        Ok(&self.calib_gyro)
+        Ok((&self.calib_gyro, &self.calib_accel))
     }
 
     pub fn set_imu_sens(&mut self) -> Result<()> {
         let gyro_sens = GyroSens::DPS2000;
+        let accel_sens = AccSens::G8;
         self.send_subcmd_wait(
             OutputReportId::RumbleSubcmd,
             SubcommandRequest {
@@ -80,7 +87,7 @@ impl JoyCon {
                 u: SubcommandRequestData {
                     imu_sensitivity: IMUSensitivity {
                         gyro_sens,
-                        acc_sens: AccSens::G8,
+                        acc_sens: accel_sens,
                         gyro_perf_rate: GyroPerfRate::Hz833,
                         acc_anti_aliasing: AccAntiAliasing::Hz100,
                     },
@@ -88,6 +95,7 @@ impl JoyCon {
             },
         )?;
         self.gyro_sens = gyro_sens;
+        self.accel_sens = accel_sens;
         Ok(())
     }
 
@@ -251,7 +259,7 @@ impl JoyCon {
             .cloned()
             .max()
             .unwrap();
-            self.max_raw = self.max_raw.max(max);
+            self.max_raw_gyro = self.max_raw_gyro.max(max);
             if max > i16::MAX - 1000 {
                 println!("saturation");
             }
@@ -261,6 +269,48 @@ impl JoyCon {
                 gyro_rps - self.calib_gyro.get_average()
             } else {
                 gyro_rps
+            }
+        }
+        Ok(out)
+    }
+
+    pub fn get_accel_delta_g(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
+        let report = self.recv()?;
+
+        ensure!(
+            report.report_id == InputReportId::StandardFull,
+            "expected StandardFull, got {:?}",
+            report.report_id
+        );
+
+        let report = unsafe { report.u.standard };
+        let frames = unsafe { report.u.gyro_acc_nfc_ir.gyro_acc_frames };
+        let offset = self
+            .calib_accel
+            .user_offset
+            .unwrap_or(self.calib_accel.factory_offset);
+        let mut out = [Vector3::default(); 3];
+        // frames are from newest to oldest so we iter backward
+        for (frame, out) in frames.iter().rev().zip(out.iter_mut()) {
+            let max = [
+                frame.raw_accel().0.abs() as i16,
+                frame.raw_accel().1.abs() as i16,
+                frame.raw_accel().2.abs() as i16,
+            ]
+            .iter()
+            .cloned()
+            .max()
+            .unwrap();
+            self.max_raw_accel = self.max_raw_accel.max(max);
+            if max > i16::MAX - 1000 {
+                println!("saturation");
+            }
+
+            let accel_g = frame.accel_g(offset, self.accel_sens);
+            *out = if apply_calibration {
+                accel_g - self.calib_accel.get_average()
+            } else {
+                accel_g
             }
         }
         Ok(out)

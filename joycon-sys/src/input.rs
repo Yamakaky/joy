@@ -386,15 +386,13 @@ impl RawGyroAccFrame {
     }
 
     /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
-    pub fn accel(&self, sensitivity_mg: u16) -> Vector3 {
-        let raw = self.raw_accel();
-        let factor = (sensitivity_mg as f32) * 2. / 65535. / 1000.;
-        Vector3(raw.0 * factor, raw.1 * factor, raw.2 * factor)
+    pub fn accel_g(&self, offset: Vector3, sens: AccSens) -> Vector3 {
+        (self.raw_accel() - offset) / (u16::MAX as f32 / sens.range_g() as f32)
     }
 
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
     pub fn gyro_dps(&self, offset: Vector3, sens: GyroSens) -> Vector3 {
-        (self.raw_gyro() - offset) / (u16::MAX as f32 / sens.range() as f32)
+        (self.raw_gyro() - offset) / (u16::MAX as f32 / sens.range_dps() as f32)
     }
 
     pub fn gyro_rps(&self, offset: Vector3, sens: GyroSens) -> Vector3 {

@@ -33,9 +33,11 @@ fn main() -> anyhow::Result<()> {
 
             if i % 60 == 0 {
                 println!("{:?}", rotation);
+                println!("{:?}", device.get_accel_delta_g(false)?[0]);
             }
         }
-        println!("{:?}", device.max_raw);
+        println!("{:?}", device.max_raw_gyro);
+        println!("{:?}", device.max_raw_accel);
     }
     Ok(())
 }
