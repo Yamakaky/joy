@@ -10,7 +10,7 @@ pub struct JoyCon {
     device: hidapi::HidDevice,
     info: hidapi::DeviceInfo,
     counter: u8,
-    calibration: Calibration,
+    calib_gyro: Calibration,
 }
 
 impl JoyCon {
@@ -27,7 +27,7 @@ impl JoyCon {
             info,
             counter: 42,
             // 10s with 3 reports at 60Hz
-            calibration: Calibration::new(10 * 60 * 3),
+            calib_gyro: Calibration::new(10 * 60 * 3),
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -51,6 +51,18 @@ impl JoyCon {
         let nb_read = self.device.read(&mut buffer)?;
         assert_eq!(nb_read, buffer.len());
         Ok(unsafe { std::mem::transmute(buffer) })
+    }
+
+    pub fn load_calibration(&mut self) -> Result<&Calibration> {
+        let factory = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
+        let factory_settings = unsafe { factory.factory_calib };
+        self.calib_gyro.factory_factor = factory_settings.gyro_factor();
+        self.calib_gyro.factory_offset = factory_settings.gyro_offset();
+        let user = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
+        let user_settings = unsafe { user.user_calib };
+        self.calib_gyro.user_factor = user_settings.gyro_factor();
+        self.calib_gyro.user_offset = user_settings.gyro_offset();
+        Ok(&self.calib_gyro)
     }
 
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
@@ -186,10 +198,10 @@ impl JoyCon {
         Ok(result.data)
     }
 
-    pub fn get_calibrated_gyro(&mut self) -> Result<Vector3> {
+    pub fn get_gyro(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
         let report = self.recv()?;
 
-        anyhow::ensure!(
+        ensure!(
             report.report_id == InputReportId::StandardFull,
             "expected StandardFull, got {:?}",
             report.report_id
@@ -197,15 +209,36 @@ impl JoyCon {
 
         let report = unsafe { report.u.standard };
         let gyro_frames = unsafe { report.u.gyro_acc_nfc_ir.gyro_acc_frames };
-        for frame in &gyro_frames {
-            self.calibration.push(frame.gyro_dps(2000));
+        let offset = self
+            .calib_gyro
+            .user_offset
+            .unwrap_or(self.calib_gyro.factory_offset);
+        let factor = self
+            .calib_gyro
+            .user_factor
+            .unwrap_or(self.calib_gyro.factory_factor);
+        let mut out = [Vector3::default(); 3];
+        // frames are from newest to oldest so we iter backward
+        for (frame, out) in gyro_frames.iter().rev().zip(out.iter_mut()) {
+            let gyro_rps = frame.gyro_rps(offset, factor);
+            *out = if apply_calibration {
+                gyro_rps - self.calib_gyro.get_average()
+            } else {
+                gyro_rps
+            }
         }
-        Ok(gyro_frames[0].gyro_dps(2000) - self.calibration.get_average())
+        Ok(out)
     }
 
     pub fn reset_calibration(&mut self) -> Result<()> {
-        self.get_calibrated_gyro()?;
-        self.calibration.reset();
+        // seems needed
+        self.get_gyro(false)?;
+        self.calib_gyro.reset();
+        for _ in 0..60 {
+            for frame in &self.get_gyro(false)? {
+                self.calib_gyro.push(*frame);
+            }
+        }
         Ok(())
     }
 }

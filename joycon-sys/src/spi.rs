@@ -46,8 +46,8 @@ impl SPIReadResult {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union SPIResultData {
-    factory_calib: SensorCalibration,
-    user_calib: UserSensorCalibration,
+    pub factory_calib: SensorCalibration,
+    pub user_calib: UserSensorCalibration,
 }
 
 impl fmt::Debug for SPIResultData {
@@ -59,21 +59,32 @@ impl fmt::Debug for SPIResultData {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct SensorCalibration {
-    acc: [[u8; 2]; 3],
-    gyro: [[u8; 2]; 3],
+    acc_orig: [[u8; 2]; 3],
+    acc_sens: [[u8; 2]; 3],
+    gyro_orig: [[u8; 2]; 3],
+    gyro_sens: [[u8; 2]; 3],
 }
 
 impl SensorCalibration {
-    pub fn acc_calib(&self) -> Vector3 {
-        Vector3::from_raw(self.acc)
+    pub fn acc_offset(&self) -> Vector3 {
+        Vector3::from_raw(self.acc_orig)
     }
 
-    pub fn gyro_calib(&self) -> Vector3 {
-        Vector3::from_raw(self.gyro)
+    pub fn acc_factor(&self) -> Vector3 {
+        Vector3::from_raw(self.acc_sens)
+    }
+
+    pub fn gyro_offset(&self) -> Vector3 {
+        Vector3::from_raw(self.gyro_orig)
+    }
+
+    pub fn gyro_factor(&self) -> Vector3 {
+        Vector3::from_raw(self.gyro_sens)
     }
 }
 
-pub const USER_SENSOR_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
+const USER_SENSOR_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct UserSensorCalibration {
@@ -82,17 +93,33 @@ pub struct UserSensorCalibration {
 }
 
 impl UserSensorCalibration {
-    pub fn acc_calib(&self) -> Option<Vector3> {
+    pub fn acc_offset(&self) -> Option<Vector3> {
         if self.magic == USER_SENSOR_CALIB_MAGIC {
-            Some(self.calib.acc_calib())
+            Some(self.calib.acc_offset())
         } else {
             None
         }
     }
 
-    pub fn gyro_calib(&self) -> Option<Vector3> {
+    pub fn acc_factor(&self) -> Option<Vector3> {
         if self.magic == USER_SENSOR_CALIB_MAGIC {
-            Some(self.calib.gyro_calib())
+            Some(self.calib.acc_factor())
+        } else {
+            None
+        }
+    }
+
+    pub fn gyro_offset(&self) -> Option<Vector3> {
+        if self.magic == USER_SENSOR_CALIB_MAGIC {
+            Some(self.calib.gyro_offset())
+        } else {
+            None
+        }
+    }
+
+    pub fn gyro_factor(&self) -> Option<Vector3> {
+        if self.magic == USER_SENSOR_CALIB_MAGIC {
+            Some(self.calib.gyro_factor())
         } else {
             None
         }

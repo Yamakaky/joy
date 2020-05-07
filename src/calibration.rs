@@ -5,6 +5,10 @@ use std::collections::VecDeque;
 pub struct Calibration {
     history: VecDeque<Vector3>,
     capacity: usize,
+    pub factory_offset: Vector3,
+    pub factory_factor: Vector3,
+    pub user_offset: Option<Vector3>,
+    pub user_factor: Option<Vector3>,
 }
 
 impl Calibration {
@@ -12,6 +16,10 @@ impl Calibration {
         Calibration {
             history: VecDeque::with_capacity(capacity),
             capacity,
+            factory_offset: Default::default(),
+            factory_factor: Default::default(),
+            user_offset: Default::default(),
+            user_factor: Default::default(),
         }
     }
 

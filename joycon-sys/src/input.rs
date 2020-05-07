@@ -5,7 +5,7 @@
 use crate::common::*;
 use crate::spi::*;
 use byteorder::{ByteOrder, LittleEndian};
-use derive_more::{Add, Div, Mul, Sub};
+use derive_more::{Add, AddAssign, Div, Mul, Sub};
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
 use std::marker::PhantomData;
@@ -391,15 +391,17 @@ impl RawGyroAccFrame {
         Vector3(raw.0 * factor, raw.1 * factor, raw.2 * factor)
     }
 
-    /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope---rotation-in-degreess---dps
-    pub fn gyro_dps(&self, sensitivity_dps: u16) -> Vector3 {
+    /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
+    // TODO: remove magic values
+    pub fn gyro_dps(&self, offset: Vector3, sens_coeff: Vector3) -> Vector3 {
         let raw = self.raw_gyro();
-        let factor = (sensitivity_dps as f32) * 2. * 1.15 / 65535.;
-        Vector3(raw.0 * factor, raw.1 * factor, raw.2 * factor)
+        let x = sens_coeff - offset;
+        let coeff: Vector3 = Vector3(936. / x.0, 936. / x.1, 936. / x.2);
+        (raw - offset) * coeff
     }
 
-    pub fn gyro_rps(&self, sensitivity_dps: u16) -> Vector3 {
-        let dps = self.gyro_dps(sensitivity_dps);
+    pub fn gyro_rps(&self, offset: Vector3, sens_coeff: Vector3) -> Vector3 {
+        let dps = self.gyro_dps(offset, sens_coeff);
         Vector3(dps.0 / 360., dps.1 / 360., dps.2 / 360.)
     }
 }
@@ -413,7 +415,8 @@ impl fmt::Debug for RawGyroAccFrame {
     }
 }
 
-#[derive(Copy, Clone, Debug, Add, Sub, Div, Mul)]
+#[derive(Copy, Clone, Debug, Add, AddAssign, Sub, Div, Mul, Default)]
+#[mul(forward)]
 pub struct Vector3(pub f32, pub f32, pub f32);
 
 impl Vector3 {
