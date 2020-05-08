@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct RawId<Id>(pub u8, PhantomData<Id>);
+pub struct RawId<Id>(u8, PhantomData<Id>);
 
 impl<Id: FromPrimitive> RawId<Id> {
     pub fn try_into(self) -> Option<Id> {
@@ -69,18 +69,78 @@ pub enum InputReportId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct InputReport {
-    pub report_id: RawId<InputReportId>,
-    pub u: InputReportContent,
+    report_id: RawId<InputReportId>,
+    u: InputReportContent,
+}
+
+impl InputReport {
+    pub fn new() -> InputReport {
+        InputReport::default()
+    }
+
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, std::mem::size_of_val(self))
+        }
+    }
+
+    pub fn normal(&self) -> Option<&NormalInputReportContent> {
+        if self.report_id == InputReportId::Normal {
+            Some(unsafe { &self.u.normal })
+        } else {
+            None
+        }
+    }
+
+    pub fn standard(&self) -> Option<&StandardInputReportContent> {
+        if self.report_id == InputReportId::Standard
+            || self.report_id == InputReportId::StandardFull
+        {
+            Some(unsafe { &self.u.standard })
+        } else {
+            None
+        }
+    }
+
+    pub fn subcmd_reply(&self) -> Option<&SubcommandReply> {
+        if self.report_id == InputReportId::Standard {
+            Some(unsafe { &self.u.standard.u.subcmd_reply })
+        } else {
+            None
+        }
+    }
+
+    pub fn imu_frames(&self) -> Option<&[RawGyroAccFrame; 3]> {
+        if self.report_id == InputReportId::StandardFull
+            || self.report_id == InputReportId::StandardFullMCU
+        {
+            Some(unsafe { &self.u.standard.u.gyro_acc_nfc_ir.gyro_acc_frames })
+        } else {
+            None
+        }
+    }
+}
+
+impl Default for InputReport {
+    fn default() -> Self {
+        // Whatever value
+        InputReport {
+            report_id: InputReportId::Normal.into(),
+            u: InputReportContent {
+                normal: NormalInputReportContent::default(),
+            },
+        }
+    }
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union InputReportContent {
-    pub normal: NormalInputReportContent,
-    pub standard: StandardInputReportContent,
+    normal: NormalInputReportContent,
+    standard: StandardInputReportContent,
 }
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct NormalInputReportContent {
     pub buttons: [u8; 2],
     pub stick: u8,
@@ -96,7 +156,7 @@ pub struct StandardInputReportContent {
     pub left_stick: StickStatus,
     pub right_stick: StickStatus,
     pub vibrator: u8,
-    pub u: ExtraData,
+    u: ExtraData,
 }
 
 impl fmt::Debug for InputReport {
@@ -275,9 +335,9 @@ impl fmt::Debug for StickStatus {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union ExtraData {
-    pub subcmd_reply: SubcommandReply,
-    pub mcu_fw_update: [u8; 37],
-    pub gyro_acc_nfc_ir: GyroAccNFCIR,
+    subcmd_reply: SubcommandReply,
+    mcu_fw_update: [u8; 37],
+    gyro_acc_nfc_ir: GyroAccNFCIR,
 }
 
 #[repr(C)]
@@ -356,8 +416,8 @@ pub enum WhichController {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
-    pub gyro_acc_frames: [RawGyroAccFrame; 3],
-    pub nfc_ir_data: [u8; 313],
+    gyro_acc_frames: [RawGyroAccFrame; 3],
+    nfc_ir_data: [u8; 313],
 }
 
 impl fmt::Debug for GyroAccNFCIR {

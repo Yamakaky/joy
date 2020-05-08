@@ -27,6 +27,32 @@ pub struct OutputReport {
     pub subcmd: SubcommandRequest,
 }
 
+impl OutputReport {
+    pub fn new() -> OutputReport {
+        OutputReport::default()
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))
+        }
+    }
+}
+
+impl Default for OutputReport {
+    fn default() -> Self {
+        OutputReport {
+            report_id: OutputReportId::RumbleSubcmd,
+            packet_counter: 0,
+            rumble_data: RumbleData::default(),
+            subcmd: SubcommandRequest {
+                subcommand_id: SubcommandId::RequestDeviceInfo,
+                u: SubcommandRequestData { nothing: () },
+            },
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SubcommandRequest {
@@ -75,7 +101,7 @@ pub union SubcommandRequestData {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct IMUSensitivity {
     pub gyro_sens: GyroSens,
     pub acc_sens: AccSens,
@@ -83,6 +109,11 @@ pub struct IMUSensitivity {
     pub acc_anti_aliasing: AccAntiAliasing,
 }
 
+/// Sensitivity range of the gyroscope.
+///
+/// If using DPS2000 for example, the gyroscope can measure values of
+/// up to +-2000 degree per second for a total range of 4000 DPS over
+/// the 16 bit raw value.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum GyroSens {
@@ -103,6 +134,16 @@ impl GyroSens {
     }
 }
 
+impl Default for GyroSens {
+    fn default() -> Self {
+        GyroSens::DPS2000
+    }
+}
+
+/// Sensitivity range of the accelerometer.
+///
+/// If using G4 for example, the accelerometer can measure values of
+/// up to +-4G for a total range of 8G over the 16 bit raw value.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum AccSens {
@@ -123,6 +164,12 @@ impl AccSens {
     }
 }
 
+impl Default for AccSens {
+    fn default() -> Self {
+        AccSens::G8
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum GyroPerfRate {
@@ -130,11 +177,28 @@ pub enum GyroPerfRate {
     Hz208 = 1,
 }
 
+impl Default for GyroPerfRate {
+    fn default() -> Self {
+        GyroPerfRate::Hz208
+    }
+}
+
+/// Anti-aliasing setting of the accelerometer.
+///
+/// Accelerations frequencies above the value are ignored using a low-pass filter.
+///
+/// See https://blog.endaq.com/filter-selection-for-shock-and-vibration-applications.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
 pub enum AccAntiAliasing {
     Hz200 = 0,
     Hz100 = 1,
+}
+
+impl Default for AccAntiAliasing {
+    fn default() -> Self {
+        AccAntiAliasing::Hz100
+    }
 }
 
 #[repr(C)]

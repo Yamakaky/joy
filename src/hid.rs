@@ -6,7 +6,6 @@ use joycon_sys::input::*;
 use joycon_sys::output::*;
 use joycon_sys::spi::*;
 use joycon_sys::*;
-use std::mem::{size_of, size_of_val};
 
 /// 200 samples per second with 3 sample per InputReport.
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
@@ -48,24 +47,21 @@ impl JoyCon {
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter += 1;
-        let raw_data = unsafe {
-            std::slice::from_raw_parts(
-                (report as *const OutputReport).cast::<u8>(),
-                size_of_val(report),
-            )
-        };
-        let nb_written = self.device.write(raw_data)?;
+        let buffer = report.as_bytes();
+        let nb_written = self.device.write(buffer)?;
         // TODO: check that, always true
-        assert_ne!(size_of::<InputReport>(), 49);
+        assert_ne!(std::mem::size_of_val(report), 49);
+        //assert_eq!(nb_written, buffer.len());
         assert_eq!(nb_written, 49);
         Ok(())
     }
 
     pub fn recv(&self) -> Result<InputReport> {
-        let mut buffer = [0u8; size_of::<InputReport>()];
-        let nb_read = self.device.read(&mut buffer)?;
+        let mut report = InputReport::new();
+        let buffer = report.as_bytes_mut();
+        let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, buffer.len());
-        Ok(unsafe { std::mem::transmute(buffer) })
+        Ok(report)
     }
 
     pub fn load_calibration(&mut self) -> Result<(&Calibration, &Calibration)> {
@@ -91,8 +87,7 @@ impl JoyCon {
                     imu_sensitivity: IMUSensitivity {
                         gyro_sens,
                         acc_sens: accel_sens,
-                        gyro_perf_rate: GyroPerfRate::Hz833,
-                        acc_anti_aliasing: AccAntiAliasing::Hz100,
+                        ..IMUSensitivity::default()
                     },
                 },
             },
@@ -203,14 +198,9 @@ impl JoyCon {
         // TODO: check ACK
         loop {
             let in_report = self.recv()?;
-            unsafe {
-                if in_report.report_id.try_into().unwrap() == InputReportId::Standard {
-                    let subcmd_reply = in_report.u.standard.u.subcmd_reply;
-                    if subcmd_reply.subcommand_id.try_into().unwrap()
-                        == out_report.subcmd.subcommand_id
-                    {
-                        return Ok(subcmd_reply);
-                    }
+            if let Some(reply) = in_report.subcmd_reply() {
+                if reply.subcommand_id == subcmd.subcommand_id {
+                    return Ok(*reply);
                 }
             }
         }
@@ -237,15 +227,7 @@ impl JoyCon {
 
     pub fn get_gyro_rot_delta(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
         let report = self.recv()?;
-
-        ensure!(
-            report.report_id == InputReportId::StandardFull,
-            "expected StandardFull, got {:?}",
-            report.report_id
-        );
-
-        let report = unsafe { report.u.standard };
-        let gyro_frames = unsafe { report.u.gyro_acc_nfc_ir.gyro_acc_frames };
+        let gyro_frames = report.imu_frames().expect("no imu frame received");
         let offset = self
             .calib_gyro
             .user_offset
@@ -279,15 +261,7 @@ impl JoyCon {
 
     pub fn get_accel_delta_g(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
         let report = self.recv()?;
-
-        ensure!(
-            report.report_id == InputReportId::StandardFull,
-            "expected StandardFull, got {:?}",
-            report.report_id
-        );
-
-        let report = unsafe { report.u.standard };
-        let frames = unsafe { report.u.gyro_acc_nfc_ir.gyro_acc_frames };
+        let frames = report.imu_frames().expect("no imu frame received");
         let offset = self
             .calib_accel
             .user_offset
