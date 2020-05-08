@@ -19,7 +19,7 @@ pub enum OutputReportId {
 /// Describes a HID report sent to the JoyCon.
 ///
 /// It is binary compatible and can be directly casted from the raw HID bytes.
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct OutputReport {
     pub report_id: OutputReportId,
@@ -54,7 +54,7 @@ impl Default for OutputReport {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct SubcommandRequest {
     pub subcommand_id: SubcommandId,
@@ -74,7 +74,7 @@ impl fmt::Debug for SubcommandRequest {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct RumbleData {
     pub raw: [u8; 8],
@@ -88,7 +88,7 @@ impl Default for RumbleData {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub union SubcommandRequestData {
     pub nothing: (),
@@ -101,7 +101,7 @@ pub union SubcommandRequestData {
     pub imu_sensitivity: IMUSensitivity,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Default)]
 pub struct IMUSensitivity {
     pub gyro_sens: GyroSens,
@@ -202,7 +202,7 @@ impl Default for AccAntiAliasing {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 // TODO: debug
 pub struct PlayerLights(u8);
@@ -239,7 +239,7 @@ pub enum InputReportMode {
     NFCIR = 0x31,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
     pub gyro_acc_frames: [[u8; 12]; 3],

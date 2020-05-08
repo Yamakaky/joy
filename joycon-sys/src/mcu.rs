@@ -1,4 +1,4 @@
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUCmd {
     pub cmd_id: MCUCmdId,
@@ -6,28 +6,28 @@ pub struct MCUCmd {
     pub u: MCUCmdData,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub union MCUCmdData {
     pub mcu_mode: MCUMode,
     pub mcu_regs: MCURegisters,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCURegisters {
     pub len: u8,
     pub regs: [MCURegister; 9],
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCURegister {
     pub address: u16,
     pub value: u8,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUSetReg {
     pub cmd_id: MCUCmdId,

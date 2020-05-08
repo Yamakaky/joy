@@ -10,7 +10,7 @@ pub const RANGE_FACTORY_CALIBRATION_STICKS: SPIRange = SPIRange(0x603D, 0x12);
 pub const RANGE_USER_CALIBRATION_STICKS: SPIRange = SPIRange(0x8010, 0x16);
 pub const RANGE_USER_CALIBRATION_SENSORS: SPIRange = SPIRange(0x8026, 0x1A);
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SPIReadRequest {
     offset: [u8; 4],
@@ -29,7 +29,7 @@ impl SPIReadRequest {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SPIReadResult {
     address: [u8; 4],
@@ -74,7 +74,7 @@ impl SPIReadResult {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub union SPIResultData {
     sticks_factory_calib: SticksCalibration,
@@ -89,21 +89,21 @@ impl fmt::Debug for SPIResultData {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SticksCalibration {
     pub left: StickCalibration,
     pub right: StickCalibration,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct UserSticksCalibration {
     pub left: UserStickCalibration,
     pub right: UserStickCalibration,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Default)]
 pub struct StickCalibration {
     max: [u8; 3],
@@ -172,7 +172,7 @@ impl fmt::Debug for StickCalibration {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct UserStickCalibration {
     magic: [u8; 2],
@@ -223,7 +223,7 @@ impl fmt::Debug for UserStickCalibration {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SensorCalibration {
     acc_orig: [[u8; 2]; 3],
@@ -252,7 +252,7 @@ impl SensorCalibration {
 
 const USER_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct UserSensorCalibration {
     magic: [u8; 2],

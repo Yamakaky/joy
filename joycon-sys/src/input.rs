@@ -11,7 +11,7 @@ use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
 use std::marker::PhantomData;
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct RawId<Id>(u8, PhantomData<Id>);
 
@@ -207,7 +207,7 @@ impl fmt::Debug for InputReport {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct DeviceStatus(u8);
 
@@ -239,7 +239,7 @@ impl fmt::Debug for DeviceStatus {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct ButtonsStatus {
     pub right: RightButtons,
@@ -248,7 +248,7 @@ pub struct ButtonsStatus {
 }
 
 bitfield::bitfield! {
-    #[repr(C)]
+    #[repr(packed)]
     #[derive(Copy, Clone)]
     pub struct RightButtons(u8);
     impl Debug;
@@ -262,7 +262,7 @@ bitfield::bitfield! {
     pub zr, _: 7;
 }
 bitfield::bitfield! {
-    #[repr(C)]
+    #[repr(packed)]
     #[derive(Copy, Clone)]
     pub struct MiddleButtons(u8);
     impl Debug;
@@ -307,7 +307,7 @@ pub enum Button {
     RIGHT,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct StickStatus {
     data: [u8; 3],
@@ -332,7 +332,7 @@ impl fmt::Debug for StickStatus {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub union ExtraData {
     subcmd_reply: SubcommandReply,
@@ -340,7 +340,7 @@ pub union ExtraData {
     gyro_acc_nfc_ir: GyroAccNFCIR,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct SubcommandReply {
     ack: Ack,
@@ -385,7 +385,7 @@ impl fmt::Debug for SubcommandReply {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct Ack(u8);
 
@@ -404,14 +404,14 @@ impl fmt::Debug for Ack {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub union SubcommandReplyData {
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct DeviceInfo {
     pub firmware_version: [u8; 2],
@@ -435,7 +435,7 @@ pub enum WhichController {
     ProController = 3,
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
     gyro_acc_frames: [RawGyroAccFrame; 3],
@@ -451,7 +451,7 @@ impl fmt::Debug for GyroAccNFCIR {
     }
 }
 
-#[repr(C)]
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct RawGyroAccFrame {
     raw_accel: [[u8; 2]; 3],
