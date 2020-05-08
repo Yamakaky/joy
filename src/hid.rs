@@ -65,12 +65,12 @@ impl JoyCon {
     }
 
     pub fn load_calibration(&mut self) -> Result<(&Calibration, &Calibration)> {
-        let factory = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
-        let factory_settings = unsafe { factory.factory_calib };
+        let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
+        let factory_settings = factory_result.factory_calib().unwrap();
         self.calib_accel.factory_offset = factory_settings.acc_offset();
         self.calib_gyro.factory_offset = factory_settings.gyro_offset();
-        let user = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
-        let user_settings = unsafe { user.user_calib };
+        let user_result = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
+        let user_settings = user_result.user_calib().unwrap();
         self.calib_accel.user_offset = user_settings.acc_offset();
         self.calib_gyro.user_offset = user_settings.gyro_offset();
         Ok((&self.calib_gyro, &self.calib_accel))
@@ -206,7 +206,7 @@ impl JoyCon {
         }
     }
 
-    fn read_spi(&mut self, range: SPIRange) -> Result<SPIResultData> {
+    fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
         let reply = self.send_subcmd_wait(
             OutputReportId::RumbleSubcmd,
             SubcommandRequest {
@@ -222,7 +222,7 @@ impl JoyCon {
             "invalid range {:?}",
             result.range()
         );
-        Ok(result.data)
+        Ok(*result)
     }
 
     pub fn get_gyro_rot_delta(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {

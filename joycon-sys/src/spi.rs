@@ -34,20 +34,36 @@ impl SPIReadRequest {
 pub struct SPIReadResult {
     address: [u8; 4],
     size: u8,
-    pub data: SPIResultData,
+    data: SPIResultData,
 }
 
 impl SPIReadResult {
     pub fn range(&self) -> SPIRange {
         SPIRange(LittleEndian::read_u32(&self.address), self.size)
     }
+
+    pub fn factory_calib(&self) -> Option<&SensorCalibration> {
+        if self.range() == RANGE_FACTORY_CALIBRATION_SENSORS {
+            Some(unsafe { &self.data.factory_calib })
+        } else {
+            None
+        }
+    }
+
+    pub fn user_calib(&self) -> Option<&UserSensorCalibration> {
+        if self.range() == RANGE_USER_CALIBRATION_SENSORS {
+            Some(unsafe { &self.data.user_calib })
+        } else {
+            None
+        }
+    }
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union SPIResultData {
-    pub factory_calib: SensorCalibration,
-    pub user_calib: UserSensorCalibration,
+    factory_calib: SensorCalibration,
+    user_calib: UserSensorCalibration,
 }
 
 impl fmt::Debug for SPIResultData {
