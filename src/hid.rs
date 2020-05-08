@@ -54,10 +54,7 @@ impl JoyCon {
         self.counter += 1;
         let buffer = report.as_bytes();
         let nb_written = self.device.write(buffer)?;
-        // TODO: check that, always true
-        assert_ne!(std::mem::size_of_val(report), 49);
-        //assert_eq!(nb_written, buffer.len());
-        assert_eq!(nb_written, 49);
+        assert_eq!(nb_written, buffer.len());
         Ok(())
     }
 
