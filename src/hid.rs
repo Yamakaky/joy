@@ -3,6 +3,7 @@
 use crate::calibration::Calibration;
 use anyhow::{ensure, Result};
 use joycon_sys::input::*;
+use joycon_sys::mcu::*;
 use joycon_sys::output::*;
 use joycon_sys::spi::*;
 use joycon_sys::*;

@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
 use crate::common::*;
+use crate::mcu::*;
 use crate::spi::*;
 use std::fmt;
 
@@ -199,45 +200,6 @@ impl Default for AccAntiAliasing {
     fn default() -> Self {
         AccAntiAliasing::Hz100
     }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct MCUCmd {
-    pub cmd_id: MCUCmdId,
-    pub subcmd_id: MCUSubCmdId,
-    pub mode: MCUMode,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-// TODO: debug
-pub enum MCUState {
-    Suspend = 0,
-    Resume = 1,
-    ResumeForUpdate = 2,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-pub enum MCUMode {
-    Standby = 1,
-    NFC = 4,
-    IR = 5,
-    MaybeFWUpdate = 6,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-//TODO: unknown values
-pub enum MCUCmdId {
-    SetMCUMode = 0x21,
-}
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-//TODO: unknown values
-pub enum MCUSubCmdId {
-    SetMCUMode = 0,
 }
 
 #[repr(C)]
