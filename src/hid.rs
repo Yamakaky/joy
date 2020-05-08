@@ -20,6 +20,8 @@ pub struct JoyCon {
     accel_sens: AccSens,
     pub max_raw_gyro: i16,
     pub max_raw_accel: i16,
+    left_stick_calib: StickCalibration,
+    right_stick_calib: StickCalibration,
 }
 
 impl JoyCon {
@@ -42,6 +44,8 @@ impl JoyCon {
             accel_sens: AccSens::G8,
             max_raw_gyro: 0,
             max_raw_accel: 0,
+            left_stick_calib: StickCalibration::default(),
+            right_stick_calib: StickCalibration::default(),
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -64,16 +68,28 @@ impl JoyCon {
         Ok(report)
     }
 
-    pub fn load_calibration(&mut self) -> Result<(&Calibration, &Calibration)> {
+    pub fn load_calibration(&mut self) -> Result<()> {
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
-        let factory_settings = factory_result.factory_calib().unwrap();
+        let factory_settings = factory_result.imu_factory_calib().unwrap();
         self.calib_accel.factory_offset = factory_settings.acc_offset();
         self.calib_gyro.factory_offset = factory_settings.gyro_offset();
+
         let user_result = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
-        let user_settings = user_result.user_calib().unwrap();
+        let user_settings = user_result.imu_user_calib().unwrap();
         self.calib_accel.user_offset = user_settings.acc_offset();
         self.calib_gyro.user_offset = user_settings.gyro_offset();
-        Ok((&self.calib_gyro, &self.calib_accel))
+
+        let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
+        let factory_settings = factory_result.sticks_factory_calib().unwrap();
+        let user_result = self.read_spi(RANGE_USER_CALIBRATION_STICKS)?;
+        let user_settings = user_result.sticks_user_calib().unwrap();
+        self.left_stick_calib = user_settings.left.calib().unwrap_or(factory_settings.left);
+        self.right_stick_calib = user_settings
+            .right
+            .calib()
+            .unwrap_or(factory_settings.right);
+
+        Ok(())
     }
 
     pub fn set_imu_sens(&mut self) -> Result<()> {
@@ -223,6 +239,17 @@ impl JoyCon {
             result.range()
         );
         Ok(*result)
+    }
+
+    pub fn get_sticks(&mut self) -> Result<((f32, f32), (f32, f32))> {
+        let report = self.recv()?;
+        let inputs = report.standard().expect("should be standard");
+        Ok((
+            self.left_stick_calib
+                .value_from_raw(inputs.left_stick.x(), inputs.left_stick.y()),
+            self.right_stick_calib
+                .value_from_raw(inputs.right_stick.x(), inputs.right_stick.y()),
+        ))
     }
 
     pub fn get_gyro_rot_delta(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {

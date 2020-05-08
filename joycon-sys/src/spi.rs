@@ -42,17 +42,32 @@ impl SPIReadResult {
         SPIRange(LittleEndian::read_u32(&self.address), self.size)
     }
 
-    pub fn factory_calib(&self) -> Option<&SensorCalibration> {
-        if self.range() == RANGE_FACTORY_CALIBRATION_SENSORS {
-            Some(unsafe { &self.data.factory_calib })
+    pub fn sticks_factory_calib(&self) -> Option<&SticksCalibration> {
+        if self.range() == RANGE_FACTORY_CALIBRATION_STICKS {
+            Some(unsafe { &self.data.sticks_factory_calib })
         } else {
             None
         }
     }
 
-    pub fn user_calib(&self) -> Option<&UserSensorCalibration> {
+    pub fn sticks_user_calib(&self) -> Option<&UserSticksCalibration> {
+        if self.range() == RANGE_USER_CALIBRATION_STICKS {
+            Some(unsafe { &self.data.sticks_user_calib })
+        } else {
+            None
+        }
+    }
+    pub fn imu_factory_calib(&self) -> Option<&SensorCalibration> {
+        if self.range() == RANGE_FACTORY_CALIBRATION_SENSORS {
+            Some(unsafe { &self.data.imu_factory_calib })
+        } else {
+            None
+        }
+    }
+
+    pub fn imu_user_calib(&self) -> Option<&UserSensorCalibration> {
         if self.range() == RANGE_USER_CALIBRATION_SENSORS {
-            Some(unsafe { &self.data.user_calib })
+            Some(unsafe { &self.data.imu_user_calib })
         } else {
             None
         }
@@ -62,13 +77,149 @@ impl SPIReadResult {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union SPIResultData {
-    factory_calib: SensorCalibration,
-    user_calib: UserSensorCalibration,
+    sticks_factory_calib: SticksCalibration,
+    sticks_user_calib: UserSticksCalibration,
+    imu_factory_calib: SensorCalibration,
+    imu_user_calib: UserSensorCalibration,
 }
 
 impl fmt::Debug for SPIResultData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SPIResultData").finish()
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Default)]
+pub struct SticksCalibration {
+    pub left: StickCalibration,
+    pub right: StickCalibration,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct UserSticksCalibration {
+    pub left: UserStickCalibration,
+    pub right: UserStickCalibration,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Default)]
+pub struct StickCalibration {
+    max: [u8; 3],
+    center: [u8; 3],
+    min: [u8; 3],
+}
+
+impl StickCalibration {
+    fn conv_x(&self, raw: [u8; 3]) -> u16 {
+        (((raw[1] as u16) << 8) & 0xF00) | raw[0] as u16
+    }
+
+    fn conv_y(&self, raw: [u8; 3]) -> u16 {
+        ((raw[2] as u16) << 4) | (raw[1] >> 4) as u16
+    }
+
+    pub fn max(&self) -> (u16, u16) {
+        let center = self.center();
+        (
+            (center.0 + self.conv_x(self.max)).min(0xFFF),
+            (center.1 + self.conv_y(self.max)).min(0xFFF),
+        )
+    }
+
+    pub fn center(&self) -> (u16, u16) {
+        (self.conv_x(self.center), self.conv_y(self.center))
+    }
+
+    pub fn min(&self) -> (u16, u16) {
+        let center = self.center();
+        (
+            center.0.saturating_sub(self.conv_x(self.min)),
+            center.1.saturating_sub(self.conv_y(self.min)),
+        )
+    }
+
+    pub fn value_from_raw(&self, x: u16, y: u16) -> (f32, f32) {
+        let min = self.min();
+        let center = self.center();
+        let max = self.max();
+        let rel_x = x.max(min.0).min(max.0) as f32 - center.0 as f32;
+        let rel_y = y.max(min.1).min(max.1) as f32 - center.1 as f32;
+
+        (
+            if rel_x >= 0. {
+                rel_x / (max.0 as f32 - center.0 as f32)
+            } else {
+                rel_x / (center.0 as f32 - min.0 as f32)
+            },
+            if rel_y >= 0. {
+                rel_y / (max.1 as f32 - center.1 as f32)
+            } else {
+                rel_y / (center.1 as f32 - min.1 as f32)
+            },
+        )
+    }
+}
+
+impl fmt::Debug for StickCalibration {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("StickCalibration")
+            .field("min", &self.min())
+            .field("center", &self.center())
+            .field("max", &self.max())
+            .finish()
+    }
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct UserStickCalibration {
+    magic: [u8; 2],
+    calib: StickCalibration,
+}
+
+impl UserStickCalibration {
+    pub fn calib(&self) -> Option<StickCalibration> {
+        if self.magic == USER_CALIB_MAGIC {
+            Some(self.calib)
+        } else {
+            None
+        }
+    }
+
+    pub fn max(&self) -> Option<(u16, u16)> {
+        if self.magic == USER_CALIB_MAGIC {
+            Some(self.calib.max())
+        } else {
+            None
+        }
+    }
+
+    pub fn center(&self) -> Option<(u16, u16)> {
+        if self.magic == USER_CALIB_MAGIC {
+            Some(self.calib.center())
+        } else {
+            None
+        }
+    }
+
+    pub fn min(&self) -> Option<(u16, u16)> {
+        if self.magic == USER_CALIB_MAGIC {
+            Some(self.calib.min())
+        } else {
+            None
+        }
+    }
+}
+
+impl fmt::Debug for UserStickCalibration {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.magic == USER_CALIB_MAGIC {
+            f.write_fmt(format_args!("{:?}", self.calib))
+        } else {
+            f.write_str("NoUserStickCalibration")
+        }
     }
 }
 
@@ -99,7 +250,7 @@ impl SensorCalibration {
     }
 }
 
-const USER_SENSOR_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
+const USER_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
@@ -110,7 +261,7 @@ pub struct UserSensorCalibration {
 
 impl UserSensorCalibration {
     pub fn acc_offset(&self) -> Option<Vector3> {
-        if self.magic == USER_SENSOR_CALIB_MAGIC {
+        if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.acc_offset())
         } else {
             None
@@ -118,7 +269,7 @@ impl UserSensorCalibration {
     }
 
     pub fn acc_factor(&self) -> Option<Vector3> {
-        if self.magic == USER_SENSOR_CALIB_MAGIC {
+        if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.acc_factor())
         } else {
             None
@@ -126,7 +277,7 @@ impl UserSensorCalibration {
     }
 
     pub fn gyro_offset(&self) -> Option<Vector3> {
-        if self.magic == USER_SENSOR_CALIB_MAGIC {
+        if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.gyro_offset())
         } else {
             None
@@ -134,7 +285,7 @@ impl UserSensorCalibration {
     }
 
     pub fn gyro_factor(&self) -> Option<Vector3> {
-        if self.magic == USER_SENSOR_CALIB_MAGIC {
+        if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.gyro_factor())
         } else {
             None

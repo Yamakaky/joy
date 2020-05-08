@@ -310,15 +310,15 @@ pub enum Button {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct StickStatus {
-    pub data: [u8; 3],
+    data: [u8; 3],
 }
 
 impl StickStatus {
-    pub fn h(self) -> u16 {
+    pub fn x(self) -> u16 {
         u16::from(self.data[0]) | u16::from(self.data[1] & 0xf) << 8
     }
 
-    pub fn v(self) -> u16 {
+    pub fn y(self) -> u16 {
         u16::from(self.data[1]) >> 4 | u16::from(self.data[2]) << 4
     }
 }
@@ -326,8 +326,8 @@ impl StickStatus {
 impl fmt::Debug for StickStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("StickStatus")
-            .field(&self.h())
-            .field(&self.v())
+            .field(&self.x())
+            .field(&self.y())
             .finish()
     }
 }
