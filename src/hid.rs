@@ -8,7 +8,8 @@ use joycon_sys::spi::*;
 use joycon_sys::*;
 use std::mem::{size_of, size_of_val};
 
-pub const GYRO_SAMPLES_PER_SECOND: u32 = 200 / 3;
+/// 200 samples per second with 3 sample per InputReport.
+pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 
 pub struct JoyCon {
     device: hidapi::HidDevice,
@@ -36,9 +37,9 @@ impl JoyCon {
             info,
             counter: 42,
             // 10s with 3 reports at 60Hz
-            calib_gyro: Calibration::new(10 * GYRO_SAMPLES_PER_SECOND as usize),
+            calib_gyro: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
             gyro_sens: GyroSens::DPS2000,
-            calib_accel: Calibration::new(10 * GYRO_SAMPLES_PER_SECOND as usize),
+            calib_accel: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
             accel_sens: AccSens::G8,
             max_raw_gyro: 0,
             max_raw_accel: 0,
@@ -266,7 +267,7 @@ impl JoyCon {
                 println!("saturation");
             }
 
-            let gyro_rps = frame.gyro_rps(offset, self.gyro_sens) / GYRO_SAMPLES_PER_SECOND as f32;
+            let gyro_rps = frame.gyro_rps(offset, self.gyro_sens) / IMU_SAMPLES_PER_SECOND as f32;
             *out = if apply_calibration {
                 gyro_rps - self.calib_gyro.get_average()
             } else {
