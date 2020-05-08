@@ -343,9 +343,31 @@ pub union ExtraData {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct SubcommandReply {
-    pub ack: Ack,
-    pub subcommand_id: RawId<SubcommandId>,
-    pub u: SubcommandReplyData,
+    ack: Ack,
+    subcommand_id: RawId<SubcommandId>,
+    u: SubcommandReplyData,
+}
+
+impl SubcommandReply {
+    pub fn id(&self) -> Option<SubcommandId> {
+        self.subcommand_id.try_into()
+    }
+
+    pub fn device_info(&self) -> Option<&DeviceInfo> {
+        if self.subcommand_id == SubcommandId::RequestDeviceInfo {
+            Some(unsafe { &self.u.device_info })
+        } else {
+            None
+        }
+    }
+
+    pub fn spi_result(&self) -> Option<&SPIReadResult> {
+        if self.subcommand_id == SubcommandId::SPIRead {
+            Some(unsafe { &self.u.spi_read })
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Debug for SubcommandReply {
@@ -385,8 +407,8 @@ impl fmt::Debug for Ack {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union SubcommandReplyData {
-    pub device_info: DeviceInfo,
-    pub spi_read: SPIReadResult,
+    device_info: DeviceInfo,
+    spi_read: SPIReadResult,
 }
 
 #[repr(C)]

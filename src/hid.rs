@@ -98,14 +98,14 @@ impl JoyCon {
     }
 
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
-        let info = self.send_subcmd_wait(
+        let reply = self.send_subcmd_wait(
             OutputReportId::RumbleSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::RequestDeviceInfo,
                 u: SubcommandRequestData { nothing: () },
             },
         )?;
-        Ok(unsafe { info.u.device_info })
+        Ok(*reply.device_info().unwrap())
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
@@ -199,7 +199,7 @@ impl JoyCon {
         loop {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
-                if reply.subcommand_id == subcmd.subcommand_id {
+                if reply.id() == Some(subcmd.subcommand_id) {
                     return Ok(*reply);
                 }
             }
@@ -216,7 +216,7 @@ impl JoyCon {
                 },
             },
         )?;
-        let result = unsafe { reply.u.spi_read };
+        let result = reply.spi_result().unwrap();
         ensure!(
             range == result.range(),
             "invalid range {:?}",
