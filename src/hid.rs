@@ -96,7 +96,7 @@ impl JoyCon {
         let gyro_sens = GyroSens::DPS2000;
         let accel_sens = AccSens::G8;
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetIMUSens,
                 u: SubcommandRequestData {
@@ -115,7 +115,7 @@ impl JoyCon {
 
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
         let reply = self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::RequestDeviceInfo,
                 u: SubcommandRequestData { nothing: () },
@@ -126,7 +126,7 @@ impl JoyCon {
 
     pub fn enable_imu(&mut self) -> Result<()> {
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::EnableIMU,
                 u: SubcommandRequestData { imu_enabled: true },
@@ -137,7 +137,7 @@ impl JoyCon {
 
     pub fn set_standard_mode(&mut self) -> Result<()> {
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetInputReportMode,
                 u: SubcommandRequestData {
@@ -150,7 +150,7 @@ impl JoyCon {
 
     pub fn set_nfc_ir_mode(&mut self) -> Result<()> {
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetInputReportMode,
                 u: SubcommandRequestData {
@@ -163,7 +163,7 @@ impl JoyCon {
 
     pub fn enable_mcu(&mut self) -> Result<()> {
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
@@ -176,7 +176,7 @@ impl JoyCon {
 
     pub fn disable_mcu(&mut self) -> Result<()> {
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
@@ -189,7 +189,7 @@ impl JoyCon {
 
     pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
         self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetPlayerLights,
                 u: SubcommandRequestData { player_lights },
@@ -224,7 +224,7 @@ impl JoyCon {
 
     fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
         let reply = self.send_subcmd_wait(
-            OutputReportId::RumbleSubcmd,
+            OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
                 subcommand_id: SubcommandId::SPIRead,
                 u: SubcommandRequestData {

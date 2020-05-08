@@ -9,7 +9,7 @@ use std::fmt;
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 pub enum OutputReportId {
-    RumbleSubcmd = 0x01,
+    RumbleAndSubcmd = 0x01,
     MCUFwUpdate = 0x03,
     RumbleOnly = 0x10,
     RequestMCUData = 0x11,
@@ -42,7 +42,7 @@ impl OutputReport {
 impl Default for OutputReport {
     fn default() -> Self {
         OutputReport {
-            report_id: OutputReportId::RumbleSubcmd,
+            report_id: OutputReportId::RumbleAndSubcmd,
             packet_counter: 0,
             rumble_data: RumbleData::default(),
             subcmd: SubcommandRequest {

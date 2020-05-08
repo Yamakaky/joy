@@ -49,7 +49,7 @@ impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum InputReportId {
     Normal = 0x3F,
-    Standard = 0x21,
+    StandardAndSubcmd = 0x21,
     MCUFwUpdate = 0x23,
     StandardFull = 0x30,
     StandardFullMCU = 0x31,
@@ -93,7 +93,7 @@ impl InputReport {
     }
 
     pub fn standard(&self) -> Option<&StandardInputReportContent> {
-        if self.report_id == InputReportId::Standard
+        if self.report_id == InputReportId::StandardAndSubcmd
             || self.report_id == InputReportId::StandardFull
         {
             Some(unsafe { &self.u.standard })
@@ -103,7 +103,7 @@ impl InputReport {
     }
 
     pub fn subcmd_reply(&self) -> Option<&SubcommandReply> {
-        if self.report_id == InputReportId::Standard {
+        if self.report_id == InputReportId::StandardAndSubcmd {
             Some(unsafe { &self.u.standard.u.subcmd_reply })
         } else {
             None
@@ -166,7 +166,7 @@ impl fmt::Debug for InputReport {
         let mut out = f.debug_struct("InputReport");
         out.field("report_id", &self.report_id);
         match self.report_id.try_into() {
-            Some(Standard) | Some(StandardFull) | Some(StandardFullMCU) => {
+            Some(StandardAndSubcmd) | Some(StandardFull) | Some(StandardFullMCU) => {
                 let content = unsafe { &self.u.standard };
                 out.field("timer", &content.timer)
                     .field("info", &content.info)
@@ -182,7 +182,7 @@ impl fmt::Debug for InputReport {
             Some(InputReportId::Normal) => {
                 out.field("pote", unsafe { &self.u.normal });
             }
-            Some(InputReportId::Standard) => {
+            Some(InputReportId::StandardAndSubcmd) => {
                 out.field("subcommand_reply", unsafe {
                     &self.u.standard.u.subcmd_reply
                 });
