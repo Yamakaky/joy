@@ -118,7 +118,7 @@ impl Default for RumbleData {
 pub union SubcommandRequestData {
     pub nothing: (),
     pub imu_enabled: bool,
-    pub input_report_mode: InputReportMode,
+    pub input_report_mode: InputReportId,
     pub player_lights: PlayerLights,
     pub mcu_state: MCUState,
     pub mcu_cmd: MCUCmd,
@@ -255,13 +255,6 @@ impl PlayerLights {
                 | (f3 as u8) << 7,
         )
     }
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug)]
-pub enum InputReportMode {
-    StandardFull = 0x30,
-    NFCIR = 0x31,
 }
 
 #[repr(packed)]

@@ -7,6 +7,18 @@ pub const JOYCON_R_BT: u16 = 0x2007;
 pub const PRO_CONTROLLER: u16 = 0x2009;
 pub const JOYCON_CHARGING_GRIP: u16 = 0x200e;
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
+pub enum InputReportId {
+    Normal = 0x3F,
+    StandardAndSubcmd = 0x21,
+    MCUFwUpdate = 0x23,
+    StandardFull = 0x30,
+    StandardFullMCU = 0x31,
+    // 0x32 not used
+    // 0x33 not used
+}
+
 // All unused values are a Nop
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]

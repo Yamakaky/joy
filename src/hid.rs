@@ -139,7 +139,7 @@ impl JoyCon {
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetInputReportMode,
                 u: SubcommandRequestData {
-                    input_report_mode: InputReportMode::StandardFull,
+                    input_report_mode: InputReportId::StandardFull,
                 },
             },
         )?;
@@ -152,7 +152,7 @@ impl JoyCon {
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetInputReportMode,
                 u: SubcommandRequestData {
-                    input_report_mode: InputReportMode::NFCIR,
+                    input_report_mode: InputReportId::StandardFullMCU,
                 },
             },
         )?;

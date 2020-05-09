@@ -45,18 +45,6 @@ impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
     }
 }
 
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
-pub enum InputReportId {
-    Normal = 0x3F,
-    StandardAndSubcmd = 0x21,
-    MCUFwUpdate = 0x23,
-    StandardFull = 0x30,
-    StandardFullMCU = 0x31,
-    // 0x32 not used
-    // 0x33 not used
-}
-
 /// Describes a HID report from the JoyCon.
 ///
 /// It is binary compatible and can be directly casted from the raw HID bytes.
@@ -343,7 +331,7 @@ pub union ExtraData {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct SubcommandReply {
-    ack: Ack,
+    pub ack: Ack,
     subcommand_id: RawId<SubcommandId>,
     u: SubcommandReplyData,
 }
@@ -388,6 +376,12 @@ impl fmt::Debug for SubcommandReply {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct Ack(u8);
+
+impl Ack {
+    pub fn is_ok(self) -> bool {
+        (self.0 & 0x80) != 0
+    }
+}
 
 impl fmt::Debug for Ack {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
