@@ -28,7 +28,7 @@ pub enum MCUReportId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union MCUReportUnion {
-    raw: [u8; 313],
+    _raw: [u8; 312],
 }
 
 #[repr(packed)]
