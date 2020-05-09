@@ -51,9 +51,9 @@ impl CRC8B {
 
 fn compute_crc8(id: u8, bytes: &[u8]) -> u8 {
     // To simplify the data layout, subcmd_id is outside the byte buffer.
-    let crc = MCU_CRC8_TABLE[id as usize];
+    let mut crc = MCU_CRC8_TABLE[id as usize];
     for byte in bytes {
-        let crc = MCU_CRC8_TABLE[(crc ^ byte) as usize];
+        crc = MCU_CRC8_TABLE[(crc ^ byte) as usize];
     }
     crc
 }
@@ -155,21 +155,20 @@ impl MCUIRModeData {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUSubcommand {
-    subcmd_id: MCUSubCmdId2,
-    u: MCUSubcommandUnion,
+    pub subcmd_id: MCUSubCmdId2,
+    pub u: MCUSubcommandUnion,
 }
 
 impl fmt::Debug for MCUSubcommand {
-    fn fmt(&self, f: &mut  fmt::Formatter) -> fmt::Result
-     {
-         f.debug_struct("MCUSubcommand").finish()
-     }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("MCUSubcommand").finish()
+    }
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union MCUSubcommandUnion {
-    pub x: u8,,
+    pub x: u8,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table
