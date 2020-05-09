@@ -107,6 +107,15 @@ impl InputReport {
             None
         }
     }
+
+    pub fn mcu_report(&self) -> Option<&MCUReport> {
+        if self.report_id == InputReportId::StandardFullMCU {
+            Some(unsafe { &self.u.standard.u.imu_mcu.mcu_report })
+        } else {
+            None
+}
+    }
+
 }
 
 impl Default for InputReport {

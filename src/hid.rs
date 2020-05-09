@@ -169,7 +169,22 @@ impl JoyCon {
                 },
             },
         )?;
-        Ok(())
+
+        // TODO: loop limit
+        self.send_mcu_subcmd_wait(MCUSubcommand {
+            subcmd_id: MCUSubCmdId2::GetStatus,
+            u: MCUSubcommandUnion { nothing: () },
+        })?;
+        loop {
+            let in_report = self.recv()?;
+            if let Some(mcu_report) = in_report.mcu_report() {
+                if let Some(status) = mcu_report.as_status() {
+                    if status.state == MCUState::Resume {
+                        return Ok(());
+                    }
+                }
+            }
+        }
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
@@ -216,6 +231,23 @@ impl JoyCon {
                     ensure!(reply.ack.is_ok(), "subcmd reply is nack");
                     return Ok(*reply);
                 }
+            }
+        }
+    }
+
+    fn send_mcu_subcmd_wait(&mut self, mcu_subcmd: MCUSubcommand) -> Result<MCUReport> {
+        let mut out_report = OutputReport {
+            packet_counter: 0,
+            report_id: OutputReportId::RequestMCUData,
+            rumble_data: RumbleData::default(),
+            u: SubcommandRequestUnion { mcu_subcmd },
+        };
+        self.send(&mut out_report)?;
+        // TODO: loop limit
+        loop {
+            let in_report = self.recv()?;
+            if let Some(mcu_report) = in_report.mcu_report() {
+                return Ok(*mcu_report);
             }
         }
     }

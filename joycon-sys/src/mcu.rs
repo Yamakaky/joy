@@ -1,11 +1,22 @@
 use crate::common::*;
+use crate::input::*;
 use std::fmt;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUReport {
-    id: MCUReportId,
+    id: RawId<MCUReportId>,
     u: MCUReportUnion,
+}
+
+impl MCUReport {
+    pub fn as_status(&self) -> Option<&MCUStatus> {
+        if dbg!(self.id) == MCUReportId::Status {
+            Some(unsafe { &self.u.status })
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Debug for MCUReport {
@@ -15,7 +26,7 @@ impl fmt::Debug for MCUReport {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUReportId {
     Status = 0x01,
     // maybe
@@ -29,6 +40,14 @@ pub enum MCUReportId {
 #[derive(Copy, Clone)]
 pub union MCUReportUnion {
     _raw: [u8; 312],
+    status: MCUStatus,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct MCUStatus {
+    _unknown: [u8; 6],
+    pub state: RawId<MCUState>,
 }
 
 #[repr(packed)]
@@ -111,7 +130,7 @@ pub struct MCUSetReg {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUState {
     Suspend = 0,
     Resume = 1,
@@ -119,7 +138,7 @@ pub enum MCUState {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUMode {
     Standby = 1,
     NFC = 4,
@@ -128,20 +147,20 @@ pub enum MCUMode {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUCmdId {
     SetMCUMode = 0x21,
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUSubCmdId {
     SetMCUMode = 0,
     SetIRMode = 1,
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUSubCmdId2 {
     GetStatus = 1,
     RequestData = 2,
@@ -149,7 +168,7 @@ pub enum MCUSubCmdId2 {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUIRMode {
     MaybeNoModeDisable = 2,
     Moment = 3,
