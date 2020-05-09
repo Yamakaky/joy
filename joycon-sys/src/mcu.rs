@@ -1,4 +1,4 @@
-use byteorder::{ByteOrder, LittleEndian};
+use crate::common::*;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
@@ -105,21 +105,17 @@ pub struct MCUIRModeData {
     pub ir_mode: MCUIRMode,
     /// Set number of packets to output per buffer
     pub no_of_frags: u8,
-    mcu_version_major: [u8; 2],
-    mcu_version_minor: [u8; 2],
+    _mcu_version_major: U16LE,
+    _mcu_version_minor: U16LE,
 }
 
 impl MCUIRModeData {
     pub fn new(ir_mode: MCUIRMode, no_of_frags: u8) -> MCUIRModeData {
-        let mut mcu_version_major = [0; 2];
-        LittleEndian::write_u16(&mut mcu_version_major, 0x0500);
-        let mut mcu_version_minor = [0; 2];
-        LittleEndian::write_u16(&mut mcu_version_minor, 0x1800);
         MCUIRModeData {
             ir_mode,
             no_of_frags,
-            mcu_version_major,
-            mcu_version_minor,
+            _mcu_version_major: 0x0500.into(),
+            _mcu_version_minor: 0x1800.into(),
         }
     }
 }

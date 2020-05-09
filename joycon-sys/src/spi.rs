@@ -1,3 +1,4 @@
+use crate::common::*;
 use crate::input::Vector3;
 use byteorder::{ByteOrder, LittleEndian};
 use std::fmt;
@@ -226,10 +227,10 @@ impl fmt::Debug for UserStickCalibration {
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SensorCalibration {
-    acc_orig: [[u8; 2]; 3],
-    acc_sens: [[u8; 2]; 3],
-    gyro_orig: [[u8; 2]; 3],
-    gyro_sens: [[u8; 2]; 3],
+    acc_orig: [I16LE; 3],
+    acc_sens: [I16LE; 3],
+    gyro_orig: [I16LE; 3],
+    gyro_sens: [I16LE; 3],
 }
 
 impl SensorCalibration {

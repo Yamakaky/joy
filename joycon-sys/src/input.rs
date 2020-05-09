@@ -5,7 +5,6 @@
 use crate::common::*;
 use crate::output::*;
 use crate::spi::*;
-use byteorder::{ByteOrder, LittleEndian};
 use derive_more::{Add, AddAssign, Div, Mul, Sub};
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
@@ -336,7 +335,7 @@ impl fmt::Debug for StickStatus {
 #[derive(Copy, Clone)]
 pub union ExtraData {
     subcmd_reply: SubcommandReply,
-    mcu_fw_update: [u8; 37],
+    _mcu_fw_update: [u8; 37],
     gyro_acc_nfc_ir: GyroAccNFCIR,
 }
 
@@ -439,7 +438,7 @@ pub enum WhichController {
 #[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
     gyro_acc_frames: [RawGyroAccFrame; 3],
-    nfc_ir_data: [u8; 313],
+    _nfc_ir_data: [u8; 313],
 }
 
 impl fmt::Debug for GyroAccNFCIR {
@@ -454,8 +453,8 @@ impl fmt::Debug for GyroAccNFCIR {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct RawGyroAccFrame {
-    raw_accel: [[u8; 2]; 3],
-    raw_gyro: [[u8; 2]; 3],
+    raw_accel: [I16LE; 3],
+    raw_gyro: [I16LE; 3],
 }
 
 impl RawGyroAccFrame {
@@ -496,11 +495,11 @@ impl fmt::Debug for RawGyroAccFrame {
 pub struct Vector3(pub f32, pub f32, pub f32);
 
 impl Vector3 {
-    pub fn from_raw(raw: [[u8; 2]; 3]) -> Vector3 {
+    pub fn from_raw(raw: [I16LE; 3]) -> Vector3 {
         Vector3(
-            LittleEndian::read_i16(&raw[0]) as f32,
-            LittleEndian::read_i16(&raw[1]) as f32,
-            LittleEndian::read_i16(&raw[2]) as f32,
+            i16::from(raw[0]) as f32,
+            i16::from(raw[1]) as f32,
+            i16::from(raw[2]) as f32,
         )
     }
 }
