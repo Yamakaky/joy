@@ -1,4 +1,5 @@
 use crate::common::*;
+use std::fmt;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
@@ -14,25 +15,47 @@ pub struct MCUCmd {
 pub union MCUCmdData {
     pub mcu_mode: MCUMode,
     pub regs: MCURegisters,
-    pub crc: CRC8,
+    pub crc: CRC8A,
     pub ir_mode: MCUIRModeData,
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct CRC8 {
+pub struct CRC8A {
     bytes: [u8; 35],
     crc: u8,
 }
 
-impl CRC8 {
+impl CRC8A {
     pub fn compute_crc8(&mut self, subcmd_id: MCUSubCmdId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
-        self.crc = MCU_CRC8_TABLE[subcmd_id as usize];
-        for byte in self.bytes.iter() {
-            self.crc = MCU_CRC8_TABLE[(self.crc ^ byte) as usize];
-        }
+        self.crc = compute_crc8(subcmd_id as u8, &self.bytes);
     }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct CRC8B {
+    bytes: [u8; 35],
+    crc: u8,
+    _padding_0xff: u8,
+}
+
+impl CRC8B {
+    pub fn compute_crc8(&mut self, subcmd_id: MCUSubCmdId2) {
+        // To simplify the data layout, subcmd_id is outside the byte buffer.
+        self.crc = compute_crc8(subcmd_id as u8, &self.bytes);
+        self._padding_0xff = 0xff;
+    }
+}
+
+fn compute_crc8(id: u8, bytes: &[u8]) -> u8 {
+    // To simplify the data layout, subcmd_id is outside the byte buffer.
+    let crc = MCU_CRC8_TABLE[id as usize];
+    for byte in bytes {
+        let crc = MCU_CRC8_TABLE[(crc ^ byte) as usize];
+    }
+    crc
 }
 
 #[repr(packed)]
@@ -89,6 +112,14 @@ pub enum MCUSubCmdId {
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug)]
+pub enum MCUSubCmdId2 {
+    GetStatus = 1,
+    RequestData = 2,
+    GetMCURegisters = 3,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug)]
 pub enum MCUIRMode {
     MaybeNoModeDisable = 2,
     Moment = 3,
@@ -122,9 +153,23 @@ impl MCUIRModeData {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct MCUSubcommand {
-    subcmd_id: MCUSubCmdId,
+    subcmd_id: MCUSubCmdId2,
+    u: MCUSubcommandUnion,
+}
+
+impl fmt::Debug for MCUSubcommand {
+    fn fmt(&self, f: &mut  fmt::Formatter) -> fmt::Result
+     {
+         f.debug_struct("MCUSubcommand").finish()
+     }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub union MCUSubcommandUnion {
+    pub x: u8,,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table
