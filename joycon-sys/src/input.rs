@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
 use crate::common::*;
+use crate::mcu::*;
 use crate::output::*;
 use crate::spi::*;
 use derive_more::{Add, AddAssign, Div, Mul, Sub};
@@ -438,14 +439,14 @@ pub enum WhichController {
 #[derive(Copy, Clone)]
 pub struct GyroAccNFCIR {
     gyro_acc_frames: [RawGyroAccFrame; 3],
-    _nfc_ir_data: [u8; 313],
+    mcu_report: MCUReport,
 }
 
 impl fmt::Debug for GyroAccNFCIR {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("GyroAccNFCIR")
             .field("gyro_acc_frames", &self.gyro_acc_frames)
-            .field("nfc_ir_data", &"[data]")
+            .field("nfc_ir_data", &self.mcu_report)
             .finish()
     }
 }

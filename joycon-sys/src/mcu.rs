@@ -3,6 +3,36 @@ use std::fmt;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
+pub struct MCUReport {
+    id: MCUReportId,
+    u: MCUReportUnion,
+}
+
+impl fmt::Debug for MCUReport {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("MCUReport").finish()
+    }
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum MCUReportId {
+    Status = 0x01,
+    // maybe
+    IRStatus = 0x13,
+    // maybe
+    Registers = 0x1b,
+    NFC = 0x2a,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub union MCUReportUnion {
+    raw: [u8; 313],
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
 pub struct MCUCmd {
     pub cmd_id: MCUCmdId,
     // Offset 12
@@ -168,7 +198,8 @@ impl fmt::Debug for MCUSubcommand {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union MCUSubcommandUnion {
-    pub x: u8,
+    pub nothing: (),
+    pub crc: CRC8B,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table
