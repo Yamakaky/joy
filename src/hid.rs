@@ -209,11 +209,11 @@ impl JoyCon {
         };
         self.send(&mut out_report)?;
         // TODO: loop limit
-        // TODO: check ACK
         loop {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
                 if reply.id() == Some(subcmd.subcommand_id) {
+                    ensure!(reply.ack.is_ok(), "subcmd reply is nack");
                     return Ok(*reply);
                 }
             }
