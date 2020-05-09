@@ -68,3 +68,8 @@ impl From<I16LE> for i16 {
         LittleEndian::read_i16(&u.0)
     }
 }
+
+#[cfg(test)]
+pub(crate) fn offset_of<A, B>(a: &A, b: &B) -> usize {
+    b as *const _ as usize - a as *const _ as usize
+}

@@ -49,7 +49,7 @@ impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
 ///
 /// It is binary compatible and can be directly casted from the raw HID bytes.
 ///
-/// ```
+/// ```ignore
 /// let mut buffer = [0u8; size_of::<InputReport>()];
 /// read_hid_report(&mut buffer);
 /// let report = unsafe { &*(&buffer as *const _ as *const InputReport)}
@@ -113,9 +113,12 @@ impl InputReport {
             Some(unsafe { &self.u.standard.u.imu_mcu.mcu_report })
         } else {
             None
-}
+        }
     }
 
+    pub(crate) unsafe fn u_mcu_report(&self) -> &MCUReport {
+        &self.u.standard.u.imu_mcu.mcu_report
+    }
 }
 
 impl Default for InputReport {
@@ -501,5 +504,22 @@ impl Vector3 {
             i16::from(raw[1]) as f32,
             i16::from(raw[2]) as f32,
         )
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn check_layout() {
+    unsafe {
+        let report = InputReport::new();
+        assert_eq!(6, offset_of(&report, &report.u.standard.left_stick));
+        assert_eq!(
+            13,
+            offset_of(&report, &report.u.standard.u.imu_mcu.imu_frames)
+        );
+        assert_eq!(
+            49,
+            offset_of(&report, &report.u.standard.u.imu_mcu.mcu_report)
+        );
     }
 }

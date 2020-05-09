@@ -241,3 +241,25 @@ const MCU_CRC8_TABLE: [u8; 256] = [
     0xAE, 0xA9, 0xA0, 0xA7, 0xB2, 0xB5, 0xBC, 0xBB, 0x96, 0x91, 0x98, 0x9F, 0x8A, 0x8D, 0x84, 0x83,
     0xDE, 0xD9, 0xD0, 0xD7, 0xC2, 0xC5, 0xCC, 0xCB, 0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4, 0xF3,
 ];
+
+#[cfg(test)]
+#[test]
+fn check_input_layout() {
+    unsafe {
+        let report = InputReport::new();
+        let mcu_report = report.u_mcu_report();
+        assert_eq!(49, offset_of(&report, mcu_report));
+        assert_eq!(56, offset_of(&report, &mcu_report.u.status.state));
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn check_output_layout() {
+    unsafe {
+        let report = crate::output::OutputReport::new();
+        let cmd = report.as_mcu_subcmd();
+        // Same as normal output report
+        assert_eq!(10, offset_of(&report, &cmd.subcmd_id));
+    }
+}

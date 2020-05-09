@@ -38,6 +38,10 @@ impl OutputReport {
             std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))
         }
     }
+
+    pub(crate) unsafe fn as_mcu_subcmd(&self) -> &MCUSubcommand {
+        &self.u.mcu_subcmd
+    }
 }
 
 impl Default for OutputReport {
@@ -254,5 +258,16 @@ impl PlayerLights {
                 | (f2 as u8) << 6
                 | (f3 as u8) << 7,
         )
+    }
+}
+
+#[cfg(test)]
+#[test]
+pub fn check_layout() {
+    unsafe {
+        let report = OutputReport::new();
+        assert_eq!(2, offset_of(&report, &report.rumble_data));
+        assert_eq!(10, offset_of(&report, &report.u.subcmd.subcommand_id));
+        assert_eq!(11, offset_of(&report, &report.u.subcmd.u.mcu_cmd));
     }
 }
