@@ -98,11 +98,11 @@ impl InputReport {
         }
     }
 
-    pub fn imu_frames(&self) -> Option<&[RawGyroAccFrame; 3]> {
+    pub fn imu_frames(&self) -> Option<&[IMUFrame; 3]> {
         if self.report_id == InputReportId::StandardFull
             || self.report_id == InputReportId::StandardFullMCU
         {
-            Some(unsafe { &self.u.standard.u.gyro_acc_nfc_ir.gyro_acc_frames })
+            Some(unsafe { &self.u.standard.u.imu_mcu.imu_frames })
         } else {
             None
         }
@@ -180,14 +180,10 @@ impl fmt::Debug for InputReport {
             }
             // TODO: mask MCU
             Some(InputReportId::StandardFull) => {
-                out.field("subcommand_reply", unsafe {
-                    &self.u.standard.u.gyro_acc_nfc_ir
-                });
+                out.field("subcommand_reply", unsafe { &self.u.standard.u.imu_mcu });
             }
             Some(InputReportId::StandardFullMCU) => {
-                out.field("subcommand_reply", unsafe {
-                    &self.u.standard.u.gyro_acc_nfc_ir
-                });
+                out.field("subcommand_reply", unsafe { &self.u.standard.u.imu_mcu });
             }
             None => {}
         };
@@ -325,7 +321,7 @@ impl fmt::Debug for StickStatus {
 pub union ExtraData {
     subcmd_reply: SubcommandReply,
     _mcu_fw_update: [u8; 37],
-    gyro_acc_nfc_ir: GyroAccNFCIR,
+    imu_mcu: IMUMCU,
 }
 
 #[repr(packed)]
@@ -431,28 +427,28 @@ pub enum WhichController {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct GyroAccNFCIR {
-    gyro_acc_frames: [RawGyroAccFrame; 3],
+pub struct IMUMCU {
+    imu_frames: [IMUFrame; 3],
     mcu_report: MCUReport,
 }
 
-impl fmt::Debug for GyroAccNFCIR {
+impl fmt::Debug for IMUMCU {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("GyroAccNFCIR")
-            .field("gyro_acc_frames", &self.gyro_acc_frames)
-            .field("nfc_ir_data", &self.mcu_report)
+        f.debug_struct("IMUMCU")
+            .field("imu_frames", &self.imu_frames)
+            .field("mcu_report", &self.mcu_report)
             .finish()
     }
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct RawGyroAccFrame {
+pub struct IMUFrame {
     raw_accel: [I16LE; 3],
     raw_gyro: [I16LE; 3],
 }
 
-impl RawGyroAccFrame {
+impl IMUFrame {
     pub fn raw_accel(&self) -> Vector3 {
         Vector3::from_raw(self.raw_accel)
     }
@@ -476,7 +472,7 @@ impl RawGyroAccFrame {
     }
 }
 
-impl fmt::Debug for RawGyroAccFrame {
+impl fmt::Debug for IMUFrame {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("RawGyroAccFrame")
             .field("accel", &self.raw_accel())

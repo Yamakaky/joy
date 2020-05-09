@@ -256,19 +256,3 @@ impl PlayerLights {
         )
     }
 }
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct GyroAccNFCIR {
-    pub gyro_acc_frames: [[u8; 12]; 3],
-    pub nfc_ir_data: [u8; 313],
-}
-
-impl fmt::Debug for GyroAccNFCIR {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("GyroAccNFCIR")
-            .field("gyro_acc_frames", &self.gyro_acc_frames)
-            .field("nfc_ir_data", &"[data]")
-            .finish()
-    }
-}

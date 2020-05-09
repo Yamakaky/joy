@@ -146,7 +146,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_nfc_ir_mode(&mut self) -> Result<()> {
+    pub fn set_mcu_mode(&mut self) -> Result<()> {
         self.send_subcmd_wait(
             OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
