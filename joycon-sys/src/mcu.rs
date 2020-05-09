@@ -114,10 +114,17 @@ impl MCUIRModeData {
         MCUIRModeData {
             ir_mode,
             no_of_frags,
+            // TODO: validate value
             _mcu_version_major: 0x0500.into(),
             _mcu_version_minor: 0x1800.into(),
         }
     }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug)]
+pub struct MCUSubcommand {
+    subcmd_id: MCUSubCmdId,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table

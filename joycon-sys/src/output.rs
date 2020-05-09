@@ -8,7 +8,7 @@ use crate::spi::*;
 use std::fmt;
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum OutputReportId {
     RumbleAndSubcmd = 0x01,
     MCUFwUpdate = 0x03,
@@ -20,12 +20,12 @@ pub enum OutputReportId {
 ///
 /// It is binary compatible and can be directly casted from the raw HID bytes.
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct OutputReport {
     pub report_id: OutputReportId,
     pub packet_counter: u8,
     pub rumble_data: RumbleData,
-    pub subcmd: SubcommandRequest,
+    pub u: SubcommandRequestUnion,
 }
 
 impl OutputReport {
@@ -46,12 +46,37 @@ impl Default for OutputReport {
             report_id: OutputReportId::RumbleAndSubcmd,
             packet_counter: 0,
             rumble_data: RumbleData::default(),
-            subcmd: SubcommandRequest {
-                subcommand_id: SubcommandId::RequestDeviceInfo,
-                u: SubcommandRequestData { nothing: () },
+            u: SubcommandRequestUnion {
+                subcmd: SubcommandRequest {
+                    subcommand_id: SubcommandId::RequestDeviceInfo,
+                    u: SubcommandRequestData { nothing: () },
+                },
             },
         }
     }
+}
+
+impl fmt::Debug for OutputReport {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = f.debug_struct("OutputReport");
+        out.field("id", &self.report_id)
+            .field("counter", &self.packet_counter);
+        if self.report_id == OutputReportId::RumbleAndSubcmd {
+            out.field("subcmd", unsafe { &self.u.subcmd });
+        } else if self.report_id == OutputReportId::RequestMCUData {
+            out.field("mcu_subcmd", unsafe { &self.u.mcu_subcmd });
+        }
+        out.finish()
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub union SubcommandRequestUnion {
+    // For OutputReportId::RumbleAndSubcmd
+    pub subcmd: SubcommandRequest,
+    // For OutputReportId::RequestMCUData
+    pub mcu_subcmd: MCUSubcommand,
 }
 
 #[repr(packed)]

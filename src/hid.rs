@@ -205,7 +205,7 @@ impl JoyCon {
             packet_counter: 0,
             report_id,
             rumble_data: RumbleData::default(),
-            subcmd,
+            u: SubcommandRequestUnion { subcmd },
         };
         self.send(&mut out_report)?;
         // TODO: loop limit
