@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::calibration::Calibration;
-use anyhow::{ensure, Result};
+use anyhow::{bail, ensure, Result};
 use joycon_sys::input::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
@@ -176,23 +176,25 @@ impl JoyCon {
             },
         )?;
 
-        // TODO: loop limit
-        self.send_mcu_subcmd(MCUSubcommand {
-            subcmd_id: MCUSubCmdId2::GetStatus,
-            u: MCUSubcommandUnion { nothing: () },
-        })?;
-        /* do later
-        loop {
-            let in_report = self.recv()?;
-            if let Some(mcu_report) = in_report.mcu_report() {
-                if let Some(status) = mcu_report.as_status() {
-                    if status.state == MCUState::Resume {
-                        return Ok(());
+        // The MCU takes some time to warm up so we retry until we get an answer
+        for _ in 0..8 {
+            // TODO: loop limit
+            self.send_mcu_subcmd(MCUSubcommand {
+                subcmd_id: MCUSubCmdId2::GetStatus,
+                u: MCUSubcommandUnion { nothing: () },
+            })?;
+            for _ in 0..8 {
+                let in_report = self.recv()?;
+                if let Some(mcu_report) = in_report.mcu_report() {
+                    if let Some(status) = mcu_report.as_status() {
+                        if status.state == MCUState::Resume {
+                            return Ok(());
+                        }
                     }
                 }
             }
-        }*/
-        Ok(())
+        }
+        bail!("error enabling the MCU");
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
