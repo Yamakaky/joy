@@ -1,3 +1,4 @@
+/// Cf https://github.com/CTCaer/Nintendo_Switch_Reverse_Engineering/blob/ir-nfc/mcu_ir_nfc_notes.md
 use crate::common::*;
 use crate::input::*;
 use std::fmt;
@@ -11,7 +12,7 @@ pub struct MCUReport {
 
 impl MCUReport {
     pub fn as_status(&self) -> Option<&MCUStatus> {
-        if self.id == MCUReportId::Status {
+        if self.id == MCUReportId::StateReport {
             Some(unsafe { &self.u.status })
         } else {
             None
@@ -28,12 +29,15 @@ impl fmt::Debug for MCUReport {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUReportId {
-    Status = 0x01,
-    // maybe
+    Empty = 0x00,
+    StateReport = 0x01,
+    IRData = 0x03,
+    BusyInitializing = 0x0b,
     IRStatus = 0x13,
-    // maybe
-    Registers = 0x1b,
-    NFC = 0x2a,
+    IRRegisters = 0x1b,
+    NFCState = 0x2a,
+    NFCReadData = 0x3a,
+    EmptyAwaitingCmd = 0xff,
 }
 
 #[repr(packed)]
@@ -44,10 +48,21 @@ pub union MCUReportUnion {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct MCUStatus {
-    _unknown: [u8; 6],
-    pub state: RawId<MCUState>,
+    _unknown: [u8; 2],
+    pub fw_major_version: U16LE,
+    pub fw_minor_version: U16LE,
+    pub state: RawId<MCUMode>,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct IRStatus {
+    _unknown_0x00: u8,
+    pub ir_mode: MCUIRMode,
+    pub required_fw_major_version: U16LE,
+    pub required_fw_minor_version: U16LE,
 }
 
 #[repr(packed)]
@@ -57,6 +72,12 @@ pub struct MCUCmd {
     // Offset 12
     pub subcmd_id: MCUSubCmdId,
     pub u: MCUCmdData,
+}
+
+impl MCUCmd {
+    pub fn compute_crc(&mut self) {
+        unsafe { self.u.crc.compute_crc8(self.subcmd_id) }
+    }
 }
 
 #[repr(packed)]
@@ -131,15 +152,8 @@ pub struct MCUSetReg {
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUState {
-    Suspend = 0,
-    Resume = 1,
-    ResumeForUpdate = 2,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUMode {
+    Suspend = 0,
     Standby = 1,
     NFC = 4,
     IR = 5,

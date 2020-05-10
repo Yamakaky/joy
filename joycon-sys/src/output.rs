@@ -125,7 +125,7 @@ pub union SubcommandRequestData {
     pub imu_enabled: bool,
     pub input_report_mode: InputReportId,
     pub player_lights: PlayerLights,
-    pub mcu_state: MCUState,
+    pub mcu_mode: MCUMode,
     pub mcu_cmd: MCUCmd,
     pub spi_read: SPIReadRequest,
     pub imu_sensitivity: IMUSensitivity,

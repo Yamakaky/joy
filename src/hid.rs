@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::calibration::Calibration;
-use anyhow::{bail, ensure, Result};
+use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
@@ -171,13 +171,18 @@ impl JoyCon {
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
-                    mcu_state: MCUState::Resume,
+                    mcu_mode: MCUMode::Standby,
                 },
             },
         )?;
+        self.wait_mcu_status(MCUMode::Standby)
+            .context("enable_mcu")?;
+        Ok(())
+    }
 
+    fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<()> {
         // The MCU takes some time to warm up so we retry until we get an answer
-        for _ in 0..8 {
+        for _ in 0..20 {
             // TODO: loop limit
             self.send_mcu_subcmd(MCUSubcommand {
                 subcmd_id: MCUSubCmdId2::GetStatus,
@@ -187,14 +192,14 @@ impl JoyCon {
                 let in_report = self.recv()?;
                 if let Some(mcu_report) = in_report.mcu_report() {
                     if let Some(status) = mcu_report.as_status() {
-                        if status.state == MCUState::Resume {
+                        if status.state == mode {
                             return Ok(());
                         }
                     }
                 }
             }
         }
-        bail!("error enabling the MCU");
+        bail!("error getting the MCU status: timeout");
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
@@ -203,29 +208,31 @@ impl JoyCon {
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
-                    mcu_state: MCUState::Suspend,
+                    mcu_mode: MCUMode::Suspend,
                 },
             },
         )?;
         Ok(())
     }
 
-    pub fn set_mcu_mode(&mut self) -> Result<()> {
-        let reply = self.send_subcmd_wait(
+    pub fn set_mcu_mode_ir(&mut self) -> Result<()> {
+        let mut mcu_cmd = MCUCmd {
+            cmd_id: MCUCmdId::SetMCUMode,
+            subcmd_id: MCUSubCmdId::SetMCUMode,
+            u: MCUCmdData {
+                mcu_mode: MCUMode::IR,
+            },
+        };
+        mcu_cmd.compute_crc();
+        self.send_subcmd_wait(
             OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
-                subcommand_id: SubcommandId::SetMCUState,
-                u: SubcommandRequestData {
-                    mcu_cmd: MCUCmd {
-                        cmd_id: MCUCmdId::SetMCUMode,
-                        subcmd_id: MCUSubCmdId::SetMCUMode,
-                        u: MCUCmdData {
-                            mcu_mode: MCUMode::IR,
-                        },
-                    },
-                },
+                subcommand_id: SubcommandId::SetMCUConf,
+                u: SubcommandRequestData { mcu_cmd },
             },
         )?;
+        self.wait_mcu_status(MCUMode::IR)
+            .context("set_mcu_mode_ir")?;
         Ok(())
     }
 

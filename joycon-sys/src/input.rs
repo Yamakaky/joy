@@ -366,6 +366,16 @@ impl SubcommandReply {
             None
         }
     }
+
+    pub fn mcu_report(&self) -> Option<&MCUReport> {
+        if self.subcommand_id == SubcommandId::SetMCUConf
+            || self.subcommand_id == SubcommandId::SetMCUState
+        {
+            Some(unsafe { &self.u.mcu_report })
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Debug for SubcommandReply {
