@@ -163,7 +163,8 @@ pub enum MCUMode {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUCmdId {
-    SetMCUMode = 0x21,
+    ConfigureMCU = 0x21,
+    ConfigureIR = 0x23,
 }
 
 #[repr(u8)]
@@ -171,6 +172,7 @@ pub enum MCUCmdId {
 pub enum MCUSubCmdId {
     SetMCUMode = 0,
     SetIRMode = 1,
+    WriteIRRegisters = 4,
 }
 
 #[repr(u8)]

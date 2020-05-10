@@ -217,7 +217,7 @@ impl JoyCon {
 
     pub fn set_mcu_mode_ir(&mut self) -> Result<()> {
         let mut mcu_cmd = MCUCmd {
-            cmd_id: MCUCmdId::SetMCUMode,
+            cmd_id: MCUCmdId::ConfigureMCU,
             subcmd_id: MCUSubCmdId::SetMCUMode,
             u: MCUCmdData {
                 mcu_mode: MCUMode::IR,
