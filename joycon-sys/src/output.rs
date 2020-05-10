@@ -270,5 +270,6 @@ pub fn check_layout() {
         assert_eq!(2, offset_of(&report, &report.rumble_data));
         assert_eq!(10, offset_of(&report, &report.u.subcmd.subcommand_id));
         assert_eq!(11, offset_of(&report, &report.u.subcmd.u.mcu_cmd));
+        assert_eq!(49, std::mem::size_of_val(&report));
     }
 }
