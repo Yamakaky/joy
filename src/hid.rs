@@ -181,20 +181,33 @@ impl JoyCon {
     }
 
     fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<()> {
-        // The MCU takes some time to warm up so we retry until we get an answer
-        for _ in 0..20 {
-            // TODO: loop limit
-            self.send_mcu_subcmd(MCUSubcommand {
-                subcmd_id: MCUSubCmdId2::GetStatus,
+        self.wait_mcu_cond(
+            MCUSubcommand {
+                // todo: variable subcmd
+                subcmd_id: MCUSubCmdId2::GetMCUStatus,
                 u: MCUSubcommandUnion { nothing: () },
-            })?;
+            },
+            |report| {
+                report
+                    .as_status()
+                    .map(|status| status.state == mode)
+                    .unwrap_or(false)
+            },
+        )
+    }
+    fn wait_mcu_cond(
+        &mut self,
+        mcu_subcmd: MCUSubcommand,
+        mut f: impl FnMut(&MCUReport) -> bool,
+    ) -> Result<()> {
+        // The MCU takes some time to warm up so we retry until we get an answer
+        for _ in 0..8 {
+            self.send_mcu_subcmd(mcu_subcmd)?;
             for _ in 0..8 {
                 let in_report = self.recv()?;
                 if let Some(mcu_report) = in_report.mcu_report() {
-                    if let Some(status) = mcu_report.as_status() {
-                        if status.state == mode {
-                            return Ok(());
-                        }
+                    if f(mcu_report) {
+                        return Ok(());
                     }
                 }
             }
@@ -233,6 +246,64 @@ impl JoyCon {
         )?;
         self.wait_mcu_status(MCUMode::IR)
             .context("set_mcu_mode_ir")?;
+        Ok(())
+    }
+
+    pub fn set_ir_image_mode(&mut self, frags: u8) -> Result<()> {
+        let mut mcu_fw_version = Default::default();
+        self.wait_mcu_cond(
+            MCUSubcommand {
+                // todo: variable subcmd
+                subcmd_id: MCUSubCmdId2::GetMCUStatus,
+                u: MCUSubcommandUnion { nothing: () },
+            },
+            |r| {
+                if let Some(status) = r.as_status() {
+                    mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
+                    true
+                } else {
+                    false
+                }
+            },
+        )?;
+        let mut mcu_cmd = MCUCmd {
+            cmd_id: MCUCmdId::ConfigureIR,
+            subcmd_id: MCUSubCmdId::SetIRMode,
+            u: MCUCmdData {
+                ir_mode: MCUIRModeData {
+                    ir_mode: MCUIRMode::ImageTransfer,
+                    no_of_frags: frags,
+                    mcu_fw_version,
+                },
+            },
+        };
+        mcu_cmd.compute_crc();
+        let reply = self.send_subcmd_wait(
+            OutputReportId::RumbleAndSubcmd,
+            SubcommandRequest {
+                subcommand_id: SubcommandId::SetMCUConf,
+                u: SubcommandRequestData { mcu_cmd },
+            },
+        )?;
+        ensure!(reply.mcu_report().unwrap().is_busy_init(), "mcu not busy");
+
+        let mut cmd = MCUSubcommand {
+            // todo: variable subcmd
+            subcmd_id: MCUSubCmdId2::GetIRData,
+            u: MCUSubcommandUnion {
+                ir_cmd: IRDataRequest {
+                    id: IRDataRequestId::GetState,
+                    u: IRDataRequestUnion { nothing: () },
+                },
+            },
+        };
+        cmd.compute_crc();
+        self.wait_mcu_cond(cmd, |r| {
+            r.as_ir_status()
+                .map(|status| status.ir_mode == MCUIRMode::ImageTransfer)
+                .unwrap_or(false)
+        })
+        .context("check sensor state")?;
         Ok(())
     }
 

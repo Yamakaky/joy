@@ -35,7 +35,7 @@ pub enum SubcommandId {
     SetIMUSens = 0x41,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct U16LE([u8; 2]);
 
 impl From<u16> for U16LE {

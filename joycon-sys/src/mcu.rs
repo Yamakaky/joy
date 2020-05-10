@@ -18,11 +18,31 @@ impl MCUReport {
             None
         }
     }
+
+    pub fn is_busy_init(&self) -> bool {
+        self.id == MCUReportId::BusyInitializing
+    }
+
+    pub fn as_ir_status(&self) -> Option<&IRStatus> {
+        if self.id == MCUReportId::IRStatus {
+            Some(unsafe { &self.u.ir_status })
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Debug for MCUReport {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MCUReport").finish()
+        let mut out = f.debug_struct("MCUReport");
+        match self.id.try_into() {
+            Some(MCUReportId::StateReport) => out.field("status", unsafe { &self.u.status }),
+            x @ Some(MCUReportId::BusyInitializing) => out.field("type", &x),
+            x @ Some(MCUReportId::Empty) => out.field("type", &x),
+            x @ Some(MCUReportId::EmptyAwaitingCmd) => out.field("type", &x),
+            id => out.field("unknown_id", &id),
+        }
+        .finish()
     }
 }
 
@@ -45,6 +65,7 @@ pub enum MCUReportId {
 pub union MCUReportUnion {
     _raw: [u8; 312],
     status: MCUStatus,
+    ir_status: IRStatus,
 }
 
 #[repr(packed)]
@@ -106,15 +127,15 @@ impl CRC8A {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct CRC8B {
-    bytes: [u8; 35],
+    bytes: [u8; 36],
     crc: u8,
     _padding_0xff: u8,
 }
 
 impl CRC8B {
-    pub fn compute_crc8(&mut self, subcmd_id: MCUSubCmdId2) {
+    pub fn compute_crc8(&mut self) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
-        self.crc = compute_crc8(subcmd_id as u8, &self.bytes);
+        self.crc = compute_crc8(0, &self.bytes);
         self._padding_0xff = 0xff;
     }
 }
@@ -178,9 +199,9 @@ pub enum MCUSubCmdId {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUSubCmdId2 {
-    GetStatus = 1,
-    RequestData = 2,
-    GetMCURegisters = 3,
+    GetMCUStatus = 1,
+    GetNFCData = 2,
+    GetIRData = 3,
 }
 
 #[repr(u8)]
@@ -207,20 +228,8 @@ pub struct MCUIRModeData {
     pub ir_mode: MCUIRMode,
     /// Set number of packets to output per buffer
     pub no_of_frags: u8,
-    _mcu_version_major: U16LE,
-    _mcu_version_minor: U16LE,
-}
-
-impl MCUIRModeData {
-    pub fn new(ir_mode: MCUIRMode, no_of_frags: u8) -> MCUIRModeData {
-        MCUIRModeData {
-            ir_mode,
-            no_of_frags,
-            // TODO: validate value
-            _mcu_version_major: 0x0500.into(),
-            _mcu_version_minor: 0x1800.into(),
-        }
-    }
+    /// Get it from MCUStatus
+    pub mcu_fw_version: (U16LE, U16LE),
 }
 
 #[repr(packed)]
@@ -228,6 +237,12 @@ impl MCUIRModeData {
 pub struct MCUSubcommand {
     pub subcmd_id: MCUSubCmdId2,
     pub u: MCUSubcommandUnion,
+}
+
+impl MCUSubcommand {
+    pub fn compute_crc(&mut self) {
+        unsafe { self.u.crc.compute_crc8() }
+    }
 }
 
 impl fmt::Debug for MCUSubcommand {
@@ -240,7 +255,29 @@ impl fmt::Debug for MCUSubcommand {
 #[derive(Copy, Clone)]
 pub union MCUSubcommandUnion {
     pub nothing: (),
+    pub ir_cmd: IRDataRequest,
     pub crc: CRC8B,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct IRDataRequest {
+    pub id: IRDataRequestId,
+    pub u: IRDataRequestUnion,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum IRDataRequestId {
+    GetSensorData = 0,
+    GetState = 2,
+    ReadRegister = 3,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub union IRDataRequestUnion {
+    pub nothing: (),
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table
@@ -283,5 +320,9 @@ fn check_output_layout() {
         let cmd = report.as_mcu_subcmd();
         // Same as normal output report
         assert_eq!(10, offset_of(&report, &cmd.subcmd_id));
+        assert_eq!(11, offset_of(&report, &cmd.u.ir_cmd.id));
+        assert_eq!(11, offset_of(&report, &cmd.u.crc));
+        assert_eq!(47, offset_of(&report, &cmd.u.crc.crc));
+        assert_eq!(48, offset_of(&report, &cmd.u.crc._padding_0xff));
     }
 }
