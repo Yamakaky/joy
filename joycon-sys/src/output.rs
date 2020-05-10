@@ -39,6 +39,7 @@ impl OutputReport {
         }
     }
 
+    #[cfg(test)]
     pub(crate) unsafe fn as_mcu_subcmd(&self) -> &MCUSubcommand {
         &self.u.mcu_subcmd
     }

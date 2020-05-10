@@ -11,7 +11,7 @@ pub struct MCUReport {
 
 impl MCUReport {
     pub fn as_status(&self) -> Option<&MCUStatus> {
-        if dbg!(self.id) == MCUReportId::Status {
+        if self.id == MCUReportId::Status {
             Some(unsafe { &self.u.status })
         } else {
             None

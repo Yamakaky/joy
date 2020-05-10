@@ -37,7 +37,7 @@ impl JoyCon {
         JoyCon {
             device,
             info,
-            counter: 42,
+            counter: 0,
             // 10s with 3 reports at 60Hz
             calib_gyro: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
             gyro_sens: GyroSens::DPS2000,
@@ -51,7 +51,7 @@ impl JoyCon {
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
-        self.counter += 1;
+        self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
         let nb_written = self.device.write(buffer)?;
         assert_eq!(nb_written, buffer.len());
@@ -59,11 +59,17 @@ impl JoyCon {
     }
 
     pub fn recv(&self) -> Result<InputReport> {
-        let mut report = InputReport::new();
-        let buffer = report.as_bytes_mut();
+        // Larger buffer to detect unhandled received data
+        let mut reports = [InputReport::new(); 2];
+        let buffer = unsafe {
+            std::slice::from_raw_parts_mut(
+                &mut reports as *mut _ as *mut u8,
+                std::mem::size_of::<InputReport>(),
+            )
+        };
         let nb_read = self.device.read(buffer)?;
-        assert_eq!(nb_read, buffer.len());
-        Ok(report)
+        assert_eq!(nb_read, std::mem::size_of_val(&reports[0]));
+        Ok(reports[0])
     }
 
     pub fn load_calibration(&mut self) -> Result<()> {
@@ -133,7 +139,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_standard_mode(&mut self) -> Result<()> {
+    pub fn set_report_mode_standard(&mut self) -> Result<()> {
         self.send_subcmd_wait(
             OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
@@ -146,7 +152,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_mcu_mode(&mut self) -> Result<()> {
+    pub fn set_report_mode_mcu(&mut self) -> Result<()> {
         self.send_subcmd_wait(
             OutputReportId::RumbleAndSubcmd,
             SubcommandRequest {
@@ -171,10 +177,11 @@ impl JoyCon {
         )?;
 
         // TODO: loop limit
-        self.send_mcu_subcmd_wait(MCUSubcommand {
+        self.send_mcu_subcmd(MCUSubcommand {
             subcmd_id: MCUSubCmdId2::GetStatus,
             u: MCUSubcommandUnion { nothing: () },
         })?;
+        /* do later
         loop {
             let in_report = self.recv()?;
             if let Some(mcu_report) = in_report.mcu_report() {
@@ -184,7 +191,8 @@ impl JoyCon {
                     }
                 }
             }
-        }
+        }*/
+        Ok(())
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
@@ -194,6 +202,25 @@ impl JoyCon {
                 subcommand_id: SubcommandId::SetMCUState,
                 u: SubcommandRequestData {
                     mcu_state: MCUState::Suspend,
+                },
+            },
+        )?;
+        Ok(())
+    }
+
+    pub fn set_mcu_mode(&mut self) -> Result<()> {
+        let reply = self.send_subcmd_wait(
+            OutputReportId::RumbleAndSubcmd,
+            SubcommandRequest {
+                subcommand_id: SubcommandId::SetMCUState,
+                u: SubcommandRequestData {
+                    mcu_cmd: MCUCmd {
+                        cmd_id: MCUCmdId::SetMCUMode,
+                        subcmd_id: MCUSubCmdId::SetMCUMode,
+                        u: MCUCmdData {
+                            mcu_mode: MCUMode::IR,
+                        },
+                    },
                 },
             },
         )?;
@@ -235,7 +262,7 @@ impl JoyCon {
         }
     }
 
-    fn send_mcu_subcmd_wait(&mut self, mcu_subcmd: MCUSubcommand) -> Result<MCUReport> {
+    fn send_mcu_subcmd(&mut self, mcu_subcmd: MCUSubcommand) -> Result<()> {
         let mut out_report = OutputReport {
             packet_counter: 0,
             report_id: OutputReportId::RequestMCUData,
@@ -243,13 +270,7 @@ impl JoyCon {
             u: SubcommandRequestUnion { mcu_subcmd },
         };
         self.send(&mut out_report)?;
-        // TODO: loop limit
-        loop {
-            let in_report = self.recv()?;
-            if let Some(mcu_report) = in_report.mcu_report() {
-                return Ok(*mcu_report);
-            }
-        }
+        Ok(())
     }
 
     fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {

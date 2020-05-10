@@ -83,6 +83,7 @@ impl InputReport {
     pub fn standard(&self) -> Option<&StandardInputReportContent> {
         if self.report_id == InputReportId::StandardAndSubcmd
             || self.report_id == InputReportId::StandardFull
+            || self.report_id == InputReportId::StandardFullMCU
         {
             Some(unsafe { &self.u.standard })
         } else {
@@ -116,6 +117,7 @@ impl InputReport {
         }
     }
 
+    #[cfg(test)]
     pub(crate) unsafe fn u_mcu_report(&self) -> &MCUReport {
         &self.u.standard.u.imu_mcu.mcu_report
     }
@@ -411,6 +413,7 @@ impl fmt::Debug for Ack {
 pub union SubcommandReplyData {
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
+    mcu_report: MCUReport,
 }
 
 #[repr(packed)]
@@ -517,6 +520,8 @@ fn check_layout() {
             13,
             offset_of(&report, &report.u.standard.u.imu_mcu.imu_frames)
         );
+        assert_eq!(13, offset_of(&report, &report.u.standard.u.subcmd_reply));
+        assert_eq!(15, offset_of(&report, &report.u.standard.u.subcmd_reply.u));
         assert_eq!(
             49,
             offset_of(&report, &report.u.standard.u.imu_mcu.mcu_report)
