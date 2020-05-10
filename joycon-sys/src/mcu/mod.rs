@@ -3,6 +3,8 @@ use crate::common::*;
 use crate::input::*;
 use std::fmt;
 
+pub mod ir_register;
+
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUReport {
@@ -153,14 +155,7 @@ fn compute_crc8(id: u8, bytes: &[u8]) -> u8 {
 #[derive(Copy, Clone)]
 pub struct MCURegisters {
     pub len: u8,
-    pub regs: [MCURegister; 9],
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct MCURegister {
-    pub address: U16LE,
-    pub value: u8,
+    pub regs: [ir_register::Register; 9],
 }
 
 #[repr(packed)]
