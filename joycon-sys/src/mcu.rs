@@ -138,7 +138,7 @@ pub struct MCURegisters {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCURegister {
-    pub address: u16,
+    pub address: U16LE,
     pub value: u8,
 }
 
@@ -186,13 +186,19 @@ pub enum MCUSubCmdId2 {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum MCUIRMode {
-    MaybeNoModeDisable = 2,
+    IRSensorReset = 0,
+    IRSensorSleep = 1,
+    Unknown2 = 2,
     Moment = 3,
     /// Wii-style pointing
     Dpd = 4,
+    Unknown5 = 5,
     Clustering = 6,
     ImageTransfer = 7,
-    //HandAnalysis = 8-10,
+    HandAnalysisSilhouette = 8,
+    HandAnalysisImage = 9,
+    HandAnalysisSilhouetteImage = 10,
+    Unknown11 = 11,
 }
 
 #[repr(packed)]
