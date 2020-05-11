@@ -44,6 +44,38 @@ impl Register {
     pub fn white_pixel_threshold(threshold: u8) -> Register {
         Register::new(WhitePixelThreshold, threshold)
     }
+
+    pub fn leds_intensity(l1: u8, l2: u8, l3: u8, l4: u8) -> [Register; 2] {
+        assert_eq!(0, (l1 | l2 | l3 | l4) & 0xf0);
+        [
+            Register::new(IntensityLeds12, l1 << 4 | l2),
+            Register::new(IntensityLeds34, l3 << 4 | l4),
+        ]
+    }
+
+    pub fn flip(side: Flip) -> Register {
+        Register::new(Flip, side as u8)
+    }
+
+    pub fn denoise(enabled: bool) -> Register {
+        Register::new(Denoise, enabled as u8)
+    }
+
+    pub fn edge_smoothing_threshold(threshold: u8) -> Register {
+        Register::new(EdgeSmoothingThreshold, threshold)
+    }
+
+    pub fn color_interpolation_threshold(threshold: u8) -> Register {
+        Register::new(ColorInterpolationThreshold, threshold)
+    }
+
+    pub fn buffer_update_time(time: u8) -> Register {
+        Register::new(BufferUpdateTimeLSB, time)
+    }
+
+    pub fn finish() -> Register {
+        Register::new(Finish, 1)
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
@@ -56,6 +88,14 @@ enum Address {
     ExposureMode = 0x3201,
     ExternalLightFilter = 0x0e00,
     WhitePixelThreshold = 0x4301,
+    IntensityLeds12 = 0x1100,
+    IntensityLeds34 = 0x1200,
+    Flip = 0x2d00,
+    Denoise = 0x6701,
+    EdgeSmoothingThreshold = 0x6801,
+    ColorInterpolationThreshold = 0x6901,
+    BufferUpdateTimeLSB = 0x0400,
+    Finish = 0x0700,
 }
 use Address::*;
 
@@ -90,4 +130,13 @@ pub enum ExposureMode {
 pub enum ExternalLightFilter {
     Off = 0b00,
     X1 = 0b11,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum Flip {
+    Normal = 0,
+    Vertically = 1,
+    Horizontally = 2,
+    Both = 3,
 }
