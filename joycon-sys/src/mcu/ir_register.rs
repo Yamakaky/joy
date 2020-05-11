@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Register {
@@ -14,6 +16,22 @@ impl Register {
             value,
         }
     }
+
+    pub fn decode_raw<'a>(
+        page: u8,
+        base_offset: u8,
+        values: &'a [u8],
+    ) -> impl Iterator<Item = Register> + 'a {
+        values
+            .iter()
+            .enumerate()
+            .filter_map(move |(offset, value)| {
+                Address::try_from((page, base_offset + offset as u8))
+                    .map(|a| Register::new(a, *value))
+                    .ok()
+            })
+    }
+
     pub fn resolution(resolution: Resolution) -> Register {
         Register::new(Resolution, resolution as u8)
     }
@@ -127,6 +145,38 @@ impl Address {
             EdgeSmoothingThreshold => (1, 0x68),
             ColorInterpolationThreshold => (1, 0x69),
         }
+    }
+}
+const ALL_ADDRESSES: &[Address] = &[
+    Resolution,
+    DigitalGainLSB,
+    DigitalGainMSB,
+    ExposureLSB,
+    ExposureMSB,
+    ExposureMode,
+    ExternalLightFilter,
+    WhitePixelThreshold,
+    IntensityLeds12,
+    IntensityLeds34,
+    Flip,
+    Denoise,
+    EdgeSmoothingThreshold,
+    ColorInterpolationThreshold,
+    BufferUpdateTimeLSB,
+    IRLeds,
+    Finish,
+];
+
+impl TryFrom<(u8, u8)> for Address {
+    type Error = ();
+
+    fn try_from(raw: (u8, u8)) -> Result<Address, ()> {
+        for address in ALL_ADDRESSES {
+            if address.address() == raw {
+                return Ok(*address);
+            }
+        }
+        Err(())
     }
 }
 
