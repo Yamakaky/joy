@@ -33,6 +33,38 @@ impl OutputReport {
         OutputReport::default()
     }
 
+    pub fn set_registers(
+        regs: &[ir_register::Register],
+    ) -> (OutputReport, &[ir_register::Register]) {
+        let size = regs.len().min(9);
+        let mut regs_fixed = [ir_register::Register::default(); 9];
+        regs_fixed[..size].copy_from_slice(&regs[..size]);
+        (
+            OutputReport {
+                report_id: OutputReportId::RumbleAndSubcmd,
+                u: SubcommandRequestUnion {
+                    subcmd: SubcommandRequest {
+                        subcommand_id: SubcommandId::SetMCUConf,
+                        u: SubcommandRequestData {
+                            mcu_cmd: MCUCmd {
+                                cmd_id: MCUCmdId::ConfigureIR,
+                                subcmd_id: MCUSubCmdId::WriteIRRegisters,
+                                u: MCUCmdData {
+                                    regs: MCURegisters {
+                                        len: regs.len() as u8,
+                                        regs: regs_fixed,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                ..OutputReport::default()
+            },
+            &regs[size..],
+        )
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))

@@ -2,7 +2,7 @@ use crate::common::*;
 use num::ToPrimitive;
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct Register {
     address: U16LE,
     value: u8,
@@ -35,6 +35,12 @@ impl Register {
             Register::new(DigitalGainLSB, ((gain & 0x0f) << 4) as u8),
             Register::new(DigitalGainMSB, ((gain & 0xf0) >> 4) as u8),
         ]
+    }
+
+    pub fn ir_leds(far: bool, near: bool) -> Register {
+        //todo: strobe + flashlight
+        //todo: bitmap
+        Register::new(IRLeds, ((!far) as u8) << 5 | ((!near) as u8) << 6)
     }
 
     pub fn external_light_filter(filter: ExternalLightFilter) -> Register {
@@ -95,6 +101,7 @@ enum Address {
     EdgeSmoothingThreshold = 0x6801,
     ColorInterpolationThreshold = 0x6901,
     BufferUpdateTimeLSB = 0x0400,
+    IRLeds = 0x1000,
     Finish = 0x0700,
 }
 use Address::*;
@@ -113,7 +120,7 @@ pub enum Resolution {
     /// Sensor Binning [2 X 2]
     R160x120 = 0b0101_0000,
     /// Sensor Binning [4 x 2] and Skipping [1 x 2]
-    R80x50 = 0b0110_0100,
+    R80x60 = 0b0110_0100,
     /// Sensor Binning [4 x 2] and Skipping [2 x 4]
     R40x30 = 0b0110_1001,
 }

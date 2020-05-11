@@ -307,6 +307,16 @@ impl JoyCon {
         Ok(())
     }
 
+    pub fn set_ir_registers(&mut self, mut regs: &[ir_register::Register]) -> Result<()> {
+        while !regs.is_empty() {
+            let (mut report, remaining_regs) = OutputReport::set_registers(regs);
+            self.send(&mut report)?;
+            //todo: check return
+            regs = remaining_regs;
+        }
+        Ok(())
+    }
+
     pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
         self.send_subcmd_wait(
             OutputReportId::RumbleAndSubcmd,
