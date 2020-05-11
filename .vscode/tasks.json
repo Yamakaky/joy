@@ -1,0 +1,44 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cargo",
+			"command": "test",
+			"args": [
+				"--workspace"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"label": "rust: cargo test --workspace"
+		},
+		{
+			"type": "cargo",
+			"command": "check",
+			"args": [
+				"--workspace"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "rust: cargo check --workspace"
+		},
+		{
+			"type": "cargo",
+			"command": "build",
+			"args": [
+				"--workspace"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "rust: cargo build --workspace"
+		}
+	]
+}
