@@ -32,6 +32,14 @@ impl MCUReport {
             None
         }
     }
+
+    pub fn as_ir_data(&self) -> Option<&IRData> {
+        if self.id == MCUReportId::IRData {
+            Some(unsafe { &self.u.ir_data })
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Debug for MCUReport {
@@ -68,6 +76,20 @@ pub union MCUReportUnion {
     _raw: [u8; 312],
     status: MCUStatus,
     ir_status: IRStatus,
+    ir_data: IRData,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct IRData {
+    _unknown: [u8; 2],
+    pub frag_number: u8,
+    pub average_intensity: u8,
+    // Only when EXFilter enabled
+    _unknown3: u8,
+    pub white_pixel_count: U16LE,
+    pub ambient_noise_count: U16LE,
+    pub img_fragment: [u8; 300],
 }
 
 #[repr(packed)]
@@ -304,6 +326,16 @@ fn check_input_layout() {
         let mcu_report = report.u_mcu_report();
         assert_eq!(49, offset_of(&report, mcu_report));
         assert_eq!(56, offset_of(&report, &mcu_report.u.status.state));
+        assert_eq!(52, offset_of(&report, &mcu_report.u.ir_data.frag_number));
+        assert_eq!(
+            53,
+            offset_of(&report, &mcu_report.u.ir_data.average_intensity)
+        );
+        assert_eq!(
+            55,
+            offset_of(&report, &mcu_report.u.ir_data.white_pixel_count)
+        );
+        assert_eq!(59, offset_of(&report, &mcu_report.u.ir_data.img_fragment));
     }
 }
 
