@@ -1,17 +1,16 @@
-use crate::common::*;
-use num::ToPrimitive;
-
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Register {
-    address: U16LE,
+    page: u8,
+    offset: u8,
     value: u8,
 }
 
 impl Register {
     fn new(address: Address, value: u8) -> Register {
         Register {
-            address: address.into(),
+            page: address.address().0,
+            offset: address.address().1,
             value,
         }
     }
@@ -44,7 +43,7 @@ impl Register {
     }
 
     pub fn external_light_filter(filter: ExternalLightFilter) -> Register {
-        Register::new(DigitalGainLSB, filter as u8)
+        Register::new(ExternalLightFilter, filter as u8)
     }
 
     pub fn white_pixel_threshold(threshold: u8) -> Register {
@@ -84,31 +83,50 @@ impl Register {
     }
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum Address {
-    Resolution = 0x2e00,
-    DigitalGainLSB = 0x2e01,
-    DigitalGainMSB = 0x2f01,
-    ExposureLSB = 0x3001,
-    ExposureMSB = 0x3101,
-    ExposureMode = 0x3201,
-    ExternalLightFilter = 0x0e00,
-    WhitePixelThreshold = 0x4301,
-    IntensityLeds12 = 0x1100,
-    IntensityLeds34 = 0x1200,
-    Flip = 0x2d00,
-    Denoise = 0x6701,
-    EdgeSmoothingThreshold = 0x6801,
-    ColorInterpolationThreshold = 0x6901,
-    BufferUpdateTimeLSB = 0x0400,
-    IRLeds = 0x1000,
-    Finish = 0x0700,
+    Resolution,
+    DigitalGainLSB,
+    DigitalGainMSB,
+    ExposureLSB,
+    ExposureMSB,
+    ExposureMode,
+    ExternalLightFilter,
+    WhitePixelThreshold,
+    IntensityLeds12,
+    IntensityLeds34,
+    Flip,
+    Denoise,
+    EdgeSmoothingThreshold,
+    ColorInterpolationThreshold,
+    BufferUpdateTimeLSB,
+    IRLeds,
+    Finish,
 }
 use Address::*;
 
-impl From<Address> for U16LE {
-    fn from(address: Address) -> U16LE {
-        U16LE::from(address.to_u16().unwrap())
+impl Address {
+    /// page + offset
+    fn address(self) -> (u8, u8) {
+        match self {
+            BufferUpdateTimeLSB => (0, 0x04),
+            Finish => (0, 0x07),
+            ExternalLightFilter => (0, 0x0e),
+            IRLeds => (0, 0x10),
+            IntensityLeds12 => (0, 0x11),
+            IntensityLeds34 => (0, 0x12),
+            Flip => (0, 0x2d),
+            Resolution => (0, 0x2e),
+            DigitalGainLSB => (1, 0x2e),
+            DigitalGainMSB => (1, 0x2f),
+            ExposureLSB => (1, 0x30),
+            ExposureMSB => (1, 0x31),
+            ExposureMode => (1, 0x32),
+            WhitePixelThreshold => (1, 0x43),
+            Denoise => (1, 0x67),
+            EdgeSmoothingThreshold => (1, 0x68),
+            ColorInterpolationThreshold => (1, 0x69),
+        }
     }
 }
 
