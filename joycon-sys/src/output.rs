@@ -65,6 +65,33 @@ impl OutputReport {
         )
     }
 
+    pub fn ir_ack(packet_id: u8) -> OutputReport {
+        let mut report = OutputReport {
+            report_id: OutputReportId::RequestMCUData,
+            packet_counter: 0,
+            rumble_data: RumbleData::default(),
+            u: SubcommandRequestUnion {
+                mcu_subcmd: MCUSubcommand {
+                    subcmd_id: MCUSubCmdId2::GetIRData,
+                    u: MCUSubcommandUnion {
+                        ir_cmd: IRDataRequest {
+                            id: IRDataRequestId::GetSensorData,
+                            u: IRDataRequestUnion {
+                                ack_request_packet: IRAckRequestPacket {
+                                    packet_missing: false,
+                                    missed_packet_id: 0,
+                                    ack_packet_id: packet_id,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
+        unsafe { report.u.mcu_subcmd.compute_crc() };
+        report
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))

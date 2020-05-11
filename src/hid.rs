@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 
 use crate::calibration::Calibration;
+use crate::image::Image;
 use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
+use joycon_sys::mcu::ir_register::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
 use joycon_sys::spi::*;
@@ -23,6 +25,7 @@ pub struct JoyCon {
     pub max_raw_accel: i16,
     left_stick_calib: StickCalibration,
     right_stick_calib: StickCalibration,
+    image: Image,
 }
 
 impl JoyCon {
@@ -47,6 +50,7 @@ impl JoyCon {
             max_raw_accel: 0,
             left_stick_calib: StickCalibration::default(),
             right_stick_calib: StickCalibration::default(),
+            image: Image::new(Resolution::R80x60),
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -58,7 +62,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn recv(&self) -> Result<InputReport> {
+    pub fn recv(&mut self) -> Result<InputReport> {
         // Larger buffer to detect unhandled received data
         let mut reports = [InputReport::new(); 2];
         let buffer = unsafe {
@@ -68,8 +72,15 @@ impl JoyCon {
             )
         };
         let nb_read = self.device.read(buffer)?;
-        assert_eq!(nb_read, std::mem::size_of_val(&reports[0]));
-        Ok(reports[0])
+        let report = reports[0];
+        assert_eq!(nb_read, std::mem::size_of_val(&report));
+        if let Some(mcu_report) = report.mcu_report() {
+            if let Some(ir_data) = mcu_report.as_ir_data() {
+                let mut ack_packet = self.image.handle(&ir_data);
+                self.send(&mut ack_packet)?;
+            }
+        }
+        Ok(report)
     }
 
     pub fn load_calibration(&mut self) -> Result<()> {
@@ -285,7 +296,10 @@ impl JoyCon {
                 u: SubcommandRequestData { mcu_cmd },
             },
         )?;
-        ensure!(reply.mcu_report().unwrap().is_busy_init(), "mcu not busy");
+        ensure!(
+            unsafe { reply.ir_status().0 } == MCUReportId::BusyInitializing,
+            "mcu not busy"
+        );
 
         let mut cmd = MCUSubcommand {
             // todo: variable subcmd

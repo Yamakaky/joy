@@ -367,14 +367,9 @@ impl SubcommandReply {
         }
     }
 
-    pub fn mcu_report(&self) -> Option<&MCUReport> {
-        if self.subcommand_id == SubcommandId::SetMCUConf
-            || self.subcommand_id == SubcommandId::SetMCUState
-        {
-            Some(unsafe { &self.u.mcu_report })
-        } else {
-            None
-        }
+    pub unsafe fn ir_status(&self) -> (MCUReportId, IRStatus) {
+        dbg!(self.subcommand_id);
+        self.u.ir_status
     }
 }
 
@@ -423,7 +418,7 @@ impl fmt::Debug for Ack {
 pub union SubcommandReplyData {
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
-    mcu_report: MCUReport,
+    ir_status: (MCUReportId, IRStatus),
 }
 
 #[repr(packed)]
@@ -537,5 +532,6 @@ fn check_layout() {
             offset_of(&report, &report.u.standard.u.imu_mcu.mcu_report)
         );
         assert_eq!(362, std::mem::size_of_val(&report));
+        assert!(37 >= std::mem::size_of::<SubcommandReply>());
     }
 }

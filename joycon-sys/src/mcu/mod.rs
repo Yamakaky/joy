@@ -295,6 +295,15 @@ pub enum IRDataRequestId {
 #[derive(Copy, Clone)]
 pub union IRDataRequestUnion {
     pub nothing: (),
+    pub ack_request_packet: IRAckRequestPacket,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct IRAckRequestPacket {
+    pub packet_missing: bool,
+    pub missed_packet_id: u8,
+    pub ack_packet_id: u8,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table

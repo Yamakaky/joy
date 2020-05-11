@@ -125,6 +125,17 @@ pub enum Resolution {
     R40x30 = 0b0110_1001,
 }
 
+impl Resolution {
+    pub fn max_fragment_id(self) -> u8 {
+        match self {
+            Resolution::R320x240 => 0xff,
+            Resolution::R160x120 => 0x0f,
+            Resolution::R80x60 => 0x0f,
+            Resolution::R40x30 => 0x03,
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum ExposureMode {
