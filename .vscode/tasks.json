@@ -18,6 +18,14 @@
 		},
 		{
 			"type": "cargo",
+			"command": "run",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "rust: cargo run"
+		},
+		{
+			"type": "cargo",
 			"command": "check",
 			"args": [
 				"--workspace"
@@ -37,7 +45,10 @@
 			"problemMatcher": [
 				"$rustc"
 			],
-			"group": "build",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"label": "rust: cargo build --workspace"
 		}
 	]
