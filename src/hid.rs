@@ -333,8 +333,12 @@ impl JoyCon {
         while !regs_mut.is_empty() {
             let (mut report, remaining_regs) = OutputReport::set_registers(regs_mut);
             self.send(&mut report)?;
-            std::thread::sleep(std::time::Duration::from_millis(15));
             regs_mut = remaining_regs;
+            if !remaining_regs.is_empty() {
+                // For packet drop purpose
+                // TODO: not clean at all
+                std::thread::sleep(std::time::Duration::from_millis(15));
+            }
         }
 
         let mut validated = 0;
@@ -379,7 +383,9 @@ impl JoyCon {
                 &reg_slice.values[..reg_slice.nb_registers as usize],
             ) {
                 for r2 in regs {
-                    if r1.same_address(*r2) && *r2 != Register::finish() {
+                    if r1.same_address(Register::finish()) && *r2 == Register::finish() {
+                        validated += 1;
+                    } else if r1.same_address(*r2) {
                         ensure!(r1 == *r2, "error setting register {:?} {:?}", r1, r2);
                         validated += 1;
                     }
