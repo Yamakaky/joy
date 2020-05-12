@@ -44,7 +44,7 @@ impl OutputReport {
             subcmd_id: MCUSubCmdId::WriteIRRegisters,
             u: MCUCmdData {
                 regs: MCURegisters {
-                    len: regs.len() as u8,
+                    len: size as u8,
                     regs: regs_fixed,
                 },
             },
