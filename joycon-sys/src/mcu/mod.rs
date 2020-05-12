@@ -34,8 +34,19 @@ impl MCUReport {
     }
 
     pub fn as_ir_data(&self) -> Option<&IRData> {
+        if self.id != MCUReportId::EmptyAwaitingCmd {
+            dbg!(self.id);
+        }
         if self.id == MCUReportId::IRData {
             Some(unsafe { &self.u.ir_data })
+        } else {
+            None
+        }
+    }
+
+    pub fn as_ir_registers(&self) -> Option<&IRRegistersSlice> {
+        if self.id == MCUReportId::IRRegisters {
+            Some(unsafe { &self.u.ir_registers })
         } else {
             None
         }
@@ -77,6 +88,17 @@ pub union MCUReportUnion {
     status: MCUStatus,
     ir_status: IRStatus,
     ir_data: IRData,
+    ir_registers: IRRegistersSlice,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct IRRegistersSlice {
+    _unknown_0x00: u8,
+    pub page: u8,
+    pub offset: u8,
+    pub nb_registers: u8,
+    pub values: [u8; 0x7f],
 }
 
 #[repr(packed)]
@@ -157,10 +179,13 @@ pub struct CRC8B {
 }
 
 impl CRC8B {
-    pub fn compute_crc8(&mut self) {
+    pub fn compute_crc8(&mut self, id: IRDataRequestId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
         self.crc = compute_crc8(0, &self.bytes);
-        self._padding_0xff = 0xff;
+        self._padding_0xff = match id {
+            IRDataRequestId::GetSensorData | IRDataRequestId::GetState => 0xff,
+            IRDataRequestId::ReadRegister => 0x00,
+        };
     }
 }
 
@@ -257,8 +282,8 @@ pub struct MCUSubcommand {
 }
 
 impl MCUSubcommand {
-    pub fn compute_crc(&mut self) {
-        unsafe { self.u.crc.compute_crc8() }
+    pub fn compute_crc(&mut self, id: IRDataRequestId) {
+        unsafe { self.u.crc.compute_crc8(id) }
     }
 }
 
@@ -296,6 +321,7 @@ pub enum IRDataRequestId {
 pub union IRDataRequestUnion {
     pub nothing: (),
     pub ack_request_packet: IRAckRequestPacket,
+    pub read_registers: IRReadRegisters,
 }
 
 #[repr(packed)]
@@ -304,6 +330,15 @@ pub struct IRAckRequestPacket {
     pub packet_missing: bool,
     pub missed_packet_id: u8,
     pub ack_packet_id: u8,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct IRReadRegisters {
+    pub unknown_0x01: u8,
+    pub page: u8,
+    pub offset: u8,
+    pub nb_registers: u8,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table
@@ -345,6 +380,8 @@ fn check_input_layout() {
             offset_of(&report, &mcu_report.u.ir_data.white_pixel_count)
         );
         assert_eq!(59, offset_of(&report, &mcu_report.u.ir_data.img_fragment));
+
+        assert_eq!(54, offset_of(&report, &mcu_report.u.ir_registers.values));
     }
 }
 
@@ -360,5 +397,11 @@ fn check_output_layout() {
         assert_eq!(11, offset_of(&report, &cmd.u.crc));
         assert_eq!(47, offset_of(&report, &cmd.u.crc.crc));
         assert_eq!(48, offset_of(&report, &cmd.u.crc._padding_0xff));
+
+        assert_eq!(
+            15,
+            offset_of(&report, &cmd.u.ir_cmd.u.read_registers.nb_registers)
+        );
+        assert_eq!(48, offset_of(&report, &report.as_mcu_cmd().u.crc.crc));
     }
 }

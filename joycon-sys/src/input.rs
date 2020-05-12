@@ -368,7 +368,8 @@ impl SubcommandReply {
     }
 
     pub unsafe fn ir_status(&self) -> (MCUReportId, IRStatus) {
-        dbg!(self.subcommand_id);
+        // seems to be true
+        assert_eq!(self.subcommand_id, SubcommandId::SetMCUConf);
         self.u.ir_status
     }
 }

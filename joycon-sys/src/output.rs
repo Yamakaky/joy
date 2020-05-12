@@ -39,24 +39,24 @@ impl OutputReport {
         let size = regs.len().min(9);
         let mut regs_fixed = [ir_register::Register::default(); 9];
         regs_fixed[..size].copy_from_slice(&regs[..size]);
+        let mut mcu_cmd = MCUCmd {
+            cmd_id: MCUCmdId::ConfigureIR,
+            subcmd_id: MCUSubCmdId::WriteIRRegisters,
+            u: MCUCmdData {
+                regs: MCURegisters {
+                    len: regs.len() as u8,
+                    regs: regs_fixed,
+                },
+            },
+        };
+        mcu_cmd.compute_crc();
         (
             OutputReport {
                 report_id: OutputReportId::RumbleAndSubcmd,
                 u: SubcommandRequestUnion {
                     subcmd: SubcommandRequest {
                         subcommand_id: SubcommandId::SetMCUConf,
-                        u: SubcommandRequestData {
-                            mcu_cmd: MCUCmd {
-                                cmd_id: MCUCmdId::ConfigureIR,
-                                subcmd_id: MCUSubCmdId::WriteIRRegisters,
-                                u: MCUCmdData {
-                                    regs: MCURegisters {
-                                        len: regs.len() as u8,
-                                        regs: regs_fixed,
-                                    },
-                                },
-                            },
-                        },
+                        u: SubcommandRequestData { mcu_cmd },
                     },
                 },
                 ..OutputReport::default()
@@ -66,6 +66,7 @@ impl OutputReport {
     }
 
     pub fn ir_ack(packet_id: u8) -> OutputReport {
+        let id = IRDataRequestId::GetSensorData;
         let mut report = OutputReport {
             report_id: OutputReportId::RequestMCUData,
             packet_counter: 0,
@@ -75,7 +76,7 @@ impl OutputReport {
                     subcmd_id: MCUSubCmdId2::GetIRData,
                     u: MCUSubcommandUnion {
                         ir_cmd: IRDataRequest {
-                            id: IRDataRequestId::GetSensorData,
+                            id,
                             u: IRDataRequestUnion {
                                 ack_request_packet: IRAckRequestPacket {
                                     packet_missing: false,
@@ -88,7 +89,7 @@ impl OutputReport {
                 },
             },
         };
-        unsafe { report.u.mcu_subcmd.compute_crc() };
+        unsafe { report.u.mcu_subcmd.compute_crc(id) };
         report
     }
 
@@ -101,6 +102,11 @@ impl OutputReport {
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_subcmd(&self) -> &MCUSubcommand {
         &self.u.mcu_subcmd
+    }
+
+    #[cfg(test)]
+    pub(crate) unsafe fn as_mcu_cmd(&self) -> &MCUCmd {
+        &self.u.subcmd.u.mcu_cmd
     }
 }
 

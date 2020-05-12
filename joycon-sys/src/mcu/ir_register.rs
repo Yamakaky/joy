@@ -1,7 +1,8 @@
 use std::convert::TryFrom;
+use std::fmt;
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct Register {
     page: u8,
     offset: u8,
@@ -32,14 +33,23 @@ impl Register {
             })
     }
 
+    pub fn page(self) -> u8 {
+        self.page
+    }
+
+    pub fn same_address(self, other: Register) -> bool {
+        self.page == other.page && self.offset == other.offset
+    }
+
     pub fn resolution(resolution: Resolution) -> Register {
         Register::new(Resolution, resolution as u8)
     }
 
-    pub fn exposure(exposure: u16) -> [Register; 2] {
+    pub fn exposure_us(exposure: u32) -> [Register; 2] {
+        let raw_exposure = exposure * 31200 / 1000;
         [
-            Register::new(ExposureLSB, (exposure & 0xff) as u8),
-            Register::new(ExposureMSB, (exposure >> 8) as u8),
+            Register::new(ExposureLSB, (raw_exposure & 0xff) as u8),
+            Register::new(ExposureMSB, (raw_exposure >> 8) as u8),
         ]
     }
 
@@ -48,6 +58,7 @@ impl Register {
     }
 
     pub fn digital_gain(gain: u16) -> [Register; 2] {
+        // todo: check
         [
             Register::new(DigitalGainLSB, ((gain & 0x0f) << 4) as u8),
             Register::new(DigitalGainMSB, ((gain & 0xf0) >> 4) as u8),
@@ -98,6 +109,21 @@ impl Register {
 
     pub fn finish() -> Register {
         Register::new(Finish, 1)
+    }
+}
+
+impl fmt::Debug for Register {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = f.debug_struct("Register");
+        match Address::try_from((self.page, self.offset)) {
+            Ok(a) => out.field("name", &a),
+            Err(_) => out.field(
+                "address",
+                &format_args!("0x{:x?}:0x{:x?}", self.page, self.offset),
+            ),
+        };
+        out.field("value", &format_args!("0x{:x?}", self.value));
+        out.finish()
     }
 }
 

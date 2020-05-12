@@ -191,7 +191,7 @@ impl JoyCon {
         Ok(())
     }
 
-    fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<()> {
+    fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
         self.wait_mcu_cond(
             MCUSubcommand {
                 // todo: variable subcmd
@@ -210,7 +210,7 @@ impl JoyCon {
         &mut self,
         mcu_subcmd: MCUSubcommand,
         mut f: impl FnMut(&MCUReport) -> bool,
-    ) -> Result<()> {
+    ) -> Result<MCUReport> {
         // The MCU takes some time to warm up so we retry until we get an answer
         for _ in 0..8 {
             self.send_mcu_subcmd(mcu_subcmd)?;
@@ -218,7 +218,7 @@ impl JoyCon {
                 let in_report = self.recv()?;
                 if let Some(mcu_report) = in_report.mcu_report() {
                     if f(mcu_report) {
-                        return Ok(());
+                        return Ok(*mcu_report);
                     }
                 }
             }
@@ -301,17 +301,18 @@ impl JoyCon {
             "mcu not busy"
         );
 
+        let id = IRDataRequestId::GetState;
         let mut cmd = MCUSubcommand {
             // todo: variable subcmd
             subcmd_id: MCUSubCmdId2::GetIRData,
             u: MCUSubcommandUnion {
                 ir_cmd: IRDataRequest {
-                    id: IRDataRequestId::GetState,
+                    id,
                     u: IRDataRequestUnion { nothing: () },
                 },
             },
         };
-        cmd.compute_crc();
+        cmd.compute_crc(id);
         self.wait_mcu_cond(cmd, |r| {
             r.as_ir_status()
                 .map(|status| status.ir_mode == MCUIRMode::ImageTransfer)
@@ -321,13 +322,66 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_ir_registers(&mut self, mut regs: &[ir_register::Register]) -> Result<()> {
-        while !regs.is_empty() {
-            let (mut report, remaining_regs) = OutputReport::set_registers(regs);
+    pub fn set_ir_registers(&mut self, regs: &[ir_register::Register]) -> Result<()> {
+        let mut regs_mut = regs;
+        while !regs_mut.is_empty() {
+            let (mut report, remaining_regs) = OutputReport::set_registers(regs_mut);
             self.send(&mut report)?;
-            //todo: check return
-            regs = remaining_regs;
+            std::thread::sleep(std::time::Duration::from_millis(15));
+            regs_mut = remaining_regs;
         }
+
+        let mut validated = 0;
+        for page in 0..=1 {
+            let offset = 0;
+            let nb_registers = 0x6f;
+            let id = IRDataRequestId::ReadRegister;
+            let mut subcmd = MCUSubcommand {
+                subcmd_id: MCUSubCmdId2::GetIRData,
+                u: MCUSubcommandUnion {
+                    ir_cmd: IRDataRequest {
+                        id,
+                        u: IRDataRequestUnion {
+                            read_registers: IRReadRegisters {
+                                unknown_0x01: 0x01,
+                                page,
+                                offset,
+                                nb_registers,
+                            },
+                        },
+                    },
+                },
+            };
+            subcmd.compute_crc(id);
+            let mcu_report = self
+                .wait_mcu_cond(subcmd, |mcu_report| {
+                    if let Some(reg_slice) = mcu_report.as_ir_registers() {
+                        reg_slice.page == page
+                            && reg_slice.offset == offset
+                            && reg_slice.nb_registers == nb_registers
+                    } else {
+                        false
+                    }
+                })
+                .context("get IR registers slice")?;
+            let reg_slice = mcu_report
+                .as_ir_registers()
+                .expect("already validated above");
+            for r1 in Register::decode_raw(
+                page,
+                offset,
+                &reg_slice.values[..reg_slice.nb_registers as usize],
+            ) {
+                for r2 in regs {
+                    if r1.same_address(*r2) && *r2 != Register::finish() {
+                        ensure!(r1 == *r2, "error setting register {:?} {:?}", r1, r2);
+                        validated += 1;
+                    }
+                }
+            }
+        }
+        assert_eq!(validated, regs.len());
+        self.send(&mut OutputReport::ir_ack(0))?;
         Ok(())
     }
 
