@@ -146,7 +146,6 @@ pub struct IRStatus {
 #[derive(Copy, Clone)]
 pub struct MCUCmd {
     pub cmd_id: MCUCmdId,
-    // Offset 12
     pub subcmd_id: MCUSubCmdId,
     pub u: MCUCmdData,
 }
@@ -154,6 +153,20 @@ pub struct MCUCmd {
 impl MCUCmd {
     pub fn compute_crc(&mut self) {
         unsafe { self.u.crc.compute_crc8(self.subcmd_id) }
+    }
+}
+
+impl fmt::Debug for MCUCmd {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = f.debug_struct("MCUCmd");
+        out.field("crc", unsafe { &self.u.crc });
+        match (self.cmd_id, self.subcmd_id) {
+            (MCUCmdId::ConfigureIR, MCUSubCmdId::WriteIRRegisters) => {
+                out.field("cmd", unsafe { &self.u.regs })
+            }
+            ids => out.field("subcommand", &ids),
+        };
+        out.finish()
     }
 }
 
@@ -169,14 +182,20 @@ pub union MCUCmdData {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct CRC8A {
-    bytes: [u8; 35],
+    bytes: [u8; 34],
     crc: u8,
 }
 
+impl fmt::Debug for CRC8A {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("CRC8A").field(&self.crc).finish()
+    }
+}
+
 impl CRC8A {
-    pub fn compute_crc8(&mut self, subcmd_id: MCUSubCmdId) {
+    pub fn compute_crc8(&mut self, cmd_id: MCUCmdId, subcmd_id: MCUSubCmdId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
-        self.crc = compute_crc8(subcmd_id as u8, &self.bytes);
+        self.crc = compute_crc8(cmd_id as u8, subcmd_id as u8, &self.bytes);
     }
 }
 
@@ -191,7 +210,7 @@ pub struct CRC8B {
 impl CRC8B {
     pub fn compute_crc8(&mut self, id: IRDataRequestId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
-        self.crc = compute_crc8(0, &self.bytes);
+        self.crc = compute_crc8(0, 0, &self.bytes);
         self._padding_0xff = match id {
             IRDataRequestId::GetSensorData | IRDataRequestId::GetState => 0xff,
             IRDataRequestId::ReadRegister => 0x00,
@@ -199,17 +218,18 @@ impl CRC8B {
     }
 }
 
-fn compute_crc8(id: u8, bytes: &[u8]) -> u8 {
+fn compute_crc8(id1: u8, id2: u8, bytes: &[u8]) -> u8 {
+    use std::iter::once;
     // To simplify the data layout, subcmd_id is outside the byte buffer.
-    let mut crc = MCU_CRC8_TABLE[id as usize];
-    for byte in bytes {
+    let mut crc = 9;
+    for byte in once(id1).chain(once(id2)).chain(bytes.iter().cloned()) {
         crc = MCU_CRC8_TABLE[(crc ^ byte) as usize];
     }
     crc
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct MCURegisters {
     pub len: u8,
     pub regs: [ir_register::Register; 9],
@@ -412,6 +432,8 @@ fn check_output_layout() {
             15,
             offset_of(&report, &cmd.u.ir_cmd.u.read_registers.nb_registers)
         );
+        assert_eq!(12, offset_of(&report, &report.as_mcu_cmd().cmd_id));
+        assert_eq!(14, offset_of(&report, &report.as_mcu_cmd().u.crc.bytes));
         assert_eq!(48, offset_of(&report, &report.as_mcu_cmd().u.crc.crc));
     }
 }

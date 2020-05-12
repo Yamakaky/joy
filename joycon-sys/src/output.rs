@@ -171,6 +171,7 @@ impl fmt::Debug for SubcommandRequest {
             SubcommandId::SetInputReportMode => {
                 out.field("subcommand", unsafe { &self.u.input_report_mode })
             }
+            SubcommandId::SetMCUConf => out.field("subcommand", unsafe { &self.u.mcu_cmd }),
             subcmd => out.field("subcommand", &subcmd),
         };
         out.finish()
