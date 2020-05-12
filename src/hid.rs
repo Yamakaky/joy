@@ -73,6 +73,7 @@ impl JoyCon {
         };
         let nb_read = self.device.read(buffer)?;
         let report = reports[0];
+        report.validate();
         assert_eq!(nb_read, std::mem::size_of_val(&report));
         if let Some(mcu_report) = report.mcu_report() {
             if let Some(ir_data) = mcu_report.as_ir_data() {

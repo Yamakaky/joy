@@ -33,7 +33,7 @@ impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
             write!(f, "{:?}", id)
         } else {
             f.debug_tuple("RawId")
-                .field(&format!("{:x}", self.0))
+                .field(&format!("0x{:x}", self.0))
                 .finish()
         }
     }
@@ -69,6 +69,20 @@ impl InputReport {
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {
         unsafe {
             std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, std::mem::size_of_val(self))
+        }
+    }
+
+    pub fn validate(&self) {
+        match self.report_id.try_into() {
+            Some(_) => {
+                if let Some(rep) = self.subcmd_reply() {
+                    rep.validate()
+                }
+                if let Some(rep) = self.mcu_report() {
+                    rep.validate()
+                }
+            }
+            None => panic!("unknown report id {:x?}", self.report_id.0),
         }
     }
 
@@ -347,6 +361,14 @@ pub struct SubcommandReply {
 }
 
 impl SubcommandReply {
+    pub fn validate(&self) {
+        assert!(
+            self.subcommand_id.try_into().is_some(),
+            "invalid subcmd id{:?}",
+            self.subcommand_id
+        )
+    }
+
     pub fn id(&self) -> Option<SubcommandId> {
         self.subcommand_id.try_into()
     }
@@ -417,6 +439,7 @@ impl fmt::Debug for Ack {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union SubcommandReplyData {
+    // add to validate() when adding variant
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
     ir_status: (MCUReportId, IRStatus),

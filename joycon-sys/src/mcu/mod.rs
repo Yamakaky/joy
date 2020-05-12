@@ -13,6 +13,13 @@ pub struct MCUReport {
 }
 
 impl MCUReport {
+    pub fn validate(&self) {
+        assert!(
+            self.id.try_into().is_some(),
+            "invalid MCU report id {:?}",
+            self.id
+        );
+    }
     pub fn as_status(&self) -> Option<&MCUStatus> {
         if self.id == MCUReportId::StateReport {
             Some(unsafe { &self.u.status })
@@ -34,9 +41,6 @@ impl MCUReport {
     }
 
     pub fn as_ir_data(&self) -> Option<&IRData> {
-        if self.id != MCUReportId::EmptyAwaitingCmd {
-            dbg!(self.id);
-        }
         if self.id == MCUReportId::IRData {
             Some(unsafe { &self.u.ir_data })
         } else {
@@ -84,6 +88,7 @@ pub enum MCUReportId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union MCUReportUnion {
+    // add to validate when adding variant
     _raw: [u8; 312],
     status: MCUStatus,
     ir_status: IRStatus,

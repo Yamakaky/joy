@@ -67,30 +67,28 @@ impl OutputReport {
 
     pub fn ir_ack(packet_id: u8) -> OutputReport {
         let id = IRDataRequestId::GetSensorData;
-        let mut report = OutputReport {
-            report_id: OutputReportId::RequestMCUData,
-            packet_counter: 0,
-            rumble_data: RumbleData::default(),
-            u: SubcommandRequestUnion {
-                mcu_subcmd: MCUSubcommand {
-                    subcmd_id: MCUSubCmdId2::GetIRData,
-                    u: MCUSubcommandUnion {
-                        ir_cmd: IRDataRequest {
-                            id,
-                            u: IRDataRequestUnion {
-                                ack_request_packet: IRAckRequestPacket {
-                                    packet_missing: false,
-                                    missed_packet_id: 0,
-                                    ack_packet_id: packet_id,
-                                },
-                            },
+        let mut mcu_subcmd = MCUSubcommand {
+            subcmd_id: MCUSubCmdId2::GetIRData,
+            u: MCUSubcommandUnion {
+                ir_cmd: IRDataRequest {
+                    id,
+                    u: IRDataRequestUnion {
+                        ack_request_packet: IRAckRequestPacket {
+                            packet_missing: false,
+                            missed_packet_id: 0,
+                            ack_packet_id: packet_id,
                         },
                     },
                 },
             },
         };
-        unsafe { report.u.mcu_subcmd.compute_crc(id) };
-        report
+        mcu_subcmd.compute_crc(id);
+        OutputReport {
+            report_id: OutputReportId::RequestMCUData,
+            packet_counter: 0,
+            rumble_data: RumbleData::default(),
+            u: SubcommandRequestUnion { mcu_subcmd },
+        }
     }
 
     pub fn as_bytes(&self) -> &[u8] {
