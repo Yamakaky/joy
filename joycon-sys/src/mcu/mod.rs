@@ -182,7 +182,7 @@ pub union MCUCmdData {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct CRC8A {
-    bytes: [u8; 34],
+    bytes: [u8; 35],
     crc: u8,
 }
 
@@ -193,9 +193,9 @@ impl fmt::Debug for CRC8A {
 }
 
 impl CRC8A {
-    pub fn compute_crc8(&mut self, cmd_id: MCUCmdId, subcmd_id: MCUSubCmdId) {
+    pub fn compute_crc8(&mut self, subcmd_id: MCUSubCmdId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
-        self.crc = compute_crc8(cmd_id as u8, subcmd_id as u8, &self.bytes);
+        self.crc = compute_crc8(subcmd_id as u8, &self.bytes);
     }
 }
 
@@ -210,7 +210,7 @@ pub struct CRC8B {
 impl CRC8B {
     pub fn compute_crc8(&mut self, id: IRDataRequestId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
-        self.crc = compute_crc8(0, 0, &self.bytes);
+        self.crc = compute_crc8(0, &self.bytes);
         self._padding_0xff = match id {
             IRDataRequestId::GetSensorData | IRDataRequestId::GetState => 0xff,
             IRDataRequestId::ReadRegister => 0x00,
@@ -218,11 +218,10 @@ impl CRC8B {
     }
 }
 
-fn compute_crc8(id1: u8, id2: u8, bytes: &[u8]) -> u8 {
-    use std::iter::once;
+fn compute_crc8(id: u8, bytes: &[u8]) -> u8 {
     // To simplify the data layout, subcmd_id is outside the byte buffer.
-    let mut crc = 9;
-    for byte in once(id1).chain(once(id2)).chain(bytes.iter().cloned()) {
+    let mut crc = MCU_CRC8_TABLE[id as usize];
+    for byte in bytes {
         crc = MCU_CRC8_TABLE[(crc ^ byte) as usize];
     }
     crc
@@ -432,8 +431,16 @@ fn check_output_layout() {
             15,
             offset_of(&report, &cmd.u.ir_cmd.u.read_registers.nb_registers)
         );
-        assert_eq!(12, offset_of(&report, &report.as_mcu_cmd().cmd_id));
-        assert_eq!(14, offset_of(&report, &report.as_mcu_cmd().u.crc.bytes));
+        assert_eq!(12, offset_of(&report, &report.as_mcu_cmd().subcmd_id));
+        assert_eq!(13, offset_of(&report, &report.as_mcu_cmd().u.crc.bytes));
         assert_eq!(48, offset_of(&report, &report.as_mcu_cmd().u.crc.crc));
     }
+}
+
+#[cfg(test)]
+#[test]
+fn crc() {
+    let regs = &[ir_register::Register::finish()];
+    let report = crate::OutputReport::set_registers(regs);
+    assert_eq!(156, unsafe { report.0.as_mcu_cmd().u.crc.crc });
 }
