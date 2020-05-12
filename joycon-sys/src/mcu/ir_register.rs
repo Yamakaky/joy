@@ -228,6 +228,15 @@ impl Resolution {
             Resolution::R40x30 => 0x03,
         }
     }
+
+    pub fn size(self) -> (u32, u32) {
+        match self {
+            Resolution::R320x240 => (320, 240),
+            Resolution::R160x120 => (160, 120),
+            Resolution::R80x60 => (80, 60),
+            Resolution::R40x30 => (40, 30),
+        }
+    }
 }
 
 #[repr(u8)]

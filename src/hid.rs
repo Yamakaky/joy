@@ -26,6 +26,7 @@ pub struct JoyCon {
     left_stick_calib: StickCalibration,
     right_stick_calib: StickCalibration,
     image: Image,
+    pub enable_ir_loop: bool,
 }
 
 impl JoyCon {
@@ -50,7 +51,8 @@ impl JoyCon {
             max_raw_accel: 0,
             left_stick_calib: StickCalibration::default(),
             right_stick_calib: StickCalibration::default(),
-            image: Image::new(Resolution::R80x60),
+            image: Image::new(Resolution::R320x240),
+            enable_ir_loop: false,
         }
     }
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -76,9 +78,12 @@ impl JoyCon {
         report.validate();
         assert_eq!(nb_read, std::mem::size_of_val(&report));
         if let Some(mcu_report) = report.mcu_report() {
-            if let Some(ir_data) = mcu_report.as_ir_data() {
-                let mut ack_packet = self.image.handle(&ir_data);
-                self.send(&mut ack_packet)?;
+            if self.enable_ir_loop {
+                for packet in &mut self.image.handle(&mcu_report) {
+                    if let Some(mut packet) = packet {
+                        self.send(&mut packet)?;
+                    }
+                }
             }
         }
         Ok(report)

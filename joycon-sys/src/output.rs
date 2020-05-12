@@ -65,20 +65,14 @@ impl OutputReport {
         )
     }
 
-    pub fn ir_ack(packet_id: u8) -> OutputReport {
+    fn ir_build(ack_request_packet: IRAckRequestPacket) -> OutputReport {
         let id = IRDataRequestId::GetSensorData;
         let mut mcu_subcmd = MCUSubcommand {
             subcmd_id: MCUSubCmdId2::GetIRData,
             u: MCUSubcommandUnion {
                 ir_cmd: IRDataRequest {
                     id,
-                    u: IRDataRequestUnion {
-                        ack_request_packet: IRAckRequestPacket {
-                            packet_missing: false,
-                            missed_packet_id: 0,
-                            ack_packet_id: packet_id,
-                        },
-                    },
+                    u: IRDataRequestUnion { ack_request_packet },
                 },
             },
         };
@@ -89,6 +83,22 @@ impl OutputReport {
             rumble_data: RumbleData::default(),
             u: SubcommandRequestUnion { mcu_subcmd },
         }
+    }
+
+    pub fn ir_resend(packet_id: u8) -> OutputReport {
+        OutputReport::ir_build(IRAckRequestPacket {
+            packet_missing: true,
+            missed_packet_id: packet_id,
+            ack_packet_id: 0,
+        })
+    }
+
+    pub fn ir_ack(packet_id: u8) -> OutputReport {
+        OutputReport::ir_build(IRAckRequestPacket {
+            packet_missing: false,
+            missed_packet_id: 0,
+            ack_packet_id: packet_id,
+        })
     }
 
     pub fn as_bytes(&self) -> &[u8] {

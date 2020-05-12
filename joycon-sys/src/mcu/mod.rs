@@ -8,17 +8,22 @@ pub mod ir_register;
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUReport {
-    id: RawId<MCUReportId>,
+    pub id: RawId<MCUReportId>,
     u: MCUReportUnion,
 }
 
 impl MCUReport {
     pub fn validate(&self) {
+        /*
         assert!(
             self.id.try_into().is_some(),
             "invalid MCU report id {:?}",
             self.id
-        );
+        );*/
+        if self.id.try_into().is_none() {
+            let slice = unsafe { (&self.u as *const _ as *const [u8; 20]).as_ref() };
+            println!("{:?}", slice);
+        }
     }
     pub fn as_status(&self) -> Option<&MCUStatus> {
         if self.id == MCUReportId::StateReport {
