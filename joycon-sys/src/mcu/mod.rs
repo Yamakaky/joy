@@ -1,9 +1,25 @@
 /// Cf https://github.com/CTCaer/Nintendo_Switch_Reverse_Engineering/blob/ir-nfc/mcu_ir_nfc_notes.md
+use self::ir::*;
 use crate::common::*;
 use crate::input::*;
 use std::fmt;
 
+pub mod ir;
 pub mod ir_register;
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum MCUReportId {
+    Empty = 0x00,
+    StateReport = 0x01,
+    IRData = 0x03,
+    BusyInitializing = 0x0b,
+    IRStatus = 0x13,
+    IRRegisters = 0x1b,
+    NFCState = 0x2a,
+    NFCReadData = 0x3a,
+    EmptyAwaitingCmd = 0xff,
+}
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
@@ -76,20 +92,6 @@ impl fmt::Debug for MCUReport {
     }
 }
 
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUReportId {
-    Empty = 0x00,
-    StateReport = 0x01,
-    IRData = 0x03,
-    BusyInitializing = 0x0b,
-    IRStatus = 0x13,
-    IRRegisters = 0x1b,
-    NFCState = 0x2a,
-    NFCReadData = 0x3a,
-    EmptyAwaitingCmd = 0xff,
-}
-
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub union MCUReportUnion {
@@ -102,29 +104,6 @@ pub union MCUReportUnion {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRRegistersSlice {
-    _unknown_0x00: u8,
-    pub page: u8,
-    pub offset: u8,
-    pub nb_registers: u8,
-    pub values: [u8; 0x7f],
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRData {
-    _unknown: [u8; 2],
-    pub frag_number: u8,
-    pub average_intensity: u8,
-    // Only when EXFilter enabled
-    _unknown3: u8,
-    pub white_pixel_count: U16LE,
-    pub ambient_noise_count: U16LE,
-    pub img_fragment: [u8; 300],
-}
-
-#[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct MCUStatus {
     _unknown: [u8; 2],
@@ -133,35 +112,41 @@ pub struct MCUStatus {
     pub state: RawId<MCUMode>,
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRStatus {
-    _unknown_0x00: u8,
-    pub ir_mode: MCUIRMode,
-    pub required_fw_major_version: U16LE,
-    pub required_fw_minor_version: U16LE,
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum MCUCommandId {
+    ConfigureMCU = 0x21,
+    ConfigureIR = 0x23,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum MCUSubCommandId {
+    SetMCUMode = 0,
+    SetIRMode = 1,
+    WriteIRRegisters = 4,
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct MCUCmd {
-    pub cmd_id: MCUCmdId,
-    pub subcmd_id: MCUSubCmdId,
-    pub u: MCUCmdData,
+pub struct MCUCommand {
+    pub cmd_id: MCUCommandId,
+    pub subcmd_id: MCUSubCommandId,
+    pub u: MCUCommandUnion,
 }
 
-impl MCUCmd {
+impl MCUCommand {
     pub fn compute_crc(&mut self) {
         unsafe { self.u.crc.compute_crc8(self.subcmd_id) }
     }
 }
 
-impl fmt::Debug for MCUCmd {
+impl fmt::Debug for MCUCommand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("MCUCmd");
         out.field("crc", unsafe { &self.u.crc });
         match (self.cmd_id, self.subcmd_id) {
-            (MCUCmdId::ConfigureIR, MCUSubCmdId::WriteIRRegisters) => {
+            (MCUCommandId::ConfigureIR, MCUSubCommandId::WriteIRRegisters) => {
                 out.field("cmd", unsafe { &self.u.regs })
             }
             ids => out.field("subcommand", &ids),
@@ -172,42 +157,87 @@ impl fmt::Debug for MCUCmd {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union MCUCmdData {
+pub union MCUCommandUnion {
     pub mcu_mode: MCUMode,
     pub regs: MCURegisters,
-    pub crc: CRC8A,
+    pub crc: MCUCommandCRC,
     pub ir_mode: MCUIRModeData,
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct CRC8A {
+pub struct MCUCommandCRC {
     bytes: [u8; 35],
     crc: u8,
 }
 
-impl fmt::Debug for CRC8A {
+impl fmt::Debug for MCUCommandCRC {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("CRC8A").field(&self.crc).finish()
     }
 }
 
-impl CRC8A {
-    pub fn compute_crc8(&mut self, subcmd_id: MCUSubCmdId) {
+impl MCUCommandCRC {
+    pub fn compute_crc8(&mut self, subcmd_id: MCUSubCommandId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
         self.crc = compute_crc8(subcmd_id as u8, &self.bytes);
     }
 }
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum MCUMode {
+    Suspend = 0,
+    Standby = 1,
+    NFC = 4,
+    IR = 5,
+    MaybeFWUpdate = 6,
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
+pub enum MCURequestId {
+    GetMCUStatus = 1,
+    GetNFCData = 2,
+    GetIRData = 3,
+}
+
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct CRC8B {
+pub struct MCURequest {
+    pub id: MCURequestId,
+    pub u: MCURequestUnion,
+}
+
+impl MCURequest {
+    pub fn compute_crc(&mut self, id: IRDataRequestId) {
+        unsafe { self.u.crc.compute_crc8(id) }
+    }
+}
+
+impl fmt::Debug for MCURequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("MCUSubcommand").finish()
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub union MCURequestUnion {
+    pub nothing: (),
+    pub ir_request: IRDataRequest,
+    pub crc: MCURequestCRC,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct MCURequestCRC {
     bytes: [u8; 36],
     crc: u8,
     _padding_0xff: u8,
 }
 
-impl CRC8B {
+impl MCURequestCRC {
     pub fn compute_crc8(&mut self, id: IRDataRequestId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
         self.crc = compute_crc8(0, &self.bytes);
@@ -225,149 +255,6 @@ fn compute_crc8(id: u8, bytes: &[u8]) -> u8 {
         crc = MCU_CRC8_TABLE[(crc ^ byte) as usize];
     }
     crc
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone, Debug)]
-pub struct MCURegisters {
-    pub len: u8,
-    pub regs: [ir_register::Register; 9],
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct MCUSetReg {
-    pub cmd_id: MCUCmdId,
-    pub subcmd_id: MCUSubCmdId,
-    pub mode: MCUMode,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUMode {
-    Suspend = 0,
-    Standby = 1,
-    NFC = 4,
-    IR = 5,
-    MaybeFWUpdate = 6,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUCmdId {
-    ConfigureMCU = 0x21,
-    ConfigureIR = 0x23,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUSubCmdId {
-    SetMCUMode = 0,
-    SetIRMode = 1,
-    WriteIRRegisters = 4,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUSubCmdId2 {
-    GetMCUStatus = 1,
-    GetNFCData = 2,
-    GetIRData = 3,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum MCUIRMode {
-    IRSensorReset = 0,
-    IRSensorSleep = 1,
-    Unknown2 = 2,
-    Moment = 3,
-    /// Wii-style pointing
-    Dpd = 4,
-    Unknown5 = 5,
-    Clustering = 6,
-    ImageTransfer = 7,
-    HandAnalysisSilhouette = 8,
-    HandAnalysisImage = 9,
-    HandAnalysisSilhouetteImage = 10,
-    Unknown11 = 11,
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct MCUIRModeData {
-    pub ir_mode: MCUIRMode,
-    /// Set number of packets to output per buffer
-    pub no_of_frags: u8,
-    /// Get it from MCUStatus
-    pub mcu_fw_version: (U16LE, U16LE),
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct MCUSubcommand {
-    pub subcmd_id: MCUSubCmdId2,
-    pub u: MCUSubcommandUnion,
-}
-
-impl MCUSubcommand {
-    pub fn compute_crc(&mut self, id: IRDataRequestId) {
-        unsafe { self.u.crc.compute_crc8(id) }
-    }
-}
-
-impl fmt::Debug for MCUSubcommand {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MCUSubcommand").finish()
-    }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub union MCUSubcommandUnion {
-    pub nothing: (),
-    pub ir_cmd: IRDataRequest,
-    pub crc: CRC8B,
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRDataRequest {
-    pub id: IRDataRequestId,
-    pub u: IRDataRequestUnion,
-}
-
-#[repr(u8)]
-#[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum IRDataRequestId {
-    GetSensorData = 0,
-    GetState = 2,
-    ReadRegister = 3,
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub union IRDataRequestUnion {
-    pub nothing: (),
-    pub ack_request_packet: IRAckRequestPacket,
-    pub read_registers: IRReadRegisters,
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRAckRequestPacket {
-    pub packet_missing: bool,
-    pub missed_packet_id: u8,
-    pub ack_packet_id: u8,
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRReadRegisters {
-    pub unknown_0x01: u8,
-    pub page: u8,
-    pub offset: u8,
-    pub nb_registers: u8,
 }
 
 // crc-8-ccitt / polynomial 0x07 look up table
@@ -421,7 +308,7 @@ fn check_output_layout() {
         let report = crate::output::OutputReport::new();
         let cmd = report.as_mcu_subcmd();
         // Same as normal output report
-        assert_eq!(10, offset_of(&report, &cmd.subcmd_id));
+        assert_eq!(10, offset_of(&report, &cmd.id));
         assert_eq!(11, offset_of(&report, &cmd.u.ir_cmd.id));
         assert_eq!(11, offset_of(&report, &cmd.u.crc));
         assert_eq!(47, offset_of(&report, &cmd.u.crc.crc));

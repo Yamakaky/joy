@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
 use crate::common::*;
+use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::spi::*;
 use std::fmt;
@@ -39,10 +40,10 @@ impl OutputReport {
         let size = regs.len().min(9);
         let mut regs_fixed = [ir_register::Register::default(); 9];
         regs_fixed[..size].copy_from_slice(&regs[..size]);
-        let mut mcu_cmd = MCUCmd {
-            cmd_id: MCUCmdId::ConfigureIR,
-            subcmd_id: MCUSubCmdId::WriteIRRegisters,
-            u: MCUCmdData {
+        let mut mcu_cmd = MCUCommand {
+            cmd_id: MCUCommandId::ConfigureIR,
+            subcmd_id: MCUSubCommandId::WriteIRRegisters,
+            u: MCUCommandUnion {
                 regs: MCURegisters {
                     len: size as u8,
                     regs: regs_fixed,
@@ -67,10 +68,10 @@ impl OutputReport {
 
     fn ir_build(ack_request_packet: IRAckRequestPacket) -> OutputReport {
         let id = IRDataRequestId::GetSensorData;
-        let mut mcu_subcmd = MCUSubcommand {
-            subcmd_id: MCUSubCmdId2::GetIRData,
-            u: MCUSubcommandUnion {
-                ir_cmd: IRDataRequest {
+        let mut mcu_subcmd = MCURequest {
+            id: MCURequestId::GetIRData,
+            u: MCURequestUnion {
+                ir_request: IRDataRequest {
                     id,
                     u: IRDataRequestUnion { ack_request_packet },
                 },
@@ -108,12 +109,12 @@ impl OutputReport {
     }
 
     #[cfg(test)]
-    pub(crate) unsafe fn as_mcu_subcmd(&self) -> &MCUSubcommand {
+    pub(crate) unsafe fn as_mcu_subcmd(&self) -> &MCURequest {
         &self.u.mcu_subcmd
     }
 
     #[cfg(test)]
-    pub(crate) unsafe fn as_mcu_cmd(&self) -> &MCUCmd {
+    pub(crate) unsafe fn as_mcu_cmd(&self) -> &MCUCommand {
         &self.u.subcmd.u.mcu_cmd
     }
 }
@@ -154,7 +155,7 @@ pub union SubcommandRequestUnion {
     // For OutputReportId::RumbleAndSubcmd
     pub subcmd: SubcommandRequest,
     // For OutputReportId::RequestMCUData
-    pub mcu_subcmd: MCUSubcommand,
+    pub mcu_subcmd: MCURequest,
 }
 
 #[repr(packed)]
@@ -200,7 +201,7 @@ pub union SubcommandRequestData {
     pub input_report_mode: InputReportId,
     pub player_lights: PlayerLights,
     pub mcu_mode: MCUMode,
-    pub mcu_cmd: MCUCmd,
+    pub mcu_cmd: MCUCommand,
     pub spi_read: SPIReadRequest,
     pub imu_sensitivity: IMUSensitivity,
 }

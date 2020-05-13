@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
 use crate::common::*;
+use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::output::*;
 use crate::spi::*;
@@ -389,7 +390,7 @@ impl SubcommandReply {
         }
     }
 
-    pub unsafe fn ir_status(&self) -> (MCUReportId, IRStatus) {
+    pub unsafe fn ir_status(&self) -> (RawId<MCUReportId>, IRStatus) {
         // seems to be true
         assert_eq!(self.subcommand_id, SubcommandId::SetMCUConf);
         self.u.ir_status
@@ -442,7 +443,7 @@ pub union SubcommandReplyData {
     // add to validate() when adding variant
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
-    ir_status: (MCUReportId, IRStatus),
+    ir_status: (RawId<MCUReportId>, IRStatus),
 }
 
 #[repr(packed)]

@@ -4,6 +4,7 @@ use crate::calibration::Calibration;
 use crate::image::Image;
 use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
+use joycon_sys::mcu::ir::*;
 use joycon_sys::mcu::ir_register::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
@@ -199,10 +200,10 @@ impl JoyCon {
 
     fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
         self.wait_mcu_cond(
-            MCUSubcommand {
+            MCURequest {
                 // todo: variable subcmd
-                subcmd_id: MCUSubCmdId2::GetMCUStatus,
-                u: MCUSubcommandUnion { nothing: () },
+                id: MCURequestId::GetMCUStatus,
+                u: MCURequestUnion { nothing: () },
             },
             |report| {
                 report
@@ -214,7 +215,7 @@ impl JoyCon {
     }
     fn wait_mcu_cond(
         &mut self,
-        mcu_subcmd: MCUSubcommand,
+        mcu_subcmd: MCURequest,
         mut f: impl FnMut(&MCUReport) -> bool,
     ) -> Result<MCUReport> {
         // The MCU takes some time to warm up so we retry until we get an answer
@@ -246,10 +247,10 @@ impl JoyCon {
     }
 
     pub fn set_mcu_mode_ir(&mut self) -> Result<()> {
-        let mut mcu_cmd = MCUCmd {
-            cmd_id: MCUCmdId::ConfigureMCU,
-            subcmd_id: MCUSubCmdId::SetMCUMode,
-            u: MCUCmdData {
+        let mut mcu_cmd = MCUCommand {
+            cmd_id: MCUCommandId::ConfigureMCU,
+            subcmd_id: MCUSubCommandId::SetMCUMode,
+            u: MCUCommandUnion {
                 mcu_mode: MCUMode::IR,
             },
         };
@@ -269,10 +270,10 @@ impl JoyCon {
     pub fn set_ir_image_mode(&mut self, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(
-            MCUSubcommand {
+            MCURequest {
                 // todo: variable subcmd
-                subcmd_id: MCUSubCmdId2::GetMCUStatus,
-                u: MCUSubcommandUnion { nothing: () },
+                id: MCURequestId::GetMCUStatus,
+                u: MCURequestUnion { nothing: () },
             },
             |r| {
                 if let Some(status) = r.as_status() {
@@ -283,10 +284,10 @@ impl JoyCon {
                 }
             },
         )?;
-        let mut mcu_cmd = MCUCmd {
-            cmd_id: MCUCmdId::ConfigureIR,
-            subcmd_id: MCUSubCmdId::SetIRMode,
-            u: MCUCmdData {
+        let mut mcu_cmd = MCUCommand {
+            cmd_id: MCUCommandId::ConfigureIR,
+            subcmd_id: MCUSubCommandId::SetIRMode,
+            u: MCUCommandUnion {
                 ir_mode: MCUIRModeData {
                     ir_mode: MCUIRMode::ImageTransfer,
                     no_of_frags: frags,
@@ -308,11 +309,11 @@ impl JoyCon {
         );
 
         let id = IRDataRequestId::GetState;
-        let mut cmd = MCUSubcommand {
+        let mut cmd = MCURequest {
             // todo: variable subcmd
-            subcmd_id: MCUSubCmdId2::GetIRData,
-            u: MCUSubcommandUnion {
-                ir_cmd: IRDataRequest {
+            id: MCURequestId::GetIRData,
+            u: MCURequestUnion {
+                ir_request: IRDataRequest {
                     id,
                     u: IRDataRequestUnion { nothing: () },
                 },
@@ -346,10 +347,10 @@ impl JoyCon {
             let offset = 0;
             let nb_registers = 0x6f;
             let id = IRDataRequestId::ReadRegister;
-            let mut subcmd = MCUSubcommand {
-                subcmd_id: MCUSubCmdId2::GetIRData,
-                u: MCUSubcommandUnion {
-                    ir_cmd: IRDataRequest {
+            let mut subcmd = MCURequest {
+                id: MCURequestId::GetIRData,
+                u: MCURequestUnion {
+                    ir_request: IRDataRequest {
                         id,
                         u: IRDataRequestUnion {
                             read_registers: IRReadRegisters {
@@ -432,7 +433,7 @@ impl JoyCon {
         }
     }
 
-    fn send_mcu_subcmd(&mut self, mcu_subcmd: MCUSubcommand) -> Result<()> {
+    fn send_mcu_subcmd(&mut self, mcu_subcmd: MCURequest) -> Result<()> {
         let mut out_report = OutputReport {
             packet_counter: 0,
             report_id: OutputReportId::RequestMCUData,
