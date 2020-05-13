@@ -4,7 +4,7 @@ use crate::common::*;
 use std::fmt;
 
 pub mod ir;
-pub mod ir_register;
+mod ir_register;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]

@@ -1,4 +1,5 @@
 use crate::mcu::*;
+pub use ir_register::*;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]

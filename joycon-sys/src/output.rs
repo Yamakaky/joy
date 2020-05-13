@@ -34,11 +34,9 @@ impl OutputReport {
         OutputReport::default()
     }
 
-    pub fn set_registers(
-        regs: &[ir_register::Register],
-    ) -> (OutputReport, &[ir_register::Register]) {
+    pub fn set_registers(regs: &[ir::Register]) -> (OutputReport, &[ir::Register]) {
         let size = regs.len().min(9);
-        let mut regs_fixed = [ir_register::Register::default(); 9];
+        let mut regs_fixed = [ir::Register::default(); 9];
         regs_fixed[..size].copy_from_slice(&regs[..size]);
         let mut mcu_cmd = MCUCommand {
             cmd_id: MCUCommandId::ConfigureIR,
@@ -209,7 +207,7 @@ pub union SubcommandRequestData {
     pub mcu_mode: MCUMode,
     pub mcu_cmd: MCUCommand,
     pub spi_read: SPIReadRequest,
-    pub imu_sensitivity: crate::imu::IMUSensitivity,
+    pub imu_sensitivity: crate::imu::Sensitivity,
 }
 
 #[repr(packed)]

@@ -77,7 +77,7 @@ impl InputReport {
         }
     }
 
-    pub fn imu_frames(&self) -> Option<&[imu::IMUFrame; 3]> {
+    pub fn imu_frames(&self) -> Option<&[imu::Frame; 3]> {
         if self.report_id == InputReportId::StandardFull
             || self.report_id == InputReportId::StandardFullMCU
         {
@@ -437,7 +437,7 @@ pub enum WhichController {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct IMUMCU {
-    imu_frames: [imu::IMUFrame; 3],
+    imu_frames: [imu::Frame; 3],
     mcu_report: MCUReport,
 }
 

@@ -1,15 +1,14 @@
-use joycon_sys::mcu::ir_register::*;
 use joycon_sys::mcu::*;
 use joycon_sys::*;
 
 pub struct Image {
     buffer: Box<[[u8; 300]; 0x100]>,
-    resolution: Resolution,
+    resolution: ir::Resolution,
     prev_fragment_id: u8,
 }
 
 impl Image {
-    pub fn new(resolution: Resolution) -> Image {
+    pub fn new(resolution: ir::Resolution) -> Image {
         Image {
             buffer: Box::new([[0; 300]; 0x100]),
             resolution: resolution,

@@ -5,7 +5,6 @@ use crate::image::Image;
 use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
 use joycon_sys::mcu::ir::*;
-use joycon_sys::mcu::ir_register::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
 use joycon_sys::spi::*;
@@ -120,10 +119,10 @@ impl JoyCon {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetIMUSens,
             u: SubcommandRequestData {
-                imu_sensitivity: imu::IMUSensitivity {
+                imu_sensitivity: imu::Sensitivity {
                     gyro_sens,
                     acc_sens: accel_sens,
-                    ..imu::IMUSensitivity::default()
+                    ..imu::Sensitivity::default()
                 },
             },
         })?;
@@ -302,7 +301,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_ir_registers(&mut self, regs: &[ir_register::Register]) -> Result<()> {
+    pub fn set_ir_registers(&mut self, regs: &[ir::Register]) -> Result<()> {
         let mut regs_mut = regs;
         while !regs_mut.is_empty() {
             let (mut report, remaining_regs) = OutputReport::set_registers(regs_mut);

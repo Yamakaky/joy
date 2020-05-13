@@ -3,12 +3,12 @@ use std::fmt;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct IMUFrame {
+pub struct Frame {
     raw_accel: [I16LE; 3],
     raw_gyro: [I16LE; 3],
 }
 
-impl IMUFrame {
+impl Frame {
     pub fn raw_accel(&self) -> Vector3 {
         Vector3::from_raw(self.raw_accel)
     }
@@ -32,7 +32,7 @@ impl IMUFrame {
     }
 }
 
-impl fmt::Debug for IMUFrame {
+impl fmt::Debug for Frame {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("RawGyroAccFrame")
             .field("accel", &self.raw_accel())
@@ -43,7 +43,7 @@ impl fmt::Debug for IMUFrame {
 
 #[repr(packed)]
 #[derive(Copy, Clone, Default)]
-pub struct IMUSensitivity {
+pub struct Sensitivity {
     pub gyro_sens: GyroSens,
     pub acc_sens: AccSens,
     pub gyro_perf_rate: GyroPerfRate,
