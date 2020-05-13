@@ -3,48 +3,11 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
 use crate::common::*;
+use crate::imu;
 use crate::mcu::ir::*;
 use crate::mcu::*;
-use crate::output::*;
 use crate::spi::*;
-use derive_more::{Add, AddAssign, Div, Mul, Sub};
-use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
-use std::marker::PhantomData;
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct RawId<Id>(u8, PhantomData<Id>);
-
-impl<Id: FromPrimitive> RawId<Id> {
-    pub fn try_into(self) -> Option<Id> {
-        Id::from_u8(self.0)
-    }
-}
-
-impl<Id: ToPrimitive> From<Id> for RawId<Id> {
-    fn from(id: Id) -> Self {
-        RawId(id.to_u8().expect("always one byte"), PhantomData)
-    }
-}
-
-impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(id) = self.try_into() {
-            write!(f, "{:?}", id)
-        } else {
-            f.debug_tuple("RawId")
-                .field(&format!("0x{:x}", self.0))
-                .finish()
-        }
-    }
-}
-
-impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
-    fn eq(&self, other: &Id) -> bool {
-        self.try_into().map(|x| x == *other).unwrap_or(false)
-    }
-}
 
 /// Describes a HID report from the JoyCon.
 ///
@@ -83,7 +46,7 @@ impl InputReport {
                     rep.validate()
                 }
             }
-            None => panic!("unknown report id {:x?}", self.report_id.0),
+            None => panic!("unknown report id {:x?}", self.report_id),
         }
     }
 
@@ -114,7 +77,7 @@ impl InputReport {
         }
     }
 
-    pub fn imu_frames(&self) -> Option<&[IMUFrame; 3]> {
+    pub fn imu_frames(&self) -> Option<&[imu::IMUFrame; 3]> {
         if self.report_id == InputReportId::StandardFull
             || self.report_id == InputReportId::StandardFullMCU
         {
@@ -474,7 +437,7 @@ pub enum WhichController {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct IMUMCU {
-    imu_frames: [IMUFrame; 3],
+    imu_frames: [imu::IMUFrame; 3],
     mcu_report: MCUReport,
 }
 
@@ -484,60 +447,6 @@ impl fmt::Debug for IMUMCU {
             .field("imu_frames", &self.imu_frames)
             .field("mcu_report", &self.mcu_report)
             .finish()
-    }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IMUFrame {
-    raw_accel: [I16LE; 3],
-    raw_gyro: [I16LE; 3],
-}
-
-impl IMUFrame {
-    pub fn raw_accel(&self) -> Vector3 {
-        Vector3::from_raw(self.raw_accel)
-    }
-
-    pub fn raw_gyro(&self) -> Vector3 {
-        Vector3::from_raw(self.raw_gyro)
-    }
-
-    /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
-    pub fn accel_g(&self, offset: Vector3, sens: AccSens) -> Vector3 {
-        (self.raw_accel() - offset) / (u16::MAX as f32 / sens.range_g() as f32)
-    }
-
-    /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
-    pub fn gyro_dps(&self, offset: Vector3, sens: GyroSens) -> Vector3 {
-        (self.raw_gyro() - offset) / (u16::MAX as f32 / sens.range_dps() as f32)
-    }
-
-    pub fn gyro_rps(&self, offset: Vector3, sens: GyroSens) -> Vector3 {
-        self.gyro_dps(offset, sens) / 360.
-    }
-}
-
-impl fmt::Debug for IMUFrame {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("RawGyroAccFrame")
-            .field("accel", &self.raw_accel())
-            .field("gyro", &self.raw_gyro())
-            .finish()
-    }
-}
-
-#[derive(Copy, Clone, Debug, Add, AddAssign, Sub, Div, Mul, Default)]
-#[mul(forward)]
-pub struct Vector3(pub f32, pub f32, pub f32);
-
-impl Vector3 {
-    pub fn from_raw(raw: [I16LE; 3]) -> Vector3 {
-        Vector3(
-            i16::from(raw[0]) as f32,
-            i16::from(raw[1]) as f32,
-            i16::from(raw[2]) as f32,
-        )
     }
 }
 

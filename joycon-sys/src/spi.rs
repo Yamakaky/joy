@@ -1,5 +1,4 @@
 use crate::common::*;
-use crate::input::Vector3;
 use byteorder::{ByteOrder, LittleEndian};
 use std::fmt;
 

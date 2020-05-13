@@ -1,4 +1,8 @@
 use byteorder::{ByteOrder, LittleEndian};
+use derive_more::{Add, AddAssign, Div, Mul, Sub};
+use num::{FromPrimitive, ToPrimitive};
+use std::fmt;
+use std::marker::PhantomData;
 
 pub const NINTENDO_VENDOR_ID: u16 = 1406;
 
@@ -72,4 +76,52 @@ impl From<I16LE> for i16 {
 #[cfg(test)]
 pub(crate) fn offset_of<A, B>(a: &A, b: &B) -> usize {
     b as *const _ as usize - a as *const _ as usize
+}
+
+#[derive(Copy, Clone, Debug, Add, AddAssign, Sub, Div, Mul, Default)]
+#[mul(forward)]
+pub struct Vector3(pub f32, pub f32, pub f32);
+
+impl Vector3 {
+    pub fn from_raw(raw: [I16LE; 3]) -> Vector3 {
+        Vector3(
+            i16::from(raw[0]) as f32,
+            i16::from(raw[1]) as f32,
+            i16::from(raw[2]) as f32,
+        )
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone)]
+pub struct RawId<Id>(u8, PhantomData<Id>);
+
+impl<Id: FromPrimitive> RawId<Id> {
+    pub fn try_into(self) -> Option<Id> {
+        Id::from_u8(self.0)
+    }
+}
+
+impl<Id: ToPrimitive> From<Id> for RawId<Id> {
+    fn from(id: Id) -> Self {
+        RawId(id.to_u8().expect("always one byte"), PhantomData)
+    }
+}
+
+impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(id) = self.try_into() {
+            write!(f, "{:?}", id)
+        } else {
+            f.debug_tuple("RawId")
+                .field(&format!("0x{:x}", self.0))
+                .finish()
+        }
+    }
+}
+
+impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
+    fn eq(&self, other: &Id) -> bool {
+        self.try_into().map(|x| x == *other).unwrap_or(false)
+    }
 }

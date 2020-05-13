@@ -19,9 +19,9 @@ pub struct JoyCon {
     info: hidapi::DeviceInfo,
     counter: u8,
     calib_gyro: Calibration,
-    gyro_sens: GyroSens,
+    gyro_sens: imu::GyroSens,
     calib_accel: Calibration,
-    accel_sens: AccSens,
+    accel_sens: imu::AccSens,
     pub max_raw_gyro: i16,
     pub max_raw_accel: i16,
     left_stick_calib: StickCalibration,
@@ -45,9 +45,9 @@ impl JoyCon {
             counter: 0,
             // 10s with 3 reports at 60Hz
             calib_gyro: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
-            gyro_sens: GyroSens::DPS2000,
+            gyro_sens: imu::GyroSens::DPS2000,
             calib_accel: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
-            accel_sens: AccSens::G8,
+            accel_sens: imu::AccSens::G8,
             max_raw_gyro: 0,
             max_raw_accel: 0,
             left_stick_calib: StickCalibration::default(),
@@ -115,15 +115,15 @@ impl JoyCon {
     }
 
     pub fn set_imu_sens(&mut self) -> Result<()> {
-        let gyro_sens = GyroSens::DPS2000;
-        let accel_sens = AccSens::G8;
+        let gyro_sens = imu::GyroSens::DPS2000;
+        let accel_sens = imu::AccSens::G8;
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetIMUSens,
             u: SubcommandRequestData {
-                imu_sensitivity: IMUSensitivity {
+                imu_sensitivity: imu::IMUSensitivity {
                     gyro_sens,
                     acc_sens: accel_sens,
-                    ..IMUSensitivity::default()
+                    ..imu::IMUSensitivity::default()
                 },
             },
         })?;

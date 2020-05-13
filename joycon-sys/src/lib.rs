@@ -6,7 +6,8 @@
 #[macro_use]
 extern crate num_derive;
 
-mod common;
+pub mod common;
+pub mod imu;
 pub mod input;
 pub mod mcu;
 pub mod output;

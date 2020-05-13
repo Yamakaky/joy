@@ -1,7 +1,6 @@
 /// Cf https://github.com/CTCaer/Nintendo_Switch_Reverse_Engineering/blob/ir-nfc/mcu_ir_nfc_notes.md
 use self::ir::*;
 use crate::common::*;
-use crate::input::*;
 use std::fmt;
 
 pub mod ir;
@@ -282,7 +281,7 @@ const MCU_CRC8_TABLE: [u8; 256] = [
 #[test]
 fn check_input_layout() {
     unsafe {
-        let report = InputReport::new();
+        let report = crate::InputReport::new();
         let mcu_report = report.u_mcu_report();
         assert_eq!(49, offset_of(&report, mcu_report));
         assert_eq!(56, offset_of(&report, &mcu_report.u.status.state));

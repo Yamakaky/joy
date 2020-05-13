@@ -1,4 +1,4 @@
-use joycon_sys::input::Vector3;
+use joycon_sys::common::Vector3;
 use std::collections::VecDeque;
 
 #[derive(Clone, Debug)]
