@@ -50,7 +50,7 @@ impl InputReport {
         }
     }
 
-    pub fn normal(&self) -> Option<&NormalInputReportContent> {
+    pub fn normal(&self) -> Option<&NormalInputReport> {
         if self.report_id == InputReportId::Normal {
             Some(unsafe { &self.u.normal })
         } else {
@@ -58,7 +58,7 @@ impl InputReport {
         }
     }
 
-    pub fn standard(&self) -> Option<&StandardInputReportContent> {
+    pub fn standard(&self) -> Option<&StandardInputReport> {
         if self.report_id == InputReportId::StandardAndSubcmd
             || self.report_id == InputReportId::StandardFull
             || self.report_id == InputReportId::StandardFullMCU
@@ -107,7 +107,7 @@ impl Default for InputReport {
         InputReport {
             report_id: InputReportId::Normal.into(),
             u: InputReportContent {
-                normal: NormalInputReportContent::default(),
+                normal: NormalInputReport::default(),
             },
         }
     }
@@ -116,13 +116,13 @@ impl Default for InputReport {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 union InputReportContent {
-    normal: NormalInputReportContent,
-    standard: StandardInputReportContent,
+    normal: NormalInputReport,
+    standard: StandardInputReport,
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
-pub struct NormalInputReportContent {
+pub struct NormalInputReport {
     pub buttons: [u8; 2],
     pub stick: u8,
     _filler: [u8; 8],
@@ -130,14 +130,14 @@ pub struct NormalInputReportContent {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct StandardInputReportContent {
+pub struct StandardInputReport {
     pub timer: u8,
     pub info: DeviceStatus,
     pub buttons: ButtonsStatus,
-    pub left_stick: StickStatus,
-    pub right_stick: StickStatus,
+    pub left_stick: Stick,
+    pub right_stick: Stick,
     pub vibrator: u8,
-    u: ExtraData,
+    u: StandardInputReportUnion,
 }
 
 impl fmt::Debug for InputReport {
@@ -191,7 +191,7 @@ pub struct DeviceStatus(u8);
 impl fmt::Debug for DeviceStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let battery = self.0 >> 4;
-        f.debug_struct("DeviceInfo")
+        f.debug_struct("DeviceStatus")
             .field(
                 "battery",
                 &match battery {
@@ -286,11 +286,11 @@ pub enum Button {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct StickStatus {
+pub struct Stick {
     data: [u8; 3],
 }
 
-impl StickStatus {
+impl Stick {
     pub fn x(self) -> u16 {
         u16::from(self.data[0]) | u16::from(self.data[1] & 0xf) << 8
     }
@@ -300,9 +300,9 @@ impl StickStatus {
     }
 }
 
-impl fmt::Debug for StickStatus {
+impl fmt::Debug for Stick {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("StickStatus")
+        f.debug_tuple("Stick")
             .field(&self.x())
             .field(&self.y())
             .finish()
@@ -311,7 +311,8 @@ impl fmt::Debug for StickStatus {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-union ExtraData {
+union StandardInputReportUnion {
+    _nothing: (),
     subcmd_reply: SubcommandReply,
     _mcu_fw_update: [u8; 37],
     imu_mcu: IMUMCU,
@@ -322,7 +323,7 @@ union ExtraData {
 pub struct SubcommandReply {
     pub ack: Ack,
     subcommand_id: RawId<SubcommandId>,
-    u: SubcommandReplyData,
+    u: SubcommandReplyUnion,
 }
 
 impl SubcommandReply {
@@ -403,7 +404,7 @@ impl fmt::Debug for Ack {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-union SubcommandReplyData {
+union SubcommandReplyUnion {
     // add to validate() when adding variant
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
@@ -435,19 +436,10 @@ pub enum WhichController {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct IMUMCU {
     imu_frames: [imu::Frame; 3],
     mcu_report: MCUReport,
-}
-
-impl fmt::Debug for IMUMCU {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("IMUMCU")
-            .field("imu_frames", &self.imu_frames)
-            .field("mcu_report", &self.mcu_report)
-            .finish()
-    }
 }
 
 #[cfg(test)]

@@ -118,7 +118,7 @@ impl JoyCon {
         let accel_sens = imu::AccSens::G8;
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetIMUSens,
-            u: SubcommandRequestData {
+            u: SubcommandRequestUnion {
                 imu_sensitivity: imu::Sensitivity {
                     gyro_sens,
                     acc_sens: accel_sens,
@@ -134,7 +134,7 @@ impl JoyCon {
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
         let reply = self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::RequestDeviceInfo,
-            u: SubcommandRequestData { nothing: () },
+            u: SubcommandRequestUnion { nothing: () },
         })?;
         Ok(*reply.device_info().unwrap())
     }
@@ -142,7 +142,7 @@ impl JoyCon {
     pub fn enable_imu(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::EnableIMU,
-            u: SubcommandRequestData { imu_enabled: true },
+            u: SubcommandRequestUnion { imu_enabled: true },
         })?;
         Ok(())
     }
@@ -150,7 +150,7 @@ impl JoyCon {
     pub fn set_report_mode_standard(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetInputReportMode,
-            u: SubcommandRequestData {
+            u: SubcommandRequestUnion {
                 input_report_mode: InputReportId::StandardFull,
             },
         })?;
@@ -160,7 +160,7 @@ impl JoyCon {
     pub fn set_report_mode_mcu(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetInputReportMode,
-            u: SubcommandRequestData {
+            u: SubcommandRequestUnion {
                 input_report_mode: InputReportId::StandardFullMCU,
             },
         })?;
@@ -170,7 +170,7 @@ impl JoyCon {
     pub fn enable_mcu(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUState,
-            u: SubcommandRequestData {
+            u: SubcommandRequestUnion {
                 mcu_mode: MCUMode::Standby,
             },
         })?;
@@ -217,7 +217,7 @@ impl JoyCon {
     pub fn disable_mcu(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUState,
-            u: SubcommandRequestData {
+            u: SubcommandRequestUnion {
                 mcu_mode: MCUMode::Suspend,
             },
         })?;
@@ -235,7 +235,7 @@ impl JoyCon {
         mcu_cmd.compute_crc();
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUConf,
-            u: SubcommandRequestData { mcu_cmd },
+            u: SubcommandRequestUnion { mcu_cmd },
         })?;
         self.wait_mcu_status(MCUMode::IR)
             .context("set_mcu_mode_ir")?;
@@ -273,7 +273,7 @@ impl JoyCon {
         mcu_cmd.compute_crc();
         let reply = self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUConf,
-            u: SubcommandRequestData { mcu_cmd },
+            u: SubcommandRequestUnion { mcu_cmd },
         })?;
         ensure!(
             unsafe { reply.ir_status().0 } == MCUReportId::BusyInitializing,
@@ -373,7 +373,7 @@ impl JoyCon {
     pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetPlayerLights,
-            u: SubcommandRequestData { player_lights },
+            u: SubcommandRequestUnion { player_lights },
         })?;
         Ok(())
     }
@@ -402,7 +402,7 @@ impl JoyCon {
     fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
         let reply = self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SPIRead,
-            u: SubcommandRequestData {
+            u: SubcommandRequestUnion {
                 spi_read: SPIReadRequest::new(range),
             },
         })?;

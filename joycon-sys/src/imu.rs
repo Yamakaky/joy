@@ -34,7 +34,7 @@ impl Frame {
 
 impl fmt::Debug for Frame {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("RawGyroAccFrame")
+        f.debug_struct("imu::Frame")
             .field("accel", &self.raw_accel())
             .field("gyro", &self.raw_gyro())
             .finish()

@@ -114,7 +114,7 @@ impl Register {
 
 impl fmt::Debug for Register {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut out = f.debug_struct("Register");
+        let mut out = f.debug_struct("ir::Register");
         match Address::try_from((self.page, self.offset)) {
             Ok(a) => out.field("name", &a),
             Err(_) => out.field(

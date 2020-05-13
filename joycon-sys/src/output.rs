@@ -26,7 +26,7 @@ pub struct OutputReport {
     pub report_id: OutputReportId,
     pub packet_counter: u8,
     pub rumble_data: RumbleData,
-    u: SubcommandRequestUnion,
+    u: OutputReportUnion,
 }
 
 impl OutputReport {
@@ -52,7 +52,7 @@ impl OutputReport {
         (
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUConf,
-                u: SubcommandRequestData { mcu_cmd },
+                u: SubcommandRequestUnion { mcu_cmd },
             }
             .into(),
             &regs[size..],
@@ -111,7 +111,7 @@ impl Default for OutputReport {
     fn default() -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::RequestDeviceInfo,
-            u: SubcommandRequestData { nothing: () },
+            u: SubcommandRequestUnion { nothing: () },
         }
         .into()
     }
@@ -123,7 +123,7 @@ impl From<SubcommandRequest> for OutputReport {
             report_id: OutputReportId::RumbleAndSubcmd,
             packet_counter: 0,
             rumble_data: RumbleData::default(),
-            u: SubcommandRequestUnion { subcmd },
+            u: OutputReportUnion { subcmd },
         }
     }
 }
@@ -134,7 +134,7 @@ impl From<MCURequest> for OutputReport {
             report_id: OutputReportId::RequestMCUData,
             packet_counter: 0,
             rumble_data: RumbleData::default(),
-            u: SubcommandRequestUnion { mcu_request },
+            u: OutputReportUnion { mcu_request },
         }
     }
 }
@@ -155,7 +155,7 @@ impl fmt::Debug for OutputReport {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-union SubcommandRequestUnion {
+union OutputReportUnion {
     // For OutputReportId::RumbleAndSubcmd
     subcmd: SubcommandRequest,
     // For OutputReportId::RequestMCUData
@@ -166,7 +166,7 @@ union SubcommandRequestUnion {
 #[derive(Copy, Clone)]
 pub struct SubcommandRequest {
     pub subcommand_id: SubcommandId,
-    pub u: SubcommandRequestData,
+    pub u: SubcommandRequestUnion,
 }
 
 impl fmt::Debug for SubcommandRequest {
@@ -199,7 +199,7 @@ impl Default for RumbleData {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union SubcommandRequestData {
+pub union SubcommandRequestUnion {
     pub nothing: (),
     pub imu_enabled: bool,
     pub input_report_mode: InputReportId,

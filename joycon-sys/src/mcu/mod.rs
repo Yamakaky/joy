@@ -142,7 +142,7 @@ impl MCUCommand {
 
 impl fmt::Debug for MCUCommand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut out = f.debug_struct("MCUCmd");
+        let mut out = f.debug_struct("MCUCommand");
         out.field("crc", unsafe { &self.u.crc });
         match (self.cmd_id, self.subcmd_id) {
             (MCUCommandId::ConfigureIR, MCUSubCommandId::WriteIRRegisters) => {
@@ -172,7 +172,7 @@ pub struct MCUCommandCRC {
 
 impl fmt::Debug for MCUCommandCRC {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("CRC8A").field(&self.crc).finish()
+        f.debug_tuple("MCUCommandCRC").field(&self.crc).finish()
     }
 }
 
@@ -216,7 +216,7 @@ impl MCURequest {
 
 impl fmt::Debug for MCURequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MCUSubcommand").finish()
+        f.debug_struct("MCURequest").finish()
     }
 }
 
