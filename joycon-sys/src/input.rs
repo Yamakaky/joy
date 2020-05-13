@@ -152,10 +152,11 @@ impl Default for InputReport {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union InputReportContent {
+union InputReportContent {
     normal: NormalInputReportContent,
     standard: StandardInputReportContent,
 }
+
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct NormalInputReportContent {
@@ -347,7 +348,7 @@ impl fmt::Debug for StickStatus {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union ExtraData {
+union ExtraData {
     subcmd_reply: SubcommandReply,
     _mcu_fw_update: [u8; 37],
     imu_mcu: IMUMCU,
@@ -439,7 +440,7 @@ impl fmt::Debug for Ack {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union SubcommandReplyData {
+union SubcommandReplyData {
     // add to validate() when adding variant
     device_info: DeviceInfo,
     spi_read: SPIReadResult,

@@ -306,17 +306,17 @@ fn check_input_layout() {
 fn check_output_layout() {
     unsafe {
         let report = crate::output::OutputReport::new();
-        let cmd = report.as_mcu_subcmd();
+        let cmd = report.as_mcu_request();
         // Same as normal output report
         assert_eq!(10, offset_of(&report, &cmd.id));
-        assert_eq!(11, offset_of(&report, &cmd.u.ir_cmd.id));
+        assert_eq!(11, offset_of(&report, &cmd.u.ir_request.id));
         assert_eq!(11, offset_of(&report, &cmd.u.crc));
         assert_eq!(47, offset_of(&report, &cmd.u.crc.crc));
         assert_eq!(48, offset_of(&report, &cmd.u.crc._padding_0xff));
 
         assert_eq!(
             15,
-            offset_of(&report, &cmd.u.ir_cmd.u.read_registers.nb_registers)
+            offset_of(&report, &cmd.u.ir_request.u.read_registers.nb_registers)
         );
         assert_eq!(12, offset_of(&report, &report.as_mcu_cmd().subcmd_id));
         assert_eq!(13, offset_of(&report, &report.as_mcu_cmd().u.crc.bytes));

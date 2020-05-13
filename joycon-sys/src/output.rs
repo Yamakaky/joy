@@ -26,7 +26,7 @@ pub struct OutputReport {
     pub report_id: OutputReportId,
     pub packet_counter: u8,
     pub rumble_data: RumbleData,
-    pub u: SubcommandRequestUnion,
+    u: SubcommandRequestUnion,
 }
 
 impl OutputReport {
@@ -52,23 +52,18 @@ impl OutputReport {
         };
         mcu_cmd.compute_crc();
         (
-            OutputReport {
-                report_id: OutputReportId::RumbleAndSubcmd,
-                u: SubcommandRequestUnion {
-                    subcmd: SubcommandRequest {
-                        subcommand_id: SubcommandId::SetMCUConf,
-                        u: SubcommandRequestData { mcu_cmd },
-                    },
-                },
-                ..OutputReport::default()
-            },
+            SubcommandRequest {
+                subcommand_id: SubcommandId::SetMCUConf,
+                u: SubcommandRequestData { mcu_cmd },
+            }
+            .into(),
             &regs[size..],
         )
     }
 
     fn ir_build(ack_request_packet: IRAckRequestPacket) -> OutputReport {
         let id = IRDataRequestId::GetSensorData;
-        let mut mcu_subcmd = MCURequest {
+        let mut mcu_request = MCURequest {
             id: MCURequestId::GetIRData,
             u: MCURequestUnion {
                 ir_request: IRDataRequest {
@@ -77,13 +72,8 @@ impl OutputReport {
                 },
             },
         };
-        mcu_subcmd.compute_crc(id);
-        OutputReport {
-            report_id: OutputReportId::RequestMCUData,
-            packet_counter: 0,
-            rumble_data: RumbleData::default(),
-            u: SubcommandRequestUnion { mcu_subcmd },
-        }
+        mcu_request.compute_crc(id);
+        mcu_request.into()
     }
 
     pub fn ir_resend(packet_id: u8) -> OutputReport {
@@ -109,8 +99,8 @@ impl OutputReport {
     }
 
     #[cfg(test)]
-    pub(crate) unsafe fn as_mcu_subcmd(&self) -> &MCURequest {
-        &self.u.mcu_subcmd
+    pub(crate) unsafe fn as_mcu_request(&self) -> &MCURequest {
+        &self.u.mcu_request
     }
 
     #[cfg(test)]
@@ -121,16 +111,32 @@ impl OutputReport {
 
 impl Default for OutputReport {
     fn default() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::RequestDeviceInfo,
+            u: SubcommandRequestData { nothing: () },
+        }
+        .into()
+    }
+}
+
+impl From<SubcommandRequest> for OutputReport {
+    fn from(subcmd: SubcommandRequest) -> Self {
         OutputReport {
             report_id: OutputReportId::RumbleAndSubcmd,
             packet_counter: 0,
             rumble_data: RumbleData::default(),
-            u: SubcommandRequestUnion {
-                subcmd: SubcommandRequest {
-                    subcommand_id: SubcommandId::RequestDeviceInfo,
-                    u: SubcommandRequestData { nothing: () },
-                },
-            },
+            u: SubcommandRequestUnion { subcmd },
+        }
+    }
+}
+
+impl From<MCURequest> for OutputReport {
+    fn from(mcu_request: MCURequest) -> Self {
+        OutputReport {
+            report_id: OutputReportId::RequestMCUData,
+            packet_counter: 0,
+            rumble_data: RumbleData::default(),
+            u: SubcommandRequestUnion { mcu_request },
         }
     }
 }
@@ -143,7 +149,7 @@ impl fmt::Debug for OutputReport {
         if self.report_id == OutputReportId::RumbleAndSubcmd {
             out.field("subcmd", unsafe { &self.u.subcmd });
         } else if self.report_id == OutputReportId::RequestMCUData {
-            out.field("mcu_subcmd", unsafe { &self.u.mcu_subcmd });
+            out.field("mcu_subcmd", unsafe { &self.u.mcu_request });
         }
         out.finish()
     }
@@ -151,11 +157,11 @@ impl fmt::Debug for OutputReport {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union SubcommandRequestUnion {
+union SubcommandRequestUnion {
     // For OutputReportId::RumbleAndSubcmd
-    pub subcmd: SubcommandRequest,
+    subcmd: SubcommandRequest,
     // For OutputReportId::RequestMCUData
-    pub mcu_subcmd: MCURequest,
+    mcu_request: MCURequest,
 }
 
 #[repr(packed)]
