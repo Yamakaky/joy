@@ -3,14 +3,14 @@ pub use ir_register::*;
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct IRDataRequest {
-    pub id: IRDataRequestId,
-    pub u: IRDataRequestUnion,
+pub struct IRRequest {
+    pub id: IRRequestId,
+    pub u: IRRequestUnion,
 }
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
-pub enum IRDataRequestId {
+pub enum IRRequestId {
     GetSensorData = 0,
     GetState = 2,
     ReadRegister = 3,
@@ -18,7 +18,7 @@ pub enum IRDataRequestId {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union IRDataRequestUnion {
+pub union IRRequestUnion {
     pub nothing: (),
     pub ack_request_packet: IRAckRequestPacket,
     pub read_registers: IRReadRegisters,

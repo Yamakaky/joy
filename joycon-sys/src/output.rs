@@ -60,13 +60,13 @@ impl OutputReport {
     }
 
     fn ir_build(ack_request_packet: IRAckRequestPacket) -> OutputReport {
-        let id = IRDataRequestId::GetSensorData;
+        let id = IRRequestId::GetSensorData;
         let mut mcu_request = MCURequest {
             id: MCURequestId::GetIRData,
             u: MCURequestUnion {
-                ir_request: IRDataRequest {
+                ir_request: IRRequest {
                     id,
-                    u: IRDataRequestUnion { ack_request_packet },
+                    u: IRRequestUnion { ack_request_packet },
                 },
             },
         };

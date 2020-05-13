@@ -1,6 +1,6 @@
-/// Cf https://github.com/CTCaer/Nintendo_Switch_Reverse_Engineering/blob/ir-nfc/mcu_ir_nfc_notes.md
-use self::ir::*;
 use crate::common::*;
+/// Cf https://github.com/CTCaer/Nintendo_Switch_Reverse_Engineering/blob/ir-nfc/mcu_ir_nfc_notes.md
+use ir::*;
 use std::fmt;
 
 pub mod ir;
@@ -209,7 +209,7 @@ pub struct MCURequest {
 }
 
 impl MCURequest {
-    pub fn compute_crc(&mut self, id: IRDataRequestId) {
+    pub fn compute_crc(&mut self, id: IRRequestId) {
         unsafe { self.u.crc.compute_crc8(id) }
     }
 }
@@ -224,7 +224,7 @@ impl fmt::Debug for MCURequest {
 #[derive(Copy, Clone)]
 pub union MCURequestUnion {
     pub nothing: (),
-    pub ir_request: IRDataRequest,
+    pub ir_request: IRRequest,
     pub crc: MCURequestCRC,
 }
 
@@ -237,12 +237,12 @@ pub struct MCURequestCRC {
 }
 
 impl MCURequestCRC {
-    pub fn compute_crc8(&mut self, id: IRDataRequestId) {
+    pub fn compute_crc8(&mut self, id: IRRequestId) {
         // To simplify the data layout, subcmd_id is outside the byte buffer.
         self.crc = compute_crc8(0, &self.bytes);
         self._padding_0xff = match id {
-            IRDataRequestId::GetSensorData | IRDataRequestId::GetState => 0xff,
-            IRDataRequestId::ReadRegister => 0x00,
+            IRRequestId::GetSensorData | IRRequestId::GetState => 0xff,
+            IRRequestId::ReadRegister => 0x00,
         };
     }
 }

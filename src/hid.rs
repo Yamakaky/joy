@@ -280,14 +280,14 @@ impl JoyCon {
             "mcu not busy"
         );
 
-        let id = IRDataRequestId::GetState;
+        let id = IRRequestId::GetState;
         let mut cmd = MCURequest {
             // todo: variable subcmd
             id: MCURequestId::GetIRData,
             u: MCURequestUnion {
-                ir_request: IRDataRequest {
+                ir_request: IRRequest {
                     id,
-                    u: IRDataRequestUnion { nothing: () },
+                    u: IRRequestUnion { nothing: () },
                 },
             },
         };
@@ -318,13 +318,13 @@ impl JoyCon {
         for page in 0..=1 {
             let offset = 0;
             let nb_registers = 0x6f;
-            let id = IRDataRequestId::ReadRegister;
+            let id = IRRequestId::ReadRegister;
             let mut subcmd = MCURequest {
                 id: MCURequestId::GetIRData,
                 u: MCURequestUnion {
-                    ir_request: IRDataRequest {
+                    ir_request: IRRequest {
                         id,
-                        u: IRDataRequestUnion {
+                        u: IRRequestUnion {
                             read_registers: IRReadRegisters {
                                 unknown_0x01: 0x01,
                                 page,
