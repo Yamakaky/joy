@@ -1,0 +1,15 @@
+[package]
+name = "render"
+version = "0.1.0"
+authors = ["Yamakaky <yamakaky@yamaworld.fr>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wgpu = "0.5"
+winit = "0.22"
+futures = "0.3"
+vk-shader-macros = "0.2"
+cgmath = "0.17"
+bytemuck = "1.2"
