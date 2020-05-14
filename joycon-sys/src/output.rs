@@ -3,6 +3,7 @@
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
 use crate::common::*;
+use crate::light;
 use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::spi::*;
@@ -203,40 +204,29 @@ pub union SubcommandRequestUnion {
     pub nothing: (),
     pub imu_enabled: bool,
     pub input_report_mode: InputReportId,
-    pub player_lights: PlayerLights,
+    player_lights: light::PlayerLights,
+    home_light: light::HomeLight,
     pub mcu_mode: MCUMode,
     pub mcu_cmd: MCUCommand,
     pub spi_read: SPIReadRequest,
     pub imu_sensitivity: crate::imu::Sensitivity,
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone, Debug)]
-// TODO: debug
-pub struct PlayerLights(u8);
+impl From<light::PlayerLights> for SubcommandRequest {
+    fn from(player_lights: light::PlayerLights) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetPlayerLights,
+            u: SubcommandRequestUnion { player_lights },
+        }
+    }
+}
 
-impl PlayerLights {
-    #[allow(clippy::identity_op, clippy::too_many_arguments)]
-    pub fn new(
-        p0: bool,
-        p1: bool,
-        p2: bool,
-        p3: bool,
-        f0: bool,
-        f1: bool,
-        f2: bool,
-        f3: bool,
-    ) -> PlayerLights {
-        PlayerLights(
-            (p0 as u8) << 0
-                | (p1 as u8) << 1
-                | (p2 as u8) << 2
-                | (p3 as u8) << 3
-                | (f0 as u8) << 4
-                | (f1 as u8) << 5
-                | (f2 as u8) << 6
-                | (f3 as u8) << 7,
-        )
+impl From<light::HomeLight> for SubcommandRequest {
+    fn from(home_light: light::HomeLight) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetHomeLight,
+            u: SubcommandRequestUnion { home_light },
+        }
     }
 }
 

@@ -4,6 +4,7 @@ use crate::calibration::Calibration;
 use crate::image::Image;
 use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
+use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
@@ -137,6 +138,11 @@ impl JoyCon {
             u: SubcommandRequestUnion { nothing: () },
         })?;
         Ok(*reply.device_info().unwrap())
+    }
+
+    pub fn set_home_light(&mut self, home_light: light::HomeLight) -> Result<()> {
+        self.send_subcmd_wait(home_light)?;
+        Ok(())
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
@@ -370,15 +376,16 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_player_light(&mut self, player_lights: PlayerLights) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetPlayerLights,
-            u: SubcommandRequestUnion { player_lights },
-        })?;
+    pub fn set_player_light(&mut self, player_lights: light::PlayerLights) -> Result<()> {
+        self.send_subcmd_wait(player_lights)?;
         Ok(())
     }
 
-    fn send_subcmd_wait(&mut self, subcmd: SubcommandRequest) -> Result<SubcommandReply> {
+    fn send_subcmd_wait<S: Into<SubcommandRequest>>(
+        &mut self,
+        subcmd: S,
+    ) -> Result<SubcommandReply> {
+        let subcmd = subcmd.into();
         let mut out_report = subcmd.into();
         self.send(&mut out_report)?;
         // TODO: loop limit

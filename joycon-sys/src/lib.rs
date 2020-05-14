@@ -9,6 +9,7 @@ extern crate num_derive;
 pub mod common;
 pub mod imu;
 pub mod input;
+pub mod light;
 pub mod mcu;
 pub mod output;
 pub mod spi;
