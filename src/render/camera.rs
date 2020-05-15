@@ -6,6 +6,7 @@ pub struct Camera {
     pub fovy: f32,
     pub znear: f32,
     pub zfar: f32,
+    pub ortho: bool,
 }
 
 impl Camera {
@@ -18,6 +19,7 @@ impl Camera {
             fovy: 45.0,
             znear: 0.1,
             zfar: 10000.0,
+            ortho: false,
         };
         camera.update_aspect(sc_desc.width, sc_desc.height);
         camera
@@ -27,10 +29,24 @@ impl Camera {
         self.aspect = width as f32 / height as f32
     }
 
-    pub fn build_view_projection_matrix(&self) -> cgmath::Matrix4<f32> {
-        let view = cgmath::Matrix4::look_at(self.eye, self.target, self.up);
-        let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
-        return OPENGL_TO_WGPU_MATRIX * proj * view;
+    pub fn build_view_projection_matrix(&self, width: u32, height: u32) -> cgmath::Matrix4<f32> {
+        OPENGL_TO_WGPU_MATRIX
+            * if self.ortho {
+                cgmath::Ortho {
+                    left: 0.,
+                    right: height as f32,
+                    bottom: 0.,
+                    top: width as f32,
+                    far: 256.,
+                    near: -1.,
+                }
+                .into()
+            } else {
+                let proj =
+                    cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
+                let view = cgmath::Matrix4::look_at(self.eye, self.target, self.up);
+                proj * view
+            }
     }
 
     pub fn input(&mut self, event: &winit::event::WindowEvent) -> bool {
@@ -45,6 +61,10 @@ impl Camera {
                     },
                 ..
             } => match keycode {
+                VirtualKeyCode::Space => {
+                    self.ortho = !self.ortho;
+                    true
+                }
                 VirtualKeyCode::Z => {
                     self.eye += (0., 1., 0.).into();
                     true

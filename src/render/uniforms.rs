@@ -19,7 +19,7 @@ impl Uniforms {
     }
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera.build_view_projection_matrix();
+        self.view_proj = camera.build_view_projection_matrix(self.width, self.height);
     }
 
     pub fn instance_count(&self) -> u32 {
