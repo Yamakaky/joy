@@ -1,6 +1,5 @@
-use cgmath::Vector3;
 use winit::{
-    event::{Event, WindowEvent},
+    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -168,12 +167,12 @@ impl GUI {
                 index_format: wgpu::IndexFormat::Uint16,
                 vertex_buffers: &[
                     wgpu::VertexBufferDescriptor {
-                        stride: (std::mem::size_of::<f32>() * 2) as wgpu::BufferAddress,
+                        stride: (std::mem::size_of::<f32>() * 3) as wgpu::BufferAddress,
                         step_mode: wgpu::InputStepMode::Vertex,
                         attributes: &[wgpu::VertexAttributeDescriptor {
                             offset: 0,
                             shader_location: 0,
-                            format: wgpu::VertexFormat::Float2,
+                            format: wgpu::VertexFormat::Float3,
                         }],
                     },
                     wgpu::VertexBufferDescriptor {
@@ -220,8 +219,8 @@ impl GUI {
     }
 
     // input() won't deal with GPU code, so it can be synchronous
-    fn input(&mut self, _event: &WindowEvent) -> bool {
-        false
+    fn input(&mut self, event: &WindowEvent) -> bool {
+        self.camera.input(event)
     }
 
     fn update(&mut self) {
@@ -241,6 +240,17 @@ impl GUI {
             &self.uniform_buffer,
             0,
             std::mem::size_of::<uniforms::Uniforms>() as wgpu::BufferAddress,
+        );
+        let staging_buffer2 = self.device.create_buffer_with_data(
+            bytemuck::cast_slice(self.irdata.as_ref()),
+            wgpu::BufferUsage::COPY_SRC,
+        );
+        encoder.copy_buffer_to_buffer(
+            &staging_buffer2,
+            0,
+            &self.instance_buffer,
+            0,
+            (self.irdata.len() * std::mem::size_of::<u32>()) as wgpu::BufferAddress,
         );
         self.queue.submit(&[encoder.finish()]);
     }
@@ -269,7 +279,7 @@ impl GUI {
             rpass.set_vertex_buffer(1, &self.instance_buffer, 0, 0);
             rpass.set_index_buffer(&self.index_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            rpass.draw_indexed(0..36, 0, 0..self.uniforms.instance_count());
+            rpass.draw_indexed(0..36, 0, dbg!(0..self.uniforms.instance_count()));
         }
 
         self.queue.submit(&[encoder.finish()]);
@@ -280,7 +290,7 @@ async fn run(event_loop: EventLoop<IRData>, window: Window) {
     let mut gui = GUI::new(&window).await;
 
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
+        *control_flow = ControlFlow::Wait;
         match event {
             Event::MainEventsCleared => window.request_redraw(),
             Event::RedrawRequested(_) => {
@@ -302,9 +312,20 @@ async fn run(event_loop: EventLoop<IRData>, window: Window) {
                 ref event,
                 window_id,
             } if window_id == window.id() => {
-                if !gui.input(event) {
+                if gui.input(event) {
+                    window.request_redraw();
+                } else {
                     match event {
                         WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                        WindowEvent::KeyboardInput {
+                            input:
+                                KeyboardInput {
+                                    state: ElementState::Pressed,
+                                    virtual_keycode: Some(VirtualKeyCode::Escape),
+                                    ..
+                                },
+                            ..
+                        } => *control_flow = ControlFlow::Exit,
                         WindowEvent::Resized(physical_size) => {
                             gui.resize(*physical_size);
                         }
@@ -327,7 +348,7 @@ fn main() {
     let proxy = event_loop.create_proxy();
     proxy
         .send_event(IRData {
-            buffer: vec![8, 4, 100, 200, 47, 91].into(),
+            buffer: vec![0, 0, 4, 8, 16, 32].into(),
             width: 3,
             height: 2,
         })

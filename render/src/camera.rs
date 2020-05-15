@@ -11,8 +11,8 @@ pub struct Camera {
 impl Camera {
     pub fn new(sc_desc: &wgpu::SwapChainDescriptor) -> Camera {
         let mut camera = Camera {
-            eye: (5., 0., -10.).into(),
-            target: (10., 0., 128.).into(),
+            eye: (2., 1., 10.).into(),
+            target: (2., 1., 0.).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
             fovy: 45.0,
@@ -31,6 +31,40 @@ impl Camera {
         let view = cgmath::Matrix4::look_at(self.eye, self.target, self.up);
         let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
         return OPENGL_TO_WGPU_MATRIX * proj * view;
+    }
+
+    pub fn input(&mut self, event: &winit::event::WindowEvent) -> bool {
+        use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+        match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(keycode),
+                        ..
+                    },
+                ..
+            } => match keycode {
+                VirtualKeyCode::Z => {
+                    self.eye += (0., 1., 0.).into();
+                    true
+                }
+                VirtualKeyCode::Q => {
+                    self.eye -= (1., 0., 0.).into();
+                    true
+                }
+                VirtualKeyCode::S => {
+                    self.eye -= (0., 1., 0.).into();
+                    true
+                }
+                VirtualKeyCode::D => {
+                    self.eye += (1., 0., 0.).into();
+                    true
+                }
+                _ => false,
+            },
+            _ => false,
+        }
     }
 }
 

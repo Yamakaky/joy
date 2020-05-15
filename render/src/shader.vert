@@ -1,6 +1,6 @@
 #version 450
 
-layout(location = 0) in vec2 a_position;
+layout(location = 0) in vec3 a_position;
 layout(location = 1) in uint a_depth;
 
 layout(location = 0) out float f_color;
@@ -13,7 +13,7 @@ uniform Uniforms {
 };
 
 void main() {
-    vec2 off = vec2(gl_InstanceIndex % width, gl_InstanceIndex / width);
-    gl_Position = u_mvp * vec4(a_position.xy + off, a_depth, 1.0);
+    vec3 off = vec3(gl_InstanceIndex % width, gl_InstanceIndex / width, -float(a_depth));
+    gl_Position = u_mvp * vec4(a_position + off, 1.0);
     f_color = a_depth / 256.;
 }
