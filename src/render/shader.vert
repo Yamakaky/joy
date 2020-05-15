@@ -13,7 +13,7 @@ uniform Uniforms {
 };
 
 void main() {
-    vec3 off = vec3(gl_InstanceIndex % width, gl_InstanceIndex / width, -float(255 - a_depth));
-    gl_Position = u_mvp * vec4(a_position + off, 1.0);
+    vec3 pos = a_position + vec3(gl_InstanceIndex % width, gl_InstanceIndex / width, -float(255 - a_depth));
+    gl_Position = u_mvp * vec4(height - pos.y, width - pos.x, pos.z, 1.0);
     f_depth = a_depth;
 }
