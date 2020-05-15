@@ -41,10 +41,12 @@ impl Register {
         self.page == other.page && self.offset == other.offset
     }
 
+    // Default value: 320x240
     pub fn resolution(resolution: Resolution) -> Register {
         Register::new(Resolution, resolution as u8)
     }
 
+    // default 0x1860
     pub fn exposure_us(exposure: u32) -> [Register; 2] {
         let raw_exposure = exposure * 31200 / 1000;
         [
@@ -53,10 +55,12 @@ impl Register {
         ]
     }
 
+    // default: Manual
     pub fn exposure_mode(mode: ExposureMode) -> Register {
         Register::new(ExposureMode, mode as u8)
     }
 
+    // TODO default 0x10 0x0
     pub fn digital_gain(gain: u16) -> [Register; 2] {
         // todo: check
         [
@@ -65,20 +69,24 @@ impl Register {
         ]
     }
 
+    // default value: 0x10 TODO
     pub fn ir_leds(far: bool, near: bool) -> Register {
         //todo: strobe + flashlight
         //todo: bitmap
         Register::new(IRLeds, ((!far) as u8) << 5 | ((!near) as u8) << 6)
     }
 
+    // default value: X1
     pub fn external_light_filter(filter: ExternalLightFilter) -> Register {
         Register::new(ExternalLightFilter, filter as u8)
     }
 
+    // default value: 0xc8
     pub fn white_pixel_threshold(threshold: u8) -> Register {
         Register::new(WhitePixelThreshold, threshold)
     }
 
+    // default: 0, 0xe, 1, 1
     pub fn leds_intensity(l1: u8, l2: u8, l3: u8, l4: u8) -> [Register; 2] {
         assert_eq!(0, (l1 | l2 | l3 | l4) & 0xf0);
         [
@@ -87,22 +95,27 @@ impl Register {
         ]
     }
 
+    // default: Normal
     pub fn flip(side: Flip) -> Register {
         Register::new(Flip, side as u8)
     }
 
+    // default : enabled
     pub fn denoise(enabled: bool) -> Register {
         Register::new(Denoise, enabled as u8)
     }
 
+    /// default: 0x23
     pub fn edge_smoothing_threshold(threshold: u8) -> Register {
         Register::new(EdgeSmoothingThreshold, threshold)
     }
 
+    // Default: 0x44
     pub fn color_interpolation_threshold(threshold: u8) -> Register {
         Register::new(ColorInterpolationThreshold, threshold)
     }
 
+    // Default value: 0x32
     pub fn buffer_update_time(time: u8) -> Register {
         Register::new(BufferUpdateTimeLSB, time)
     }
