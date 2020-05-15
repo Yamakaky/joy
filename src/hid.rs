@@ -13,6 +13,7 @@ use joycon_sys::*;
 
 /// 200 samples per second with 3 sample per InputReport.
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
+const WAIT_TIMEOUT: u32 = 60;
 
 pub struct JoyCon {
     device: hidapi::HidDevice,
@@ -35,7 +36,7 @@ impl JoyCon {
         device: hidapi::HidDevice,
         info: hidapi::DeviceInfo,
         resolution: Resolution,
-    ) -> JoyCon {
+    ) -> Result<JoyCon> {
         assert!([
             JOYCON_L_BT,
             JOYCON_R_BT,
@@ -43,7 +44,7 @@ impl JoyCon {
             JOYCON_CHARGING_GRIP,
         ]
         .contains(&info.product_id()));
-        JoyCon {
+        let mut joycon = JoyCon {
             device,
             info,
             counter: 0,
@@ -58,7 +59,10 @@ impl JoyCon {
             right_stick_calib: StickCalibration::default(),
             image: Image::new(resolution),
             enable_ir_loop: false,
-        }
+        };
+
+        joycon.set_report_mode_standard()?;
+        Ok(joycon)
     }
 
     pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(Box<[u8]>, u32, u32)>) {
@@ -215,9 +219,9 @@ impl JoyCon {
         mut f: impl FnMut(&MCUReport) -> bool,
     ) -> Result<MCUReport> {
         // The MCU takes some time to warm up so we retry until we get an answer
-        for _ in 0..8 {
+        for _ in 0..WAIT_TIMEOUT {
             self.send_mcu_subcmd(mcu_subcmd)?;
-            for _ in 0..8 {
+            for _ in 0..WAIT_TIMEOUT {
                 let in_report = self.recv()?;
                 if let Some(mcu_report) = in_report.mcu_report() {
                     if f(mcu_report) {
@@ -388,9 +392,9 @@ impl JoyCon {
     ) -> Result<SubcommandReply> {
         let subcmd = subcmd.into();
         let mut out_report = subcmd.into();
+
         self.send(&mut out_report)?;
-        // TODO: loop limit
-        loop {
+        for _ in 0..WAIT_TIMEOUT {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
                 if reply.id() == Some(subcmd.subcommand_id) {
@@ -399,6 +403,8 @@ impl JoyCon {
                 }
             }
         }
+
+        bail!("Timeout while waiting for subcommand");
     }
 
     fn send_mcu_subcmd(&mut self, mcu_subcmd: MCURequest) -> Result<()> {
