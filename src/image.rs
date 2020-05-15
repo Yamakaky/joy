@@ -38,7 +38,7 @@ impl Image {
             //println!("got packet {}", packet.frag_number);
             if packet.frag_number == self.resolution.max_fragment_id() {
                 if self.prev_fragment_id != 0 {
-                    println!("got complete packet");
+                    //println!("got complete packet");
                     if let Some(ref mut cb) = self.cb {
                         let (width, height) = self.resolution.size();
                         let mut buffer = Vec::with_capacity((width * height) as usize);

@@ -31,7 +31,11 @@ pub struct JoyCon {
 }
 
 impl JoyCon {
-    pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> JoyCon {
+    pub fn new(
+        device: hidapi::HidDevice,
+        info: hidapi::DeviceInfo,
+        resolution: Resolution,
+    ) -> JoyCon {
         assert!([
             JOYCON_L_BT,
             JOYCON_R_BT,
@@ -52,7 +56,7 @@ impl JoyCon {
             max_raw_accel: 0,
             left_stick_calib: StickCalibration::default(),
             right_stick_calib: StickCalibration::default(),
-            image: Image::new(Resolution::R320x240),
+            image: Image::new(resolution),
             enable_ir_loop: false,
         }
     }
