@@ -1,3 +1,4 @@
+use std::sync::mpsc;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -312,13 +313,33 @@ impl GUI {
     }
 }
 
-pub async fn run(event_loop: EventLoop<IRData>, window: Window) {
+pub async fn run(
+    event_loop: EventLoop<IRData>,
+    window: Window,
+    thread_contact: mpsc::SyncSender<()>,
+    thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
+) -> ! {
     let mut gui = GUI::new(&window).await;
+    window.set_maximized(true);
+
+    let mut thread_handle = Some(thread_handle);
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         match event {
             Event::MainEventsCleared => window.request_redraw(),
+            Event::LoopDestroyed => {
+                let _ = thread_contact.send(());
+                match thread_handle
+                    .take()
+                    .expect("thread already exited???")
+                    .join()
+                {
+                    Ok(Ok(())) => {}
+                    Ok(Err(e)) => eprintln!("Joycon thread exited with error: {:?}", e),
+                    Err(_) => eprintln!("Joycon thread crashed"),
+                }
+            }
             Event::RedrawRequested(_) => {
                 gui.update();
                 gui.render();
