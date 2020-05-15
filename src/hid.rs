@@ -324,7 +324,8 @@ impl JoyCon {
                 std::thread::sleep(std::time::Duration::from_millis(15));
             }
         }
-
+        // TODO reg value doesn't change until next frame
+        /*
         let mut validated = 0;
         for page in 0..=1 {
             let offset = 0;
@@ -377,7 +378,7 @@ impl JoyCon {
             }
         }
         assert_eq!(validated, regs.len());
-        self.send(&mut OutputReport::ir_ack(0))?;
+        self.send(&mut OutputReport::ir_ack(0))?;*/
         Ok(())
     }
 
