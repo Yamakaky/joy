@@ -5,6 +5,7 @@ use winit::{
 };
 
 mod camera;
+mod texture;
 mod uniforms;
 
 const MAX_INSTANCE_COUNT: u64 = 320 * 240;
@@ -22,6 +23,7 @@ struct GUI {
     uniforms: uniforms::Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
+    depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
     irdata: Box<[u32]>,
@@ -134,6 +136,9 @@ impl GUI {
             label: Some("uniform_bind_group"),
         });
 
+        let depth_texture =
+            texture::Texture::create_depth_texture(&device, &sc_desc, "depth_texture");
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             bind_group_layouts: &[&uniform_bind_group_layout],
         });
@@ -162,7 +167,15 @@ impl GUI {
                 write_mask: wgpu::ColorWrite::ALL,
             }],
             primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-            depth_stencil_state: None,
+            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
+                format: texture::Texture::DEPTH_FORMAT,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less, // 1.
+                stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE, // 2.
+                stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
+                stencil_read_mask: 0,
+                stencil_write_mask: 0,
+            }),
             vertex_state: wgpu::VertexStateDescriptor {
                 index_format: wgpu::IndexFormat::Uint16,
                 vertex_buffers: &[
@@ -204,6 +217,7 @@ impl GUI {
             uniforms,
             uniform_buffer,
             uniform_bind_group,
+            depth_texture,
             size,
             camera,
             irdata: vec![].into(),
@@ -215,6 +229,8 @@ impl GUI {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
+        self.depth_texture =
+            texture::Texture::create_depth_texture(&self.device, &self.sc_desc, "depth_texture");
         self.camera.update_aspect(self.size.width, self.size.height);
     }
 
@@ -274,7 +290,15 @@ impl GUI {
                     store_op: wgpu::StoreOp::Store,
                     clear_color: wgpu::Color::BLACK,
                 }],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: &self.depth_texture.view,
+                    depth_load_op: wgpu::LoadOp::Clear,
+                    depth_store_op: wgpu::StoreOp::Store,
+                    clear_depth: 1.0,
+                    stencil_load_op: wgpu::LoadOp::Clear,
+                    stencil_store_op: wgpu::StoreOp::Store,
+                    clear_stencil: 0,
+                }),
             });
             rpass.set_pipeline(&self.render_pipeline);
             rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);

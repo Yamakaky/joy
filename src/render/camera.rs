@@ -12,7 +12,7 @@ impl Camera {
     pub fn new(sc_desc: &wgpu::SwapChainDescriptor) -> Camera {
         let mut camera = Camera {
             eye: (120., 120., 20.).into(),
-            target: (120., 120., -128.).into(),
+            target: (120., 120., -50.).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
             fovy: 45.0,
@@ -59,6 +59,14 @@ impl Camera {
                 }
                 VirtualKeyCode::D => {
                     self.eye += (1., 0., 0.).into();
+                    true
+                }
+                VirtualKeyCode::A => {
+                    self.eye -= (0., 0., 1.).into();
+                    true
+                }
+                VirtualKeyCode::E => {
+                    self.eye += (0., 0., 1.).into();
                     true
                 }
                 _ => false,
