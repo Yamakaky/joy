@@ -223,7 +223,7 @@ impl Resolution {
     pub fn max_fragment_id(self) -> u8 {
         match self {
             Resolution::R320x240 => 0xff,
-            Resolution::R160x120 => 0x0f,
+            Resolution::R160x120 => 0x3f,
             Resolution::R80x60 => 0x0f,
             Resolution::R40x30 => 0x03,
         }
