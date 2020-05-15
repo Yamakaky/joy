@@ -56,6 +56,11 @@ impl JoyCon {
             enable_ir_loop: false,
         }
     }
+
+    pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(Box<[u8]>, u32, u32)>) {
+        self.image.set_cb(cb);
+    }
+
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;

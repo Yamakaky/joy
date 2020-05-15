@@ -7,7 +7,6 @@ edition = "2018"
 [workspace]
 members = [
     "joycon-sys",
-    "render",
 ]
 
 [dependencies]
@@ -16,3 +15,9 @@ enigo = "0.0.14"
 image = { version = "0.23", features = ["png"], default_features = false }
 hidapi = "1.2"
 joycon-sys = { path = "joycon-sys" }
+wgpu = "0.5"
+winit = "0.22"
+futures = "0.3"
+vk-shader-macros = "0.2"
+cgmath = "0.17"
+bytemuck = "1.2"

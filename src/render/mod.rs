@@ -109,17 +109,17 @@ impl GUI {
             .create_buffer_with_data(bytemuck::cast_slice(index_data), wgpu::BufferUsage::INDEX);
 
         let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            size: MAX_INSTANCE_COUNT,
+            size: MAX_INSTANCE_COUNT * 4,
             usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
             label: Some("instance_buffer"),
         });
 
         let vs_module = device.create_shader_module(vk_shader_macros::include_glsl!(
-            "src/shader.vert",
+            "src/render/shader.vert",
             kind: vert
         ));
         let fs_module = device.create_shader_module(vk_shader_macros::include_glsl!(
-            "src/shader.frag",
+            "src/render/shader.frag",
             kind: frag
         ));
 
@@ -241,17 +241,19 @@ impl GUI {
             0,
             std::mem::size_of::<uniforms::Uniforms>() as wgpu::BufferAddress,
         );
-        let staging_buffer2 = self.device.create_buffer_with_data(
-            bytemuck::cast_slice(self.irdata.as_ref()),
-            wgpu::BufferUsage::COPY_SRC,
-        );
-        encoder.copy_buffer_to_buffer(
-            &staging_buffer2,
-            0,
-            &self.instance_buffer,
-            0,
-            (self.irdata.len() * std::mem::size_of::<u32>()) as wgpu::BufferAddress,
-        );
+        if self.irdata.len() > 0 {
+            let staging_buffer2 = self.device.create_buffer_with_data(
+                bytemuck::cast_slice(self.irdata.as_ref()),
+                wgpu::BufferUsage::COPY_SRC,
+            );
+            encoder.copy_buffer_to_buffer(
+                &staging_buffer2,
+                0,
+                &self.instance_buffer,
+                0,
+                (self.irdata.len() * std::mem::size_of::<u32>()) as wgpu::BufferAddress,
+            );
+        }
         self.queue.submit(&[encoder.finish()]);
     }
 
@@ -279,14 +281,14 @@ impl GUI {
             rpass.set_vertex_buffer(1, &self.instance_buffer, 0, 0);
             rpass.set_index_buffer(&self.index_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            rpass.draw_indexed(0..36, 0, dbg!(0..self.uniforms.instance_count()));
+            rpass.draw_indexed(0..36, 0, 0..self.uniforms.instance_count());
         }
 
         self.queue.submit(&[encoder.finish()]);
     }
 }
 
-async fn run(event_loop: EventLoop<IRData>, window: Window) {
+pub async fn run(event_loop: EventLoop<IRData>, window: Window) {
     let mut gui = GUI::new(&window).await;
 
     event_loop.run(move |event, _, control_flow| {
@@ -340,20 +342,6 @@ async fn run(event_loop: EventLoop<IRData>, window: Window) {
             _ => {}
         }
     });
-}
-
-fn main() {
-    let event_loop = EventLoop::with_user_event();
-    let window = winit::window::Window::new(&event_loop).unwrap();
-    let proxy = event_loop.create_proxy();
-    proxy
-        .send_event(IRData {
-            buffer: vec![0, 0, 4, 8, 16, 32].into(),
-            width: 3,
-            height: 2,
-        })
-        .unwrap();
-    futures::executor::block_on(run(event_loop, window));
 }
 
 #[derive(Debug)]

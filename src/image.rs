@@ -5,6 +5,7 @@ pub struct Image {
     buffer: Box<[[u8; 300]; 0x100]>,
     resolution: ir::Resolution,
     prev_fragment_id: u8,
+    cb: Option<Box<dyn FnMut(Box<[u8]>, u32, u32)>>,
 }
 
 impl Image {
@@ -13,7 +14,12 @@ impl Image {
             buffer: Box::new([[0; 300]; 0x100]),
             resolution: resolution,
             prev_fragment_id: 0,
+            cb: None,
         }
+    }
+
+    pub fn set_cb(&mut self, cb: Box<dyn FnMut(Box<[u8]>, u32, u32)>) {
+        self.cb = Some(cb);
     }
 
     pub fn handle(&mut self, report: &MCUReport) -> [Option<OutputReport>; 2] {
@@ -33,20 +39,18 @@ impl Image {
             if packet.frag_number == self.resolution.max_fragment_id() {
                 if self.prev_fragment_id != 0 {
                     println!("got complete packet");
-                    let (width, height) = self.resolution.size();
-                    let mut image = image::ImageBuffer::new(width, height);
-                    for (i, frag) in self
-                        .buffer
-                        .iter()
-                        .enumerate()
-                        .take(self.resolution.max_fragment_id() as usize + 1)
-                    {
-                        for (j, pixel) in frag.iter().cloned().enumerate() {
-                            let sum = (i * 300 + j) as u32;
-                            image.put_pixel(sum % width, sum / width, image::Luma([pixel]));
+                    if let Some(ref mut cb) = self.cb {
+                        let (width, height) = self.resolution.size();
+                        let mut buffer = Vec::with_capacity((width * height) as usize);
+                        for fragment in self
+                            .buffer
+                            .iter()
+                            .take(self.resolution.max_fragment_id() as usize + 1)
+                        {
+                            buffer.extend(fragment.iter());
                         }
+                        cb(buffer.into(), width, height);
                     }
-                    image.save("D:\\ir.png").unwrap();
                     self.buffer = Box::new([[0; 300]; 0x100]);
                 }
                 self.prev_fragment_id = 0;

@@ -11,13 +11,13 @@ pub struct Camera {
 impl Camera {
     pub fn new(sc_desc: &wgpu::SwapChainDescriptor) -> Camera {
         let mut camera = Camera {
-            eye: (2., 1., 10.).into(),
-            target: (2., 1., 0.).into(),
+            eye: (120., 120., 20.).into(),
+            target: (120., 120., -128.).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
             fovy: 45.0,
             znear: 0.1,
-            zfar: 200.0,
+            zfar: 10000.0,
         };
         camera.update_aspect(sc_desc.width, sc_desc.height);
         camera
