@@ -5,6 +5,9 @@ use winit::{
     window::Window,
 };
 
+mod camera;
+mod uniforms;
+
 struct GUI {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -14,7 +17,11 @@ struct GUI {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
+    uniforms: uniforms::Uniforms,
+    uniform_buffer: wgpu::Buffer,
+    uniform_bind_group: wgpu::BindGroup,
     size: winit::dpi::PhysicalSize<u32>,
+    camera: camera::Camera,
 }
 
 impl GUI {
@@ -50,11 +57,19 @@ impl GUI {
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
+        let camera = camera::Camera::new(&sc_desc);
+        let mut uniforms = uniforms::Uniforms::new();
+        uniforms.update_view_proj(&camera);
+        let uniform_buffer = device.create_buffer_with_data(
+            bytemuck::cast_slice(&[uniforms]),
+            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        );
+
         let vertex_data: &[f32] = &[0.0, 0.5, -0.5, -0.5, 0.5, -0.5];
         let vertex_buffer = device
             .create_buffer_with_data(bytemuck::cast_slice(vertex_data), wgpu::BufferUsage::VERTEX);
 
-        let instance_data: &[f32] = &[0.0, 0.2];
+        let instance_data: &[u32] = &[0, 80];
         let instance_buffer = device.create_buffer_with_data(
             bytemuck::cast_slice(instance_data),
             wgpu::BufferUsage::VERTEX,
@@ -69,8 +84,19 @@ impl GUI {
             kind: frag
         ));
 
+        let uniform_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                bindings: &uniforms::Uniforms::layout(),
+                label: Some("uniform_bind_group_layout"),
+            });
+        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &uniform_bind_group_layout,
+            bindings: &uniforms.bindings(&uniform_buffer),
+            label: Some("uniform_bind_group"),
+        });
+
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[],
+            bind_group_layouts: &[&uniform_bind_group_layout],
         });
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             layout: &pipeline_layout,
@@ -111,12 +137,12 @@ impl GUI {
                         }],
                     },
                     wgpu::VertexBufferDescriptor {
-                        stride: std::mem::size_of::<f32>() as wgpu::BufferAddress,
+                        stride: std::mem::size_of::<u32>() as wgpu::BufferAddress,
                         step_mode: wgpu::InputStepMode::Instance,
                         attributes: &[wgpu::VertexAttributeDescriptor {
                             offset: 0,
                             shader_location: 1,
-                            format: wgpu::VertexFormat::Float,
+                            format: wgpu::VertexFormat::Uint,
                         }],
                     },
                 ],
@@ -135,7 +161,11 @@ impl GUI {
             render_pipeline,
             vertex_buffer,
             instance_buffer,
+            uniforms,
+            uniform_buffer,
+            uniform_bind_group,
             size,
+            camera,
         }
     }
 
@@ -144,6 +174,7 @@ impl GUI {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
+        self.camera.update_aspect(self.size.width, self.size.height);
     }
 
     // input() won't deal with GPU code, so it can be synchronous
@@ -151,7 +182,26 @@ impl GUI {
         false
     }
 
-    fn update(&mut self) {}
+    fn update(&mut self) {
+        self.uniforms.update_view_proj(&self.camera);
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("update encoder"),
+            });
+        let staging_buffer = self.device.create_buffer_with_data(
+            bytemuck::cast_slice(&[self.uniforms]),
+            wgpu::BufferUsage::COPY_SRC,
+        );
+        encoder.copy_buffer_to_buffer(
+            &staging_buffer,
+            0,
+            &self.uniform_buffer,
+            0,
+            std::mem::size_of::<uniforms::Uniforms>() as wgpu::BufferAddress,
+        );
+        self.queue.submit(&[encoder.finish()]);
+    }
 
     fn render(&mut self) {
         let frame = self
@@ -175,7 +225,8 @@ impl GUI {
             rpass.set_pipeline(&self.render_pipeline);
             rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
             rpass.set_vertex_buffer(1, &self.instance_buffer, 0, 0);
-            rpass.draw(0..3, 0..2);
+            rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
+            rpass.draw(0..3, 0..self.uniforms.instance_count());
         }
 
         self.queue.submit(&[encoder.finish()]);
