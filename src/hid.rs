@@ -329,9 +329,11 @@ impl JoyCon {
             }
         }
         // TODO reg value doesn't change until next frame
-        /*
-        let mut validated = 0;
-        for page in 0..=1 {
+        Ok(())
+    }
+    pub fn get_ir_registers(&mut self) -> Result<Vec<Register>> {
+        let mut registers = vec![];
+        for page in 0..=4 {
             let offset = 0;
             let nb_registers = 0x6f;
             let id = IRRequestId::ReadRegister;
@@ -366,24 +368,13 @@ impl JoyCon {
             let reg_slice = mcu_report
                 .as_ir_registers()
                 .expect("already validated above");
-            for r1 in Register::decode_raw(
+            registers.extend(Register::decode_raw(
                 page,
                 offset,
                 &reg_slice.values[..reg_slice.nb_registers as usize],
-            ) {
-                for r2 in regs {
-                    if r1.same_address(Register::finish()) && *r2 == Register::finish() {
-                        validated += 1;
-                    } else if r1.same_address(*r2) {
-                        ensure!(r1 == *r2, "error setting register {:?} {:?}", r1, r2);
-                        validated += 1;
-                    }
-                }
-            }
+            ));
         }
-        assert_eq!(validated, regs.len());
-        self.send(&mut OutputReport::ir_ack(0))?;*/
-        Ok(())
+        Ok(registers)
     }
 
     pub fn set_player_light(&mut self, player_lights: light::PlayerLights) -> Result<()> {
