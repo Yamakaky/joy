@@ -329,6 +329,7 @@ pub async fn run(
         match event {
             Event::MainEventsCleared => window.request_redraw(),
             Event::LoopDestroyed => {
+                eprintln!("sending shutdown signal to thread");
                 let _ = thread_contact.send(());
                 match thread_handle
                     .take()
