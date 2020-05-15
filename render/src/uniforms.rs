@@ -11,8 +11,8 @@ impl Uniforms {
         use cgmath::SquareMatrix;
         Uniforms {
             view_proj: cgmath::Matrix4::identity(),
-            width: 1,
-            height: 2,
+            width: 0,
+            height: 0,
         }
     }
 

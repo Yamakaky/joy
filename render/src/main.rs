@@ -8,6 +8,8 @@ use winit::{
 mod camera;
 mod uniforms;
 
+const MAX_INSTANCE_COUNT: u64 = 320 * 240;
+
 struct GUI {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -16,12 +18,14 @@ struct GUI {
     swap_chain: wgpu::SwapChain,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
+    index_buffer: wgpu::Buffer,
     instance_buffer: wgpu::Buffer,
     uniforms: uniforms::Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
+    irdata: Box<[u32]>,
 }
 
 impl GUI {
@@ -65,15 +69,51 @@ impl GUI {
             wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         );
 
-        let vertex_data: &[f32] = &[0.0, 0.5, -0.5, -0.5, 0.5, -0.5];
+        #[rustfmt::skip]
+        let vertex_data: &[f32] = &[
+            // front
+            -0.4, -0.4,  0.4,
+            0.4, -0.4,  0.4,
+            0.4,  0.4,  0.4,
+            -0.4,  0.4,  0.4,
+            // back
+            -0.4, -0.4, -0.4,
+            0.4, -0.4, -0.4,
+            0.4,  0.4, -0.4,
+            -0.4,  0.4, -0.4,
+        ];
         let vertex_buffer = device
             .create_buffer_with_data(bytemuck::cast_slice(vertex_data), wgpu::BufferUsage::VERTEX);
 
-        let instance_data: &[u32] = &[0, 80];
-        let instance_buffer = device.create_buffer_with_data(
-            bytemuck::cast_slice(instance_data),
-            wgpu::BufferUsage::VERTEX,
-        );
+        #[rustfmt::skip]
+        let index_data: &[u16] = &[
+            // front
+            0, 1, 2,
+            2, 3, 0,
+            // right
+            1, 5, 6,
+            6, 2, 1,
+            // back
+            7, 6, 5,
+            5, 4, 7,
+            // left
+            4, 0, 3,
+            3, 7, 4,
+            // bottom
+            4, 5, 1,
+            1, 0, 4,
+            // top
+            3, 2, 6,
+            6, 7, 3,
+        ];
+        let index_buffer = device
+            .create_buffer_with_data(bytemuck::cast_slice(index_data), wgpu::BufferUsage::INDEX);
+
+        let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            size: MAX_INSTANCE_COUNT,
+            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
+            label: Some("instance_buffer"),
+        });
 
         let vs_module = device.create_shader_module(vk_shader_macros::include_glsl!(
             "src/shader.vert",
@@ -160,12 +200,14 @@ impl GUI {
             swap_chain,
             render_pipeline,
             vertex_buffer,
+            index_buffer,
             instance_buffer,
             uniforms,
             uniform_buffer,
             uniform_bind_group,
             size,
             camera,
+            irdata: vec![].into(),
         }
     }
 
@@ -225,15 +267,16 @@ impl GUI {
             rpass.set_pipeline(&self.render_pipeline);
             rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
             rpass.set_vertex_buffer(1, &self.instance_buffer, 0, 0);
+            rpass.set_index_buffer(&self.index_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            rpass.draw(0..3, 0..self.uniforms.instance_count());
+            rpass.draw_indexed(0..36, 0, 0..self.uniforms.instance_count());
         }
 
         self.queue.submit(&[encoder.finish()]);
     }
 }
 
-async fn run(event_loop: EventLoop<()>, window: Window) {
+async fn run(event_loop: EventLoop<IRData>, window: Window) {
     let mut gui = GUI::new(&window).await;
 
     event_loop.run(move |event, _, control_flow| {
@@ -243,6 +286,17 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
             Event::RedrawRequested(_) => {
                 gui.update();
                 gui.render();
+            }
+            Event::UserEvent(IRData {
+                buffer,
+                width,
+                height,
+            }) => {
+                assert_eq!(buffer.len(), width as usize * height as usize);
+                gui.irdata = buffer;
+                gui.uniforms.width = width;
+                gui.uniforms.height = height;
+                window.request_redraw();
             }
             Event::WindowEvent {
                 ref event,
@@ -268,7 +322,22 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 }
 
 fn main() {
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::with_user_event();
     let window = winit::window::Window::new(&event_loop).unwrap();
+    let proxy = event_loop.create_proxy();
+    proxy
+        .send_event(IRData {
+            buffer: vec![8, 4, 100, 200, 47, 91].into(),
+            width: 3,
+            height: 2,
+        })
+        .unwrap();
     futures::executor::block_on(run(event_loop, window));
+}
+
+#[derive(Debug)]
+pub struct IRData {
+    pub buffer: Box<[u32]>,
+    pub width: u32,
+    pub height: u32,
 }
