@@ -93,7 +93,7 @@ impl fmt::Debug for MCUReport {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union MCUReportUnion {
+union MCUReportUnion {
     // add to validate when adding variant
     _raw: [u8; 312],
     status: MCUStatus,

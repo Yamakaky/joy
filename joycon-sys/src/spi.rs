@@ -76,7 +76,7 @@ impl SPIReadResult {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union SPIResultData {
+union SPIResultData {
     sticks_factory_calib: SticksCalibration,
     sticks_user_calib: UserSticksCalibration,
     imu_factory_calib: SensorCalibration,
