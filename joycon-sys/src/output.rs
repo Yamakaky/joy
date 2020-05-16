@@ -149,8 +149,41 @@ union OutputReportUnion {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct SubcommandRequest {
-    pub subcommand_id: SubcommandId,
-    pub u: SubcommandRequestUnion,
+    subcommand_id: SubcommandId,
+    u: SubcommandRequestUnion,
+}
+
+impl SubcommandRequest {
+    pub fn id(&self) -> SubcommandId {
+        self.subcommand_id
+    }
+    pub fn set_imu_enabled(imu_enabled: bool) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::EnableIMU,
+            u: SubcommandRequestUnion { imu_enabled },
+        }
+    }
+
+    pub fn set_input_report_mode(input_report_mode: InputReportId) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetInputReportMode,
+            u: SubcommandRequestUnion { input_report_mode },
+        }
+    }
+
+    pub fn request_device_info() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::RequestDeviceInfo,
+            u: SubcommandRequestUnion { nothing: () },
+        }
+    }
+
+    pub fn set_mcu_mode(mcu_mode: MCUMode) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetMCUState,
+            u: SubcommandRequestUnion { mcu_mode },
+        }
+    }
 }
 
 impl From<MCUCommand> for SubcommandRequest {
@@ -192,16 +225,34 @@ impl Default for RumbleData {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union SubcommandRequestUnion {
-    pub nothing: (),
-    pub imu_enabled: bool,
-    pub input_report_mode: InputReportId,
+union SubcommandRequestUnion {
+    nothing: (),
+    imu_enabled: bool,
+    input_report_mode: InputReportId,
     player_lights: light::PlayerLights,
     home_light: light::HomeLight,
-    pub mcu_mode: MCUMode,
-    pub mcu_cmd: MCUCommand,
-    pub spi_read: SPIReadRequest,
-    pub imu_sensitivity: crate::imu::Sensitivity,
+    mcu_mode: MCUMode,
+    mcu_cmd: MCUCommand,
+    spi_read: SPIReadRequest,
+    imu_sensitivity: crate::imu::Sensitivity,
+}
+
+impl From<crate::imu::Sensitivity> for SubcommandRequest {
+    fn from(imu_sensitivity: crate::imu::Sensitivity) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetIMUSens,
+            u: SubcommandRequestUnion { imu_sensitivity },
+        }
+    }
+}
+
+impl From<SPIReadRequest> for SubcommandRequest {
+    fn from(spi_read: SPIReadRequest) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SPIRead,
+            u: SubcommandRequestUnion { spi_read },
+        }
+    }
 }
 
 impl From<light::PlayerLights> for SubcommandRequest {

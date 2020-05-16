@@ -130,15 +130,10 @@ impl JoyCon {
     pub fn set_imu_sens(&mut self) -> Result<()> {
         let gyro_sens = imu::GyroSens::DPS2000;
         let accel_sens = imu::AccSens::G8;
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetIMUSens,
-            u: SubcommandRequestUnion {
-                imu_sensitivity: imu::Sensitivity {
-                    gyro_sens,
-                    acc_sens: accel_sens,
-                    ..imu::Sensitivity::default()
-                },
-            },
+        self.send_subcmd_wait(imu::Sensitivity {
+            gyro_sens,
+            acc_sens: accel_sens,
+            ..imu::Sensitivity::default()
         })?;
         self.gyro_sens = gyro_sens;
         self.accel_sens = accel_sens;
@@ -146,10 +141,7 @@ impl JoyCon {
     }
 
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
-        let reply = self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::RequestDeviceInfo,
-            u: SubcommandRequestUnion { nothing: () },
-        })?;
+        let reply = self.send_subcmd_wait(SubcommandRequest::request_device_info())?;
         Ok(*reply.device_info().unwrap())
     }
 
@@ -159,40 +151,26 @@ impl JoyCon {
     }
 
     pub fn enable_imu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::EnableIMU,
-            u: SubcommandRequestUnion { imu_enabled: true },
-        })?;
+        self.send_subcmd_wait(SubcommandRequest::set_imu_enabled(true))?;
         Ok(())
     }
 
     pub fn set_report_mode_standard(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetInputReportMode,
-            u: SubcommandRequestUnion {
-                input_report_mode: InputReportId::StandardFull,
-            },
-        })?;
+        self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
+            InputReportId::StandardFull,
+        ))?;
         Ok(())
     }
 
     pub fn set_report_mode_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetInputReportMode,
-            u: SubcommandRequestUnion {
-                input_report_mode: InputReportId::StandardFullMCU,
-            },
-        })?;
+        self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
+            InputReportId::StandardFullMCU,
+        ))?;
         Ok(())
     }
 
     pub fn enable_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetMCUState,
-            u: SubcommandRequestUnion {
-                mcu_mode: MCUMode::Standby,
-            },
-        })?;
+        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
         self.wait_mcu_status(MCUMode::Standby)
             .context("enable_mcu")?;
         Ok(())
@@ -228,21 +206,12 @@ impl JoyCon {
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetMCUState,
-            u: SubcommandRequestUnion {
-                mcu_mode: MCUMode::Suspend,
-            },
-        })?;
+        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
         Ok(())
     }
 
     pub fn set_mcu_mode_ir(&mut self) -> Result<()> {
-        let mcu_cmd = MCUCommand::set_mcu_mode(MCUMode::IR);
-        self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetMCUConf,
-            u: SubcommandRequestUnion { mcu_cmd },
-        })?;
+        self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::IR))?;
         self.wait_mcu_status(MCUMode::IR)
             .context("set_mcu_mode_ir")?;
         Ok(())
@@ -343,7 +312,7 @@ impl JoyCon {
         for _ in 0..WAIT_TIMEOUT {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
-                if reply.id() == Some(subcmd.subcommand_id) {
+                if reply.id() == Some(subcmd.id()) {
                     ensure!(reply.ack.is_ok(), "subcmd reply is nack");
                     return Ok(*reply);
                 }
@@ -360,12 +329,7 @@ impl JoyCon {
     }
 
     fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
-        let reply = self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SPIRead,
-            u: SubcommandRequestUnion {
-                spi_read: SPIReadRequest::new(range),
-            },
-        })?;
+        let reply = self.send_subcmd_wait(SPIReadRequest::new(range))?;
         let result = reply.spi_result().unwrap();
         ensure!(
             range == result.range(),
