@@ -39,17 +39,10 @@ impl OutputReport {
         let size = regs.len().min(9);
         let mut regs_fixed = [ir::Register::default(); 9];
         regs_fixed[..size].copy_from_slice(&regs[..size]);
-        let mut mcu_cmd = MCUCommand {
-            cmd_id: MCUCommandId::ConfigureIR,
-            subcmd_id: MCUSubCommandId::WriteIRRegisters,
-            u: MCUCommandUnion {
-                regs: MCURegisters {
-                    len: size as u8,
-                    regs: regs_fixed,
-                },
-            },
-        };
-        mcu_cmd.compute_crc();
+        let mut mcu_cmd = MCUCommand::set_ir_registers(MCURegisters {
+            len: size as u8,
+            regs: regs_fixed,
+        });
         (
             SubcommandRequest {
                 subcommand_id: SubcommandId::SetMCUConf,
@@ -168,6 +161,15 @@ union OutputReportUnion {
 pub struct SubcommandRequest {
     pub subcommand_id: SubcommandId,
     pub u: SubcommandRequestUnion,
+}
+
+impl From<MCUCommand> for SubcommandRequest {
+    fn from(mcu_cmd: MCUCommand) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetMCUConf,
+            u: SubcommandRequestUnion { mcu_cmd },
+        }
+    }
 }
 
 impl fmt::Debug for SubcommandRequest {

@@ -244,14 +244,7 @@ impl JoyCon {
     }
 
     pub fn set_mcu_mode_ir(&mut self) -> Result<()> {
-        let mut mcu_cmd = MCUCommand {
-            cmd_id: MCUCommandId::ConfigureMCU,
-            subcmd_id: MCUSubCommandId::SetMCUMode,
-            u: MCUCommandUnion {
-                mcu_mode: MCUMode::IR,
-            },
-        };
-        mcu_cmd.compute_crc();
+        let mcu_cmd = MCUCommand::set_mcu_mode(MCUMode::IR);
         self.send_subcmd_wait(SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUConf,
             u: SubcommandRequestUnion { mcu_cmd },
@@ -278,22 +271,12 @@ impl JoyCon {
                 }
             },
         )?;
-        let mut mcu_cmd = MCUCommand {
-            cmd_id: MCUCommandId::ConfigureIR,
-            subcmd_id: MCUSubCommandId::SetIRMode,
-            u: MCUCommandUnion {
-                ir_mode: MCUIRModeData {
-                    ir_mode: MCUIRMode::ImageTransfer,
-                    no_of_frags: frags,
-                    mcu_fw_version,
-                },
-            },
-        };
-        mcu_cmd.compute_crc();
-        let reply = self.send_subcmd_wait(SubcommandRequest {
-            subcommand_id: SubcommandId::SetMCUConf,
-            u: SubcommandRequestUnion { mcu_cmd },
-        })?;
+        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
+            ir_mode: MCUIRMode::ImageTransfer,
+            no_of_frags: frags,
+            mcu_fw_version,
+        });
+        let reply = self.send_subcmd_wait(mcu_cmd)?;
         ensure!(
             unsafe { reply.ir_status().0 } == MCUReportId::BusyInitializing,
             "mcu not busy"

@@ -129,14 +129,50 @@ pub enum MCUSubCommandId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUCommand {
-    pub cmd_id: MCUCommandId,
-    pub subcmd_id: MCUSubCommandId,
-    pub u: MCUCommandUnion,
+    cmd_id: MCUCommandId,
+    subcmd_id: MCUSubCommandId,
+    u: MCUCommandUnion,
 }
 
 impl MCUCommand {
-    pub fn compute_crc(&mut self) {
-        unsafe { self.u.crc.compute_crc8(self.subcmd_id) }
+    pub fn set_mcu_mode(mode: MCUMode) -> Self {
+        let mut u = MCUCommandUnion::new();
+        u.mcu_mode = mode;
+        MCUCommand {
+            cmd_id: MCUCommandId::ConfigureMCU,
+            subcmd_id: MCUSubCommandId::SetMCUMode,
+            u,
+        }
+        .compute_crc()
+    }
+
+    pub fn configure_ir(conf: MCUIRModeData) -> Self {
+        let mut u = MCUCommandUnion::new();
+        u.ir_mode = conf;
+        MCUCommand {
+            cmd_id: MCUCommandId::ConfigureIR,
+            subcmd_id: MCUSubCommandId::SetIRMode,
+            u,
+        }
+        .compute_crc()
+    }
+
+    pub fn set_ir_registers(regs: MCURegisters) -> Self {
+        let mut u = MCUCommandUnion::new();
+        u.regs = regs;
+        MCUCommand {
+            cmd_id: MCUCommandId::ConfigureIR,
+            subcmd_id: MCUSubCommandId::WriteIRRegisters,
+            u,
+        }
+        .compute_crc()
+    }
+
+    fn compute_crc(mut self) -> MCUCommand {
+        unsafe {
+            self.u.crc.compute_crc8(self.subcmd_id);
+        }
+        self
     }
 }
 
@@ -156,11 +192,22 @@ impl fmt::Debug for MCUCommand {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union MCUCommandUnion {
-    pub mcu_mode: MCUMode,
-    pub regs: MCURegisters,
-    pub crc: MCUCommandCRC,
-    pub ir_mode: MCUIRModeData,
+union MCUCommandUnion {
+    mcu_mode: MCUMode,
+    regs: MCURegisters,
+    crc: MCUCommandCRC,
+    ir_mode: MCUIRModeData,
+}
+
+impl MCUCommandUnion {
+    fn new() -> Self {
+        MCUCommandUnion {
+            crc: MCUCommandCRC {
+                bytes: [0; 35],
+                crc: 0,
+            },
+        }
+    }
 }
 
 #[repr(packed)]
