@@ -93,7 +93,7 @@ impl Vector3 {
     }
 }
 
-#[repr(packed)]
+#[repr(transparent)]
 #[derive(Copy, Clone)]
 pub struct RawId<Id>(u8, PhantomData<Id>);
 
