@@ -54,10 +54,7 @@ impl OutputReport {
     }
 
     fn ir_build(ack_request_packet: IRAckRequestPacket) -> OutputReport {
-        let mcu_request = MCURequest::from(IRRequest {
-            id: IRRequestId::GetSensorData,
-            u: IRRequestUnion { ack_request_packet },
-        });
+        let mcu_request = MCURequest::from(IRRequest::from(ack_request_packet));
         mcu_request.into()
     }
 

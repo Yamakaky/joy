@@ -269,11 +269,7 @@ impl JoyCon {
             "mcu not busy"
         );
 
-        let request = IRRequest {
-            id: IRRequestId::GetState,
-            u: IRRequestUnion { nothing: () },
-        };
-        self.wait_mcu_cond(request, |r| {
+        self.wait_mcu_cond(IRRequest::get_state(), |r| {
             r.as_ir_status()
                 .map(|status| status.ir_mode == MCUIRMode::ImageTransfer)
                 .unwrap_or(false)
@@ -302,18 +298,12 @@ impl JoyCon {
         for page in 0..=4 {
             let offset = 0;
             let nb_registers = 0x6f;
-            let id = IRRequestId::ReadRegister;
-            let request = IRRequest {
-                id,
-                u: IRRequestUnion {
-                    read_registers: IRReadRegisters {
-                        unknown_0x01: 0x01,
-                        page,
-                        offset,
-                        nb_registers,
-                    },
-                },
-            };
+            let request = IRRequest::from(IRReadRegisters {
+                unknown_0x01: 0x01,
+                page,
+                offset,
+                nb_registers,
+            });
             let mcu_report = self
                 .wait_mcu_cond(request, |mcu_report| {
                     if let Some(reg_slice) = mcu_report.as_ir_registers() {

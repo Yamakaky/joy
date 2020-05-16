@@ -4,8 +4,40 @@ pub use ir_register::*;
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct IRRequest {
-    pub id: IRRequestId,
-    pub u: IRRequestUnion,
+    id: IRRequestId,
+    #[allow(dead_code)]
+    u: IRRequestUnion,
+}
+
+impl IRRequest {
+    pub fn id(&self) -> IRRequestId {
+        self.id
+    }
+
+    pub fn get_state() -> IRRequest {
+        IRRequest {
+            id: IRRequestId::GetState,
+            u: IRRequestUnion { nothing: () },
+        }
+    }
+}
+
+impl From<IRAckRequestPacket> for IRRequest {
+    fn from(ack_request_packet: IRAckRequestPacket) -> Self {
+        IRRequest {
+            id: IRRequestId::GetSensorData,
+            u: IRRequestUnion { ack_request_packet },
+        }
+    }
+}
+
+impl From<IRReadRegisters> for IRRequest {
+    fn from(read_registers: IRReadRegisters) -> Self {
+        IRRequest {
+            id: IRRequestId::ReadRegister,
+            u: IRRequestUnion { read_registers },
+        }
+    }
 }
 
 #[repr(u8)]
@@ -18,10 +50,10 @@ pub enum IRRequestId {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union IRRequestUnion {
-    pub nothing: (),
-    pub ack_request_packet: IRAckRequestPacket,
-    pub read_registers: IRReadRegisters,
+union IRRequestUnion {
+    nothing: (),
+    ack_request_packet: IRAckRequestPacket,
+    read_registers: IRReadRegisters,
 }
 
 #[repr(packed)]
@@ -114,4 +146,18 @@ pub struct MCUSetReg {
     pub cmd_id: MCUCommandId,
     pub subcmd_id: MCUSubCommandId,
     pub mode: MCUMode,
+}
+
+#[cfg(test)]
+#[test]
+fn check_output_layout() {
+    unsafe {
+        let report = crate::output::OutputReport::new();
+        let cmd = report.as_mcu_request();
+        assert_eq!(11, offset_of(&report, &cmd.u.ir_request.id));
+        assert_eq!(
+            15,
+            offset_of(&report, &cmd.u.ir_request.u.read_registers.nb_registers)
+        );
+    }
 }
