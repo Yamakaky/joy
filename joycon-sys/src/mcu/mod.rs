@@ -251,13 +251,42 @@ pub enum MCURequestId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCURequest {
-    pub id: MCURequestId,
-    pub u: MCURequestUnion,
+    id: MCURequestId,
+    u: MCURequestUnion,
 }
 
 impl MCURequest {
-    pub fn compute_crc(&mut self, id: IRRequestId) {
-        unsafe { self.u.crc.compute_crc8(id) }
+    pub fn id(&self) -> MCURequestId {
+        self.id
+    }
+    pub fn get_mcu_status() -> Self {
+        let mut u = MCURequestUnion::new();
+        u.nothing = ();
+        // no crc with u.nothing
+        MCURequest {
+            id: MCURequestId::GetMCUStatus,
+            u,
+        }
+    }
+
+    fn compute_crc(mut self, id: IRRequestId) -> Self {
+        unsafe {
+            self.u.crc.compute_crc8(id);
+        }
+        self
+    }
+}
+
+impl From<IRRequest> for MCURequest {
+    fn from(ir_request: IRRequest) -> Self {
+        let mut u = MCURequestUnion::new();
+        u.ir_request = ir_request;
+        // no crc with u.nothing
+        MCURequest {
+            id: MCURequestId::GetIRData,
+            u,
+        }
+        .compute_crc(ir_request.id)
     }
 }
 
@@ -269,10 +298,22 @@ impl fmt::Debug for MCURequest {
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub union MCURequestUnion {
-    pub nothing: (),
-    pub ir_request: IRRequest,
-    pub crc: MCURequestCRC,
+union MCURequestUnion {
+    nothing: (),
+    ir_request: IRRequest,
+    crc: MCURequestCRC,
+}
+
+impl MCURequestUnion {
+    fn new() -> Self {
+        MCURequestUnion {
+            crc: MCURequestCRC {
+                bytes: [0; 36],
+                crc: 0,
+                _padding_0xff: 0,
+            },
+        }
+    }
 }
 
 #[repr(packed)]

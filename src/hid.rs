@@ -199,25 +199,19 @@ impl JoyCon {
     }
 
     fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
-        self.wait_mcu_cond(
-            MCURequest {
-                // todo: variable subcmd
-                id: MCURequestId::GetMCUStatus,
-                u: MCURequestUnion { nothing: () },
-            },
-            |report| {
-                report
-                    .as_status()
-                    .map(|status| status.state == mode)
-                    .unwrap_or(false)
-            },
-        )
+        self.wait_mcu_cond(MCURequest::get_mcu_status(), |report| {
+            report
+                .as_status()
+                .map(|status| status.state == mode)
+                .unwrap_or(false)
+        })
     }
-    fn wait_mcu_cond(
+    fn wait_mcu_cond<R: Into<MCURequest>>(
         &mut self,
-        mcu_subcmd: MCURequest,
+        mcu_subcmd: R,
         mut f: impl FnMut(&MCUReport) -> bool,
     ) -> Result<MCUReport> {
+        let mcu_subcmd = mcu_subcmd.into();
         // The MCU takes some time to warm up so we retry until we get an answer
         for _ in 0..WAIT_TIMEOUT {
             self.send_mcu_subcmd(mcu_subcmd)?;
@@ -256,21 +250,14 @@ impl JoyCon {
 
     pub fn set_ir_image_mode(&mut self, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
-        self.wait_mcu_cond(
-            MCURequest {
-                // todo: variable subcmd
-                id: MCURequestId::GetMCUStatus,
-                u: MCURequestUnion { nothing: () },
-            },
-            |r| {
-                if let Some(status) = r.as_status() {
-                    mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
-                    true
-                } else {
-                    false
-                }
-            },
-        )?;
+        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
+            if let Some(status) = r.as_status() {
+                mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
+                true
+            } else {
+                false
+            }
+        })?;
         let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
             ir_mode: MCUIRMode::ImageTransfer,
             no_of_frags: frags,
@@ -282,19 +269,11 @@ impl JoyCon {
             "mcu not busy"
         );
 
-        let id = IRRequestId::GetState;
-        let mut cmd = MCURequest {
-            // todo: variable subcmd
-            id: MCURequestId::GetIRData,
-            u: MCURequestUnion {
-                ir_request: IRRequest {
-                    id,
-                    u: IRRequestUnion { nothing: () },
-                },
-            },
+        let request = IRRequest {
+            id: IRRequestId::GetState,
+            u: IRRequestUnion { nothing: () },
         };
-        cmd.compute_crc(id);
-        self.wait_mcu_cond(cmd, |r| {
+        self.wait_mcu_cond(request, |r| {
             r.as_ir_status()
                 .map(|status| status.ir_mode == MCUIRMode::ImageTransfer)
                 .unwrap_or(false)
@@ -324,25 +303,19 @@ impl JoyCon {
             let offset = 0;
             let nb_registers = 0x6f;
             let id = IRRequestId::ReadRegister;
-            let mut subcmd = MCURequest {
-                id: MCURequestId::GetIRData,
-                u: MCURequestUnion {
-                    ir_request: IRRequest {
-                        id,
-                        u: IRRequestUnion {
-                            read_registers: IRReadRegisters {
-                                unknown_0x01: 0x01,
-                                page,
-                                offset,
-                                nb_registers,
-                            },
-                        },
+            let request = IRRequest {
+                id,
+                u: IRRequestUnion {
+                    read_registers: IRReadRegisters {
+                        unknown_0x01: 0x01,
+                        page,
+                        offset,
+                        nb_registers,
                     },
                 },
             };
-            subcmd.compute_crc(id);
             let mcu_report = self
-                .wait_mcu_cond(subcmd, |mcu_report| {
+                .wait_mcu_cond(request, |mcu_report| {
                     if let Some(reg_slice) = mcu_report.as_ir_registers() {
                         reg_slice.page == page
                             && reg_slice.offset == offset

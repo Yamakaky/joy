@@ -39,7 +39,7 @@ impl OutputReport {
         let size = regs.len().min(9);
         let mut regs_fixed = [ir::Register::default(); 9];
         regs_fixed[..size].copy_from_slice(&regs[..size]);
-        let mut mcu_cmd = MCUCommand::set_ir_registers(MCURegisters {
+        let mcu_cmd = MCUCommand::set_ir_registers(MCURegisters {
             len: size as u8,
             regs: regs_fixed,
         });
@@ -54,17 +54,10 @@ impl OutputReport {
     }
 
     fn ir_build(ack_request_packet: IRAckRequestPacket) -> OutputReport {
-        let id = IRRequestId::GetSensorData;
-        let mut mcu_request = MCURequest {
-            id: MCURequestId::GetIRData,
-            u: MCURequestUnion {
-                ir_request: IRRequest {
-                    id,
-                    u: IRRequestUnion { ack_request_packet },
-                },
-            },
-        };
-        mcu_request.compute_crc(id);
+        let mcu_request = MCURequest::from(IRRequest {
+            id: IRRequestId::GetSensorData,
+            u: IRRequestUnion { ack_request_packet },
+        });
         mcu_request.into()
     }
 
