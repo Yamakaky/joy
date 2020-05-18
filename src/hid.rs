@@ -115,6 +115,8 @@ impl JoyCon {
         let user_settings = user_result.imu_user_calib().unwrap();
         self.imu_handler.set_user(*user_settings);
 
+        self.imu_handler.reset_calibration();
+
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
         let factory_settings = factory_result.sticks_factory_calib().unwrap();
         let user_result = self.read_spi(RANGE_USER_CALIBRATION_STICKS)?;

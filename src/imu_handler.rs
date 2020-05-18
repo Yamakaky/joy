@@ -19,6 +19,7 @@ pub struct Handler {
     factory_calibration: spi::SensorCalibration,
     user_calibration: spi::UserSensorCalibration,
     position: Position,
+    calib_nb: u32,
 }
 
 impl Handler {
@@ -38,6 +39,7 @@ impl Handler {
                 speed: Vector3::zero(),
                 position: Vector3::zero(),
             },
+            calib_nb: 0,
         }
     }
 
@@ -62,7 +64,17 @@ impl Handler {
     pub fn handle_frames(&mut self, frames: &[imu::Frame]) {
         let offset = self.gyro_calib();
         for frame in frames.iter().rev() {
-            let delta_rotation = frame.rotation(offset, self.gyro_sens);
+            let raw_delta_rotation = frame.rotation(offset, self.gyro_sens);
+            if self.calib_nb > 0 {
+                self.calib_gyro.push(raw_delta_rotation);
+                self.calib_nb -= 1;
+            }
+            let c = self.calib_gyro.get_average();
+            let delta_rotation = Euler::new(
+                raw_delta_rotation.x - c.x,
+                raw_delta_rotation.y - c.y,
+                raw_delta_rotation.z - c.z,
+            );
             self.position.last_delta_rotation = delta_rotation;
             self.position.rotation = self.position.rotation * Quaternion::from(delta_rotation);
             if let Some(ref mut cb) = self.imu_cb {
@@ -73,5 +85,6 @@ impl Handler {
 
     pub fn reset_calibration(&mut self) {
         self.calib_gyro.reset();
+        self.calib_nb = 200;
     }
 }
