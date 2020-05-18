@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use crate::calibration::Calibration;
 use crate::image::Image;
+use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
 use joycon_sys::light;
@@ -19,16 +19,13 @@ pub struct JoyCon {
     device: hidapi::HidDevice,
     info: hidapi::DeviceInfo,
     counter: u8,
-    calib_gyro: Calibration,
-    gyro_sens: imu::GyroSens,
-    calib_accel: Calibration,
-    accel_sens: imu::AccSens,
     pub max_raw_gyro: i16,
     pub max_raw_accel: i16,
     left_stick_calib: StickCalibration,
     right_stick_calib: StickCalibration,
     image: Image,
     pub enable_ir_loop: bool,
+    imu_handler: crate::imu_handler::Handler,
 }
 
 impl JoyCon {
@@ -48,17 +45,16 @@ impl JoyCon {
             device,
             info,
             counter: 0,
-            // 10s with 3 reports at 60Hz
-            calib_gyro: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
-            gyro_sens: imu::GyroSens::DPS2000,
-            calib_accel: Calibration::new(10 * IMU_SAMPLES_PER_SECOND as usize),
-            accel_sens: imu::AccSens::G8,
             max_raw_gyro: 0,
             max_raw_accel: 0,
             left_stick_calib: StickCalibration::default(),
             right_stick_calib: StickCalibration::default(),
             image: Image::new(resolution),
             enable_ir_loop: false,
+            imu_handler: crate::imu_handler::Handler::new(
+                imu::GyroSens::default(),
+                imu::AccSens::default(),
+            ),
         };
 
         joycon.set_report_mode_standard()?;
@@ -67,6 +63,10 @@ impl JoyCon {
 
     pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(Box<[u8]>, u32, u32)>) {
         self.image.set_cb(cb);
+    }
+
+    pub fn set_imu_callback(&mut self, cb: Box<dyn FnMut(&imu_handler::Position)>) {
+        self.imu_handler.set_cb(cb);
     }
 
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -91,6 +91,9 @@ impl JoyCon {
         let report = reports[0];
         report.validate();
         assert_eq!(nb_read, std::mem::size_of_val(&report));
+        if let Some(frames) = report.imu_frames() {
+            self.imu_handler.handle_frames(frames);
+        }
         if let Some(mcu_report) = report.mcu_report() {
             if self.enable_ir_loop {
                 for packet in &mut self.image.handle(&mcu_report) {
@@ -106,13 +109,11 @@ impl JoyCon {
     pub fn load_calibration(&mut self) -> Result<()> {
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
         let factory_settings = factory_result.imu_factory_calib().unwrap();
-        self.calib_accel.factory_offset = factory_settings.acc_offset();
-        self.calib_gyro.factory_offset = factory_settings.gyro_offset();
+        self.imu_handler.set_factory(*factory_settings);
 
         let user_result = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
         let user_settings = user_result.imu_user_calib().unwrap();
-        self.calib_accel.user_offset = user_settings.acc_offset();
-        self.calib_gyro.user_offset = user_settings.gyro_offset();
+        self.imu_handler.set_user(*user_settings);
 
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
         let factory_settings = factory_result.sticks_factory_calib().unwrap();
@@ -135,8 +136,10 @@ impl JoyCon {
             acc_sens: accel_sens,
             ..imu::Sensitivity::default()
         })?;
+        // TODO
+        /*
         self.gyro_sens = gyro_sens;
-        self.accel_sens = accel_sens;
+        self.accel_sens = accel_sens;*/
         Ok(())
     }
 
@@ -348,86 +351,6 @@ impl JoyCon {
             self.right_stick_calib
                 .value_from_raw(inputs.right_stick.x(), inputs.right_stick.y()),
         ))
-    }
-
-    pub fn get_gyro_rot_delta(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
-        let report = self.recv()?;
-        let gyro_frames = report.imu_frames().expect("no imu frame received");
-        let offset = self
-            .calib_gyro
-            .user_offset
-            .unwrap_or(self.calib_gyro.factory_offset);
-        let mut out = [Vector3::default(); 3];
-        // frames are from newest to oldest so we iter backward
-        for (frame, out) in gyro_frames.iter().rev().zip(out.iter_mut()) {
-            let max = [
-                frame.raw_gyro().0.abs() as i16,
-                frame.raw_gyro().1.abs() as i16,
-                frame.raw_gyro().2.abs() as i16,
-            ]
-            .iter()
-            .cloned()
-            .max()
-            .unwrap();
-            self.max_raw_gyro = self.max_raw_gyro.max(max);
-            if max > i16::MAX - 1000 {
-                println!("saturation");
-            }
-
-            let gyro_rps = frame.gyro_rps(offset, self.gyro_sens) / IMU_SAMPLES_PER_SECOND as f32;
-            *out = if apply_calibration {
-                gyro_rps - self.calib_gyro.get_average()
-            } else {
-                gyro_rps
-            }
-        }
-        Ok(out)
-    }
-
-    pub fn get_accel_delta_g(&mut self, apply_calibration: bool) -> Result<[Vector3; 3]> {
-        let report = self.recv()?;
-        let frames = report.imu_frames().expect("no imu frame received");
-        let offset = self
-            .calib_accel
-            .user_offset
-            .unwrap_or(self.calib_accel.factory_offset);
-        let mut out = [Vector3::default(); 3];
-        // frames are from newest to oldest so we iter backward
-        for (frame, out) in frames.iter().rev().zip(out.iter_mut()) {
-            let max = [
-                frame.raw_accel().0.abs() as i16,
-                frame.raw_accel().1.abs() as i16,
-                frame.raw_accel().2.abs() as i16,
-            ]
-            .iter()
-            .cloned()
-            .max()
-            .unwrap();
-            self.max_raw_accel = self.max_raw_accel.max(max);
-            if max > i16::MAX - 1000 {
-                println!("saturation");
-            }
-
-            let accel_g = frame.accel_g(offset, self.accel_sens);
-            *out = if apply_calibration {
-                accel_g - self.calib_accel.get_average()
-            } else {
-                accel_g
-            }
-        }
-        Ok(out)
-    }
-
-    pub fn reset_calibration(&mut self) -> Result<()> {
-        // seems needed
-        self.get_gyro_rot_delta(false)?;
-        self.calib_gyro.reset();
-        for _ in 0..60 {
-            for frame in &self.get_gyro_rot_delta(false)? {
-                self.calib_gyro.push(*frame);
-            }
-        }
-        Ok(())
     }
 }
 

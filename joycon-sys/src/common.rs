@@ -1,5 +1,5 @@
 use byteorder::{ByteOrder, LittleEndian};
-use derive_more::{Add, AddAssign, Div, Mul, Sub};
+use cgmath::Vector3;
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
 use std::marker::PhantomData;
@@ -57,7 +57,7 @@ impl From<U16LE> for u16 {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct I16LE([u8; 2]);
 
 impl From<i16> for I16LE {
@@ -79,18 +79,12 @@ pub(crate) fn offset_of<A, B>(a: &A, b: &B) -> usize {
     b as *const _ as usize - a as *const _ as usize
 }
 
-#[derive(Copy, Clone, Debug, Add, AddAssign, Sub, Div, Mul, Default)]
-#[mul(forward)]
-pub struct Vector3(pub f32, pub f32, pub f32);
-
-impl Vector3 {
-    pub fn from_raw(raw: [I16LE; 3]) -> Vector3 {
-        Vector3(
-            i16::from(raw[0]) as f32,
-            i16::from(raw[1]) as f32,
-            i16::from(raw[2]) as f32,
-        )
-    }
+pub fn vector_from_raw(raw: [I16LE; 3]) -> Vector3<f32> {
+    Vector3::new(
+        i16::from(raw[0]) as f32,
+        i16::from(raw[1]) as f32,
+        i16::from(raw[2]) as f32,
+    )
 }
 
 #[repr(transparent)]

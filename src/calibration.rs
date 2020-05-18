@@ -1,25 +1,25 @@
-use joycon_sys::common::Vector3;
+use cgmath::*;
 use std::collections::VecDeque;
+
+pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
+
+type Entry = Euler<Deg<f32>>;
 
 #[derive(Clone, Debug)]
 pub struct Calibration {
-    history: VecDeque<Vector3>,
+    history: VecDeque<Entry>,
     capacity: usize,
-    pub factory_offset: Vector3,
-    pub user_offset: Option<Vector3>,
 }
 
 impl Calibration {
-    pub fn new(capacity: usize) -> Calibration {
+    pub fn with_capacity(capacity: usize) -> Calibration {
         Calibration {
             history: VecDeque::with_capacity(capacity),
             capacity,
-            factory_offset: Default::default(),
-            user_offset: Default::default(),
         }
     }
 
-    pub fn push(&mut self, entry: Vector3) {
+    pub fn push(&mut self, entry: Entry) {
         if self.history.len() == self.capacity {
             self.history.pop_back();
         }
@@ -30,15 +30,25 @@ impl Calibration {
         self.history.clear();
     }
 
-    pub fn get_average(&mut self) -> Vector3 {
+    pub fn get_average(&mut self) -> Entry {
+        let zero = Euler::new(Deg(0.), Deg(0.), Deg(0.));
         let len = self.history.len() as f32;
         if len == 0. {
-            return Vector3(0., 0., 0.);
+            return zero;
         }
-        let sum = self
-            .history
-            .iter()
-            .fold(Vector3(0., 0., 0.), |acc, val| acc + *val);
-        Vector3(sum.0 / len, sum.1 / len, sum.2 / len)
+        let sum = self.history.iter().cloned().fold((0., 0., 0.), |acc, val| {
+            (
+                acc.0 + val.x.0 / len,
+                acc.1 + val.y.0 / len,
+                acc.2 + val.z.0 / len,
+            )
+        });
+        Euler::new(Deg(sum.0), Deg(sum.1), Deg(sum.2))
+    }
+}
+
+impl Default for Calibration {
+    fn default() -> Self {
+        Calibration::with_capacity(3 * IMU_SAMPLES_PER_SECOND as usize)
     }
 }
