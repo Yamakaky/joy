@@ -1,5 +1,6 @@
-use cgmath::InnerSpace;
+use cgmath::prelude::*;
 use cgmath::Vector3;
+use std::collections::HashMap;
 use std::mem::size_of;
 
 #[repr(C)]
@@ -46,7 +47,8 @@ impl Vertex {
                 Vector3::new(height as f32 - y, width as f32 - x, (*z as f32) - 255.)
             })
             .collect();
-        let mut out = vec![];
+        let mut vertices = vec![];
+        let mut positions: HashMap<_, Vec<Vector3<f32>>> = HashMap::new();
         for x in 0..(width - 1) {
             for y in 0..(height - 1) {
                 {
@@ -55,16 +57,27 @@ impl Vertex {
                     let b = points[i + 1];
                     let c = points[i + width];
                     let normal = (b - a).cross(c - a).normalize();
-                    assert!(normal != Vector3::new(0., 0., 0.));
-                    out.push(Vertex {
+                    positions
+                        .entry((a.x as u32, a.y as u32))
+                        .or_default()
+                        .push(normal);
+                    positions
+                        .entry((b.x as u32, b.y as u32))
+                        .or_default()
+                        .push(normal);
+                    positions
+                        .entry((c.x as u32, c.y as u32))
+                        .or_default()
+                        .push(normal);
+                    vertices.push(Vertex {
                         position: a,
                         normal,
                     });
-                    out.push(Vertex {
+                    vertices.push(Vertex {
                         position: b,
                         normal,
                     });
-                    out.push(Vertex {
+                    vertices.push(Vertex {
                         position: c,
                         normal,
                     });
@@ -76,21 +89,41 @@ impl Vertex {
                     let b = points[i - 1];
                     let c = points[i - width];
                     let normal = (b - a).cross(c - a).normalize();
-                    out.push(Vertex {
+                    positions
+                        .entry((a.x as u32, a.y as u32))
+                        .or_default()
+                        .push(normal);
+                    positions
+                        .entry((b.x as u32, b.y as u32))
+                        .or_default()
+                        .push(normal);
+                    positions
+                        .entry((c.x as u32, c.y as u32))
+                        .or_default()
+                        .push(normal);
+                    vertices.push(Vertex {
                         position: a,
                         normal,
                     });
-                    out.push(Vertex {
+                    vertices.push(Vertex {
                         position: b,
                         normal,
                     });
-                    out.push(Vertex {
+                    vertices.push(Vertex {
                         position: c,
                         normal,
                     });
                 }
             }
         }
-        out
+        for vertex in &mut vertices {
+            let pos = (vertex.position.x as u32, vertex.position.y as u32);
+            let normals = &positions[&pos];
+            assert!(normals.len() > 0, "{:?}", pos);
+            let average_normal =
+                normals.iter().fold(Vector3::zero(), std::ops::Add::add) / normals.len() as f32;
+            vertex.normal = average_normal;
+        }
+        vertices
     }
 }
