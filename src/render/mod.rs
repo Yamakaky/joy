@@ -1,3 +1,4 @@
+use object::Vertex;
 use std::sync::mpsc;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -6,10 +7,9 @@ use winit::{
 };
 
 mod camera;
+mod object;
 mod texture;
 mod uniforms;
-
-const MAX_INSTANCE_COUNT: u64 = 320 * 240;
 
 struct GUI {
     surface: wgpu::Surface,
@@ -19,15 +19,13 @@ struct GUI {
     swap_chain: wgpu::SwapChain,
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
-    index_buffer: wgpu::Buffer,
-    instance_buffer: wgpu::Buffer,
     uniforms: uniforms::Uniforms,
     uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
-    irdata: Box<[u32]>,
+    irdata: Box<[u8]>,
 }
 
 impl GUI {
@@ -71,50 +69,11 @@ impl GUI {
             wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         );
 
-        #[rustfmt::skip]
-        let vertex_data: &[f32] = &[
-            // front
-            -0.4, -0.4,  0.4,
-            0.4, -0.4,  0.4,
-            0.4,  0.4,  0.4,
-            -0.4,  0.4,  0.4,
-            // back
-            -0.4, -0.4, -0.4,
-            0.4, -0.4, -0.4,
-            0.4,  0.4, -0.4,
-            -0.4,  0.4, -0.4,
-        ];
-        let vertex_buffer = device
-            .create_buffer_with_data(bytemuck::cast_slice(vertex_data), wgpu::BufferUsage::VERTEX);
-
-        #[rustfmt::skip]
-        let index_data: &[u16] = &[
-            // front
-            0, 1, 2,
-            2, 3, 0,
-            // right
-            1, 5, 6,
-            6, 2, 1,
-            // back
-            7, 6, 5,
-            5, 4, 7,
-            // left
-            4, 0, 3,
-            3, 7, 4,
-            // bottom
-            4, 5, 1,
-            1, 0, 4,
-            // top
-            3, 2, 6,
-            6, 7, 3,
-        ];
-        let index_buffer = device
-            .create_buffer_with_data(bytemuck::cast_slice(index_data), wgpu::BufferUsage::INDEX);
-
-        let instance_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            size: MAX_INSTANCE_COUNT * 4,
+        // TODO: proper size
+        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            size: Vertex::BUF_SIZE,
             usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
-            label: Some("instance_buffer"),
+            label: Some("vertex_buffer"),
         });
 
         let vs_module = device.create_shader_module(vk_shader_macros::include_glsl!(
@@ -179,26 +138,7 @@ impl GUI {
             }),
             vertex_state: wgpu::VertexStateDescriptor {
                 index_format: wgpu::IndexFormat::Uint16,
-                vertex_buffers: &[
-                    wgpu::VertexBufferDescriptor {
-                        stride: (std::mem::size_of::<f32>() * 3) as wgpu::BufferAddress,
-                        step_mode: wgpu::InputStepMode::Vertex,
-                        attributes: &[wgpu::VertexAttributeDescriptor {
-                            offset: 0,
-                            shader_location: 0,
-                            format: wgpu::VertexFormat::Float3,
-                        }],
-                    },
-                    wgpu::VertexBufferDescriptor {
-                        stride: std::mem::size_of::<u32>() as wgpu::BufferAddress,
-                        step_mode: wgpu::InputStepMode::Instance,
-                        attributes: &[wgpu::VertexAttributeDescriptor {
-                            offset: 0,
-                            shader_location: 1,
-                            format: wgpu::VertexFormat::Uint,
-                        }],
-                    },
-                ],
+                vertex_buffers: &[Vertex::descriptor()],
             },
             sample_count: 1,
             sample_mask: !0,
@@ -213,8 +153,6 @@ impl GUI {
             swap_chain,
             render_pipeline,
             vertex_buffer,
-            index_buffer,
-            instance_buffer,
             uniforms,
             uniform_buffer,
             uniform_bind_group,
@@ -259,16 +197,17 @@ impl GUI {
             std::mem::size_of::<uniforms::Uniforms>() as wgpu::BufferAddress,
         );
         if self.irdata.len() > 0 {
-            let staging_buffer2 = self.device.create_buffer_with_data(
-                bytemuck::cast_slice(self.irdata.as_ref()),
-                wgpu::BufferUsage::COPY_SRC,
-            );
+            let vertices = Vertex::from_ir(&self.irdata, self.uniforms.width, self.uniforms.height);
+            let data = bytemuck::cast_slice(&vertices);
+            let staging_buffer2 = self
+                .device
+                .create_buffer_with_data(data, wgpu::BufferUsage::COPY_SRC);
             encoder.copy_buffer_to_buffer(
                 &staging_buffer2,
                 0,
-                &self.instance_buffer,
+                &self.vertex_buffer,
                 0,
-                (self.irdata.len() * std::mem::size_of::<u32>()) as wgpu::BufferAddress,
+                data.len() as wgpu::BufferAddress,
             );
         }
         self.queue.submit(&[encoder.finish()]);
@@ -303,10 +242,14 @@ impl GUI {
             });
             rpass.set_pipeline(&self.render_pipeline);
             rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
-            rpass.set_vertex_buffer(1, &self.instance_buffer, 0, 0);
-            rpass.set_index_buffer(&self.index_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            rpass.draw_indexed(0..36, 0, 0..self.uniforms.instance_count());
+            // TODO: not as trash
+            let vert_nb = if self.uniforms.width > 0 && self.uniforms.height > 0 {
+                (self.uniforms.width - 1) * (self.uniforms.height - 1) * 6
+            } else {
+                0
+            };
+            rpass.draw(0..vert_nb, 0..1);
         }
 
         self.queue.submit(&[encoder.finish()]);
@@ -392,7 +335,7 @@ pub async fn run(
 
 #[derive(Debug)]
 pub struct IRData {
-    pub buffer: Box<[u32]>,
+    pub buffer: Box<[u8]>,
     pub width: u32,
     pub height: u32,
 }
