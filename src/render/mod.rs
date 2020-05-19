@@ -11,6 +11,61 @@ mod object;
 mod texture;
 mod uniforms;
 
+fn create_render_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    color_format: wgpu::TextureFormat,
+    depth_format: Option<wgpu::TextureFormat>,
+    vertex_descs: &[wgpu::VertexBufferDescriptor],
+    vs_spv: &[u32],
+    fs_spv: &[u32],
+) -> wgpu::RenderPipeline {
+    let vs_module = device.create_shader_module(vs_spv);
+    let fs_module = device.create_shader_module(fs_spv);
+
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        layout: &layout,
+        vertex_stage: wgpu::ProgrammableStageDescriptor {
+            module: &vs_module,
+            entry_point: "main",
+        },
+        fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
+            module: &fs_module,
+            entry_point: "main",
+        }),
+        rasterization_state: Some(wgpu::RasterizationStateDescriptor {
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: wgpu::CullMode::None,
+            depth_bias: 0,
+            depth_bias_slope_scale: 0.0,
+            depth_bias_clamp: 0.0,
+        }),
+        primitive_topology: wgpu::PrimitiveTopology::TriangleList,
+        color_states: &[wgpu::ColorStateDescriptor {
+            format: color_format,
+            color_blend: wgpu::BlendDescriptor::REPLACE,
+            alpha_blend: wgpu::BlendDescriptor::REPLACE,
+            write_mask: wgpu::ColorWrite::ALL,
+        }],
+        depth_stencil_state: depth_format.map(|format| wgpu::DepthStencilStateDescriptor {
+            format,
+            depth_write_enabled: true,
+            depth_compare: wgpu::CompareFunction::Less,
+            stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE,
+            stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
+            stencil_read_mask: 0,
+            stencil_write_mask: 0,
+        }),
+        sample_count: 1,
+        sample_mask: !0,
+        alpha_to_coverage_enabled: false,
+        vertex_state: wgpu::VertexStateDescriptor {
+            index_format: wgpu::IndexFormat::Uint16,
+            vertex_buffers: vertex_descs,
+        },
+    })
+}
+
 struct GUI {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -69,21 +124,11 @@ impl GUI {
             wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         );
 
-        // TODO: proper size
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             size: Vertex::BUF_SIZE,
             usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
             label: Some("vertex_buffer"),
         });
-
-        let vs_module = device.create_shader_module(vk_shader_macros::include_glsl!(
-            "src/render/shader.vert",
-            kind: vert
-        ));
-        let fs_module = device.create_shader_module(vk_shader_macros::include_glsl!(
-            "src/render/shader.frag",
-            kind: frag
-        ));
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -102,48 +147,16 @@ impl GUI {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             bind_group_layouts: &[&uniform_bind_group_layout],
         });
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            layout: &pipeline_layout,
-            vertex_stage: wgpu::ProgrammableStageDescriptor {
-                module: &vs_module,
-                entry_point: "main",
-            },
-            fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-                module: &fs_module,
-                entry_point: "main",
-            }),
-            rasterization_state: Some(wgpu::RasterizationStateDescriptor {
-                front_face: wgpu::FrontFace::Ccw,
-                // TODO: Back
-                cull_mode: wgpu::CullMode::None,
-                depth_bias: 0,
-                depth_bias_slope_scale: 0.0,
-                depth_bias_clamp: 0.0,
-            }),
-            color_states: &[wgpu::ColorStateDescriptor {
-                format: wgpu::TextureFormat::Bgra8UnormSrgb,
-                color_blend: wgpu::BlendDescriptor::REPLACE,
-                alpha_blend: wgpu::BlendDescriptor::REPLACE,
-                write_mask: wgpu::ColorWrite::ALL,
-            }],
-            primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-            depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
-                format: texture::Texture::DEPTH_FORMAT,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less, // 1.
-                stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE, // 2.
-                stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
-                stencil_read_mask: 0,
-                stencil_write_mask: 0,
-            }),
-            vertex_state: wgpu::VertexStateDescriptor {
-                index_format: wgpu::IndexFormat::Uint16,
-                vertex_buffers: &[Vertex::descriptor()],
-            },
-            sample_count: 1,
-            sample_mask: !0,
-            alpha_to_coverage_enabled: false,
-        });
+
+        let render_pipeline = create_render_pipeline(
+            &device,
+            &pipeline_layout,
+            wgpu::TextureFormat::Bgra8UnormSrgb,
+            Some(texture::Texture::DEPTH_FORMAT),
+            &[Vertex::descriptor()],
+            vk_shader_macros::include_glsl!("src/render/shader.vert", kind: vert),
+            vk_shader_macros::include_glsl!("src/render/shader.frag", kind: vert),
+        );
 
         Self {
             surface,
@@ -240,16 +253,15 @@ impl GUI {
                     clear_stencil: 0,
                 }),
             });
+            if self.uniforms.width > 0 && self.uniforms.height > 0 {
             rpass.set_pipeline(&self.render_pipeline);
             rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            // TODO: not as trash
-            let vert_nb = if self.uniforms.width > 0 && self.uniforms.height > 0 {
-                (self.uniforms.width - 1) * (self.uniforms.height - 1) * 6
-            } else {
-                0
-            };
-            rpass.draw(0..vert_nb, 0..1);
+                rpass.draw(
+                    0..(self.uniforms.width - 1) * (self.uniforms.height - 1) * 6,
+                    0..1,
+                );
+            }
         }
 
         self.queue.submit(&[encoder.finish()]);
