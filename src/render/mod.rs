@@ -21,17 +21,14 @@ fn create_render_pipeline(
     vs_spv: &[u32],
     fs_spv: &[u32],
 ) -> wgpu::RenderPipeline {
-    let vs_module = device.create_shader_module(vs_spv);
-    let fs_module = device.create_shader_module(fs_spv);
-
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         layout: &layout,
         vertex_stage: wgpu::ProgrammableStageDescriptor {
-            module: &vs_module,
+            module: &device.create_shader_module(vs_spv),
             entry_point: "main",
         },
         fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-            module: &fs_module,
+            module: &device.create_shader_module(fs_spv),
             entry_point: "main",
         }),
         rasterization_state: Some(wgpu::RasterizationStateDescriptor {
@@ -156,7 +153,7 @@ impl GUI {
             Some(texture::Texture::DEPTH_FORMAT),
             &[Vertex::descriptor()],
             vk_shader_macros::include_glsl!("src/render/shader.vert", kind: vert),
-            vk_shader_macros::include_glsl!("src/render/shader.frag", kind: vert),
+            vk_shader_macros::include_glsl!("src/render/shader.frag", kind: frag),
         );
 
         Self {
