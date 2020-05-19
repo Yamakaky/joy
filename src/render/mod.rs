@@ -20,6 +20,7 @@ fn create_render_pipeline(
     vertex_descs: &[wgpu::VertexBufferDescriptor],
     vs_spv: &[u32],
     fs_spv: &[u32],
+    sample_count: u32,
 ) -> wgpu::RenderPipeline {
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         layout: &layout,
@@ -54,7 +55,7 @@ fn create_render_pipeline(
             stencil_read_mask: 0,
             stencil_write_mask: 0,
         }),
-        sample_count: 1,
+        sample_count,
         sample_mask: !0,
         alpha_to_coverage_enabled: false,
         vertex_state: wgpu::VertexStateDescriptor {
@@ -64,6 +65,32 @@ fn create_render_pipeline(
     })
 }
 
+fn create_multisampled_framebuffer(
+    device: &wgpu::Device,
+    sc_desc: &wgpu::SwapChainDescriptor,
+    sample_count: u32,
+) -> wgpu::TextureView {
+    let multisampled_texture_extent = wgpu::Extent3d {
+        width: sc_desc.width,
+        height: sc_desc.height,
+        depth: 1,
+    };
+    let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
+        size: multisampled_texture_extent,
+        array_layer_count: 1,
+        mip_level_count: 1,
+        sample_count: sample_count,
+        dimension: wgpu::TextureDimension::D2,
+        format: sc_desc.format,
+        usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+        label: None,
+    };
+
+    device
+        .create_texture(multisampled_frame_descriptor)
+        .create_default_view()
+}
+
 struct GUI {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -71,6 +98,8 @@ struct GUI {
     sc_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
     render_pipeline: wgpu::RenderPipeline,
+    sample_count: u32,
+    multisampled_framebuffer: wgpu::TextureView,
     vertex_buffer: wgpu::Buffer,
     uniforms: uniforms::Uniforms,
     uniform_buffer: wgpu::Buffer,
@@ -83,6 +112,7 @@ struct GUI {
 
 impl GUI {
     async fn new(window: &Window) -> Self {
+        let sample_count = 16;
         let size = window.inner_size();
         let surface = wgpu::Surface::create(window);
 
@@ -139,8 +169,12 @@ impl GUI {
             label: Some("uniform_bind_group"),
         });
 
-        let depth_texture =
-            texture::Texture::create_depth_texture(&device, &sc_desc, "depth_texture");
+        let depth_texture = texture::Texture::create_depth_texture(
+            &device,
+            &sc_desc,
+            sample_count,
+            Some("depth_texture"),
+        );
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             bind_group_layouts: &[&uniform_bind_group_layout],
@@ -154,7 +188,10 @@ impl GUI {
             &[Vertex::descriptor()],
             vk_shader_macros::include_glsl!("src/render/shader.vert", kind: vert),
             vk_shader_macros::include_glsl!("src/render/shader.frag", kind: frag),
+            sample_count,
         );
+        let multisampled_framebuffer =
+            create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
         Self {
             surface,
@@ -163,6 +200,8 @@ impl GUI {
             sc_desc,
             swap_chain,
             render_pipeline,
+            sample_count,
+            multisampled_framebuffer,
             vertex_buffer,
             uniforms,
             uniform_buffer,
@@ -179,8 +218,14 @@ impl GUI {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
-        self.depth_texture =
-            texture::Texture::create_depth_texture(&self.device, &self.sc_desc, "depth_texture");
+        self.multisampled_framebuffer =
+            create_multisampled_framebuffer(&self.device, &self.sc_desc, self.sample_count);
+        self.depth_texture = texture::Texture::create_depth_texture(
+            &self.device,
+            &self.sc_desc,
+            self.sample_count,
+            Some("depth_texture"),
+        );
         self.camera.update_aspect(self.size.width, self.size.height);
     }
 
@@ -233,14 +278,25 @@ impl GUI {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+            let color_attachment = if self.sample_count == 1 {
+                wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: &frame.view,
                     resolve_target: None,
                     load_op: wgpu::LoadOp::Clear,
                     store_op: wgpu::StoreOp::Store,
                     clear_color: wgpu::Color::BLACK,
-                }],
+                }
+            } else {
+                wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &self.multisampled_framebuffer,
+                    resolve_target: Some(&frame.view),
+                    load_op: wgpu::LoadOp::Clear,
+                    store_op: wgpu::StoreOp::Store,
+                    clear_color: wgpu::Color::BLACK,
+                }
+            };
+            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[color_attachment],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
                     attachment: &self.depth_texture.view,
                     depth_load_op: wgpu::LoadOp::Clear,

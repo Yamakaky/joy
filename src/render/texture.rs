@@ -10,7 +10,8 @@ impl Texture {
     pub fn create_depth_texture(
         device: &wgpu::Device,
         sc_desc: &wgpu::SwapChainDescriptor,
-        label: &str,
+        sample_count: u32,
+        label: Option<&str>,
     ) -> Self {
         let size = wgpu::Extent3d {
             width: sc_desc.width,
@@ -18,11 +19,11 @@ impl Texture {
             depth: 1,
         };
         let desc = wgpu::TextureDescriptor {
-            label: Some(label),
+            label,
             size,
             array_layer_count: 1,
             mip_level_count: 1,
-            sample_count: 1,
+            sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: Self::DEPTH_FORMAT,
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT
