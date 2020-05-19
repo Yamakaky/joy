@@ -8,6 +8,7 @@ use winit::{
 
 mod camera;
 mod object;
+mod parameters;
 mod texture;
 mod uniforms;
 
@@ -253,14 +254,16 @@ impl GUI {
                     clear_stencil: 0,
                 }),
             });
-            if self.uniforms.width > 0 && self.uniforms.height > 0 {
             rpass.set_pipeline(&self.render_pipeline);
             rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
+            if self.uniforms.width > 0 && self.uniforms.height > 0 {
                 rpass.draw(
                     0..(self.uniforms.width - 1) * (self.uniforms.height - 1) * 6,
                     0..1,
                 );
+            } else {
+                rpass.draw(0..0, 0..1);
             }
         }
 
@@ -271,7 +274,7 @@ impl GUI {
 pub async fn run(
     event_loop: EventLoop<IRData>,
     window: Window,
-    thread_contact: mpsc::SyncSender<()>,
+    thread_contact: mpsc::Sender<JoyconCmd>,
     thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
 ) -> ! {
     let mut gui = GUI::new(&window).await;
@@ -279,13 +282,15 @@ pub async fn run(
 
     let mut thread_handle = Some(thread_handle);
 
+    let mut parameters = parameters::Parameters::new();
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         match event {
             Event::MainEventsCleared => window.request_redraw(),
             Event::LoopDestroyed => {
                 eprintln!("sending shutdown signal to thread");
-                let _ = thread_contact.send(());
+                let _ = thread_contact.send(JoyconCmd::Stop);
                 match thread_handle
                     .take()
                     .expect("thread already exited???")
@@ -315,7 +320,7 @@ pub async fn run(
                 ref event,
                 window_id,
             } if window_id == window.id() => {
-                if gui.input(event) {
+                if gui.input(event) || parameters.input(event, &thread_contact) {
                     window.request_redraw();
                 } else {
                     match event {
@@ -350,4 +355,9 @@ pub struct IRData {
     pub buffer: Box<[u8]>,
     pub width: u32,
     pub height: u32,
+}
+
+pub enum JoyconCmd {
+    Stop,
+    SetRegister(joycon_sys::mcu::ir::Register),
 }

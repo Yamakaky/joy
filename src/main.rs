@@ -2,6 +2,7 @@ use hidapi::HidApi;
 use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::output::*;
+use render::JoyconCmd;
 use std::rc::Rc;
 use std::sync::mpsc;
 use winit::event_loop::*;
@@ -17,7 +18,7 @@ fn main() -> ! {
     let event_loop = EventLoop::with_user_event();
     let window = winit::window::Window::new(&event_loop).unwrap();
     let proxy = event_loop.create_proxy();
-    let (thread_contact, recv) = mpsc::sync_channel(1);
+    let (thread_contact, recv) = mpsc::channel();
     let thread_handle = std::thread::spawn(|| hid_main(proxy, recv));
 
     futures::executor::block_on(render::run(
@@ -29,7 +30,10 @@ fn main() -> ! {
 }
 
 #[allow(dead_code, unused_mut, unused_variables)]
-fn hid_main(proxy: EventLoopProxy<render::IRData>, recv: mpsc::Receiver<()>) -> anyhow::Result<()> {
+fn hid_main(
+    proxy: EventLoopProxy<render::IRData>,
+    recv: mpsc::Receiver<JoyconCmd>,
+) -> anyhow::Result<()> {
     let val = OutputReport::default();
 
     let api = HidApi::new()?;
@@ -95,10 +99,6 @@ fn hid_main(proxy: EventLoopProxy<render::IRData>, recv: mpsc::Receiver<()>) -> 
         let mut i = 0;
         device.enable_ir_loop = true;
         while gui_still_running {
-            if let Ok(()) = recv.try_recv() {
-                eprintln!("shutting down thread");
-                gui_still_running = false;
-            }
             /*
 
             device.max_raw_gyro = 0;
@@ -120,6 +120,18 @@ fn hid_main(proxy: EventLoopProxy<render::IRData>, recv: mpsc::Receiver<()>) -> 
             i += 1;
 
             //println!("{:?}", stick);
+
+            while let Ok(cmd) = recv.try_recv() {
+                match cmd {
+                    JoyconCmd::Stop => {
+                        eprintln!("shutting down thread");
+                        gui_still_running = false;
+                    }
+                    JoyconCmd::SetRegister(register) => {
+                        dbg!(device.set_ir_registers(&[register, Register::finish(),])?);
+                    }
+                }
+            }
         }
 
         dbg!(device.set_report_mode_standard()?);
