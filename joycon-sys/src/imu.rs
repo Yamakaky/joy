@@ -2,7 +2,7 @@ use crate::common::*;
 use cgmath::{Deg, Euler, Vector3};
 use std::fmt;
 
-pub const IMU_SAMPLE_DURATION: f32 = 0.005;
+pub const IMU_SAMPLE_DURATION: f64 = 0.005;
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 
 #[repr(packed)]
@@ -13,22 +13,22 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub fn raw_accel(&self) -> Vector3<f32> {
+    pub fn raw_accel(&self) -> Vector3<f64> {
         vector_from_raw(self.raw_accel)
     }
 
-    pub fn raw_gyro(&self) -> Vector3<f32> {
+    pub fn raw_gyro(&self) -> Vector3<f64> {
         vector_from_raw(self.raw_gyro)
     }
 
     /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
-    pub fn accel_g(&self, offset: Vector3<f32>, sens: AccSens) -> Vector3<f32> {
-        (self.raw_accel() - offset) / (u16::MAX as f32 / sens.range_g() as f32)
+    pub fn accel_g(&self, offset: Vector3<f64>, sens: AccSens) -> Vector3<f64> {
+        (self.raw_accel() - offset) / (u16::MAX as f64 / sens.range_g() as f64)
     }
 
     /// The rotation described in this frame.
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
-    pub fn rotation(&self, offset: Vector3<f32>, sens: GyroSens) -> Euler<Deg<f32>> {
+    pub fn rotation(&self, offset: Vector3<f64>, sens: GyroSens) -> Euler<Deg<f64>> {
         let dps = (self.raw_gyro() - offset) * sens.factor() * IMU_SAMPLE_DURATION;
         Euler {
             x: Deg(dps.x),
@@ -81,8 +81,8 @@ impl GyroSens {
     }
 
     /// factor from raw unit to dps
-    pub fn factor(self) -> f32 {
-        self.range_dps() as f32 / u16::MAX as f32
+    pub fn factor(self) -> f64 {
+        self.range_dps() as f64 / u16::MAX as f64
     }
 }
 

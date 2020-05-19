@@ -344,7 +344,7 @@ impl JoyCon {
         Ok(*result)
     }
 
-    pub fn get_sticks(&mut self) -> Result<((f32, f32), (f32, f32))> {
+    pub fn get_sticks(&mut self) -> Result<((f64, f64), (f64, f64))> {
         let report = self.recv()?;
         let inputs = report.standard().expect("should be standard");
         Ok((

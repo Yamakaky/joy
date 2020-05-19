@@ -141,23 +141,23 @@ impl StickCalibration {
         )
     }
 
-    pub fn value_from_raw(&self, x: u16, y: u16) -> (f32, f32) {
+    pub fn value_from_raw(&self, x: u16, y: u16) -> (f64, f64) {
         let min = self.min();
         let center = self.center();
         let max = self.max();
-        let rel_x = x.max(min.0).min(max.0) as f32 - center.0 as f32;
-        let rel_y = y.max(min.1).min(max.1) as f32 - center.1 as f32;
+        let rel_x = x.max(min.0).min(max.0) as f64 - center.0 as f64;
+        let rel_y = y.max(min.1).min(max.1) as f64 - center.1 as f64;
 
         (
             if rel_x >= 0. {
-                rel_x / (max.0 as f32 - center.0 as f32)
+                rel_x / (max.0 as f64 - center.0 as f64)
             } else {
-                rel_x / (center.0 as f32 - min.0 as f32)
+                rel_x / (center.0 as f64 - min.0 as f64)
             },
             if rel_y >= 0. {
-                rel_y / (max.1 as f32 - center.1 as f32)
+                rel_y / (max.1 as f64 - center.1 as f64)
             } else {
-                rel_y / (center.1 as f32 - min.1 as f32)
+                rel_y / (center.1 as f64 - min.1 as f64)
             },
         )
     }
@@ -234,19 +234,19 @@ pub struct SensorCalibration {
 }
 
 impl SensorCalibration {
-    pub fn acc_offset(&self) -> Vector3<f32> {
+    pub fn acc_offset(&self) -> Vector3<f64> {
         vector_from_raw(self.acc_orig)
     }
 
-    pub fn acc_factor(&self) -> Vector3<f32> {
+    pub fn acc_factor(&self) -> Vector3<f64> {
         vector_from_raw(self.acc_sens)
     }
 
-    pub fn gyro_offset(&self) -> Vector3<f32> {
+    pub fn gyro_offset(&self) -> Vector3<f64> {
         vector_from_raw(self.gyro_orig)
     }
 
-    pub fn gyro_factor(&self) -> Vector3<f32> {
+    pub fn gyro_factor(&self) -> Vector3<f64> {
         vector_from_raw(self.gyro_sens)
     }
 }
@@ -261,7 +261,7 @@ pub struct UserSensorCalibration {
 }
 
 impl UserSensorCalibration {
-    pub fn acc_offset(&self) -> Option<Vector3<f32>> {
+    pub fn acc_offset(&self) -> Option<Vector3<f64>> {
         if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.acc_offset())
         } else {
@@ -269,7 +269,7 @@ impl UserSensorCalibration {
         }
     }
 
-    pub fn acc_factor(&self) -> Option<Vector3<f32>> {
+    pub fn acc_factor(&self) -> Option<Vector3<f64>> {
         if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.acc_factor())
         } else {
@@ -277,7 +277,7 @@ impl UserSensorCalibration {
         }
     }
 
-    pub fn gyro_offset(&self) -> Option<Vector3<f32>> {
+    pub fn gyro_offset(&self) -> Option<Vector3<f64>> {
         if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.gyro_offset())
         } else {
@@ -285,7 +285,7 @@ impl UserSensorCalibration {
         }
     }
 
-    pub fn gyro_factor(&self) -> Option<Vector3<f32>> {
+    pub fn gyro_factor(&self) -> Option<Vector3<f64>> {
         if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.gyro_factor())
         } else {

@@ -4,11 +4,11 @@ use joycon_sys::*;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Position {
-    pub last_delta_rotation: Euler<Deg<f32>>,
-    pub rotation: Quaternion<f32>,
-    pub accel: Vector3<f32>,
-    pub speed: Vector3<f32>,
-    pub position: Vector3<f32>,
+    pub last_delta_rotation: Euler<Deg<f64>>,
+    pub rotation: Quaternion<f64>,
+    pub accel: Vector3<f64>,
+    pub speed: Vector3<f64>,
+    pub position: Vector3<f64>,
 }
 
 pub struct Handler {
@@ -57,13 +57,13 @@ impl Handler {
         self.imu_cb = Some(cb);
     }
 
-    fn acc_calib(&self) -> Vector3<f32> {
+    fn acc_calib(&self) -> Vector3<f64> {
         self.user_calibration
             .acc_offset()
             .unwrap_or_else(|| self.factory_calibration.acc_offset())
     }
 
-    fn gyro_calib(&self) -> Vector3<f32> {
+    fn gyro_calib(&self) -> Vector3<f64> {
         self.user_calibration
             .gyro_offset()
             .unwrap_or_else(|| self.factory_calibration.gyro_offset())

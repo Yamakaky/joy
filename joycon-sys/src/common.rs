@@ -79,11 +79,11 @@ pub(crate) fn offset_of<A, B>(a: &A, b: &B) -> usize {
     b as *const _ as usize - a as *const _ as usize
 }
 
-pub fn vector_from_raw(raw: [I16LE; 3]) -> Vector3<f32> {
+pub fn vector_from_raw(raw: [I16LE; 3]) -> Vector3<f64> {
     Vector3::new(
-        i16::from(raw[0]) as f32,
-        i16::from(raw[1]) as f32,
-        i16::from(raw[2]) as f32,
+        i16::from(raw[0]) as f64,
+        i16::from(raw[1]) as f64,
+        i16::from(raw[2]) as f64,
     )
 }
 

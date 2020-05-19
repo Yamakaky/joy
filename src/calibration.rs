@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 
-type Entry = Vector3<f32>;
+type Entry = Vector3<f64>;
 
 #[derive(Clone, Debug)]
 pub struct Calibration {
@@ -32,7 +32,7 @@ impl Calibration {
 
     pub fn get_average(&mut self) -> Entry {
         let zero = Vector3::new(0., 0., 0.);
-        let len = self.history.len() as f32;
+        let len = self.history.len() as f64;
         if len == 0. {
             return zero;
         }
