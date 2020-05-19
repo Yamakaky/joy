@@ -5,6 +5,7 @@ pub struct Image {
     buffer: Box<[[u8; 300]; 0x100]>,
     resolution: ir::Resolution,
     prev_fragment_id: u8,
+    changing_resolution: bool,
     cb: Option<Box<dyn FnMut(Box<[u8]>, u32, u32)>>,
 }
 
@@ -14,6 +15,7 @@ impl Image {
             buffer: Box::new([[0; 300]; 0x100]),
             resolution: resolution,
             prev_fragment_id: 0,
+            changing_resolution: false,
             cb: None,
         }
     }
@@ -22,9 +24,21 @@ impl Image {
         self.cb = Some(cb);
     }
 
+    pub fn change_resolution(&mut self, resolution: ir::Resolution) {
+        self.resolution = resolution;
+        self.changing_resolution = true;
+    }
+
     pub fn handle(&mut self, report: &MCUReport) -> [Option<OutputReport>; 2] {
         // TODO: handle lossed packets
         if let Some(packet) = report.as_ir_data() {
+            if self.changing_resolution {
+                if packet.frag_number != 0 {
+                    return [Some(OutputReport::ir_ack(packet.frag_number)), None];
+                }
+                self.changing_resolution = false;
+            }
+
             self.buffer[packet.frag_number as usize] = packet.img_fragment;
             let resend = if packet.frag_number > 0
                 && self.prev_fragment_id > 0

@@ -45,7 +45,7 @@ fn hid_main(
         .device_list()
         .filter(|x| x.vendor_id() == joycon_sys::NINTENDO_VENDOR_ID)
     {
-        let resolution = Resolution::R320x240;
+        let resolution = Resolution::R160x120;
 
         let mut device = hid::JoyCon::new(device.open_device(&api)?, device.clone(), resolution)?;
         println!("new dev: {:?}", device.get_dev_info()?);
@@ -90,8 +90,7 @@ fn hid_main(
         dbg!(device.set_report_mode_mcu()?);
         dbg!(device.enable_mcu()?);
         dbg!(device.set_mcu_mode_ir()?);
-        dbg!(device.set_ir_image_mode(resolution.max_fragment_id())?);
-        dbg!(device.set_ir_registers(&[Register::resolution(resolution), Register::finish(),])?);
+        device.change_ir_resolution(resolution)?;
 
         //device.set_imu_sens()?;
         //device.enable_imu()?;
@@ -127,7 +126,15 @@ fn hid_main(
                         eprintln!("shutting down thread");
                         gui_still_running = false;
                     }
+                    JoyconCmd::SetResolution(resolution) => {
+                        dbg!(device.set_ir_image_mode(resolution.max_fragment_id())?);
+                        dbg!(device.set_ir_registers(&[
+                            Register::resolution(resolution),
+                            Register::finish(),
+                        ])?);
+                    }
                     JoyconCmd::SetRegister(register) => {
+                        assert!(!register.same_address(Register::resolution(Resolution::R320x240)));
                         dbg!(device.set_ir_registers(&[register, Register::finish(),])?);
                     }
                 }

@@ -4,12 +4,16 @@ use std::sync::mpsc;
 
 pub struct Parameters {
     resolution: Resolution,
+    flip: Flip,
+    denoise: bool,
 }
 
 impl Parameters {
     pub fn new() -> Self {
         Self {
             resolution: Resolution::R320x240,
+            flip: Flip::Normal,
+            denoise: true,
         }
     }
     pub fn input(
@@ -37,9 +41,27 @@ impl Parameters {
                         R40x30 => R320x240,
                     };
                     thread_contact
-                        .send(JoyconCmd::SetRegister(Register::resolution(
-                            self.resolution,
-                        )))
+                        .send(JoyconCmd::SetResolution(self.resolution))
+                        .unwrap();
+                    true
+                }
+                VirtualKeyCode::F => {
+                    use Flip::*;
+                    self.flip = match self.flip {
+                        Normal => Vertically,
+                        Vertically => Horizontally,
+                        Horizontally => Both,
+                        Both => Normal,
+                    };
+                    thread_contact
+                        .send(JoyconCmd::SetRegister(Register::flip(self.flip)))
+                        .unwrap();
+                    true
+                }
+                VirtualKeyCode::N => {
+                    self.denoise = !self.denoise;
+                    thread_contact
+                        .send(JoyconCmd::SetRegister(Register::denoise(self.denoise)))
                         .unwrap();
                     true
                 }

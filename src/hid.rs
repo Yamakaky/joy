@@ -106,6 +106,16 @@ impl JoyCon {
         Ok(report)
     }
 
+    pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
+        // TODO: doesn't work while an image is in progress
+        self.set_ir_image_mode(resolution.max_fragment_id())
+            .context("change_ir_resolution")?;
+        self.set_ir_registers(&[Register::resolution(resolution), Register::finish()])
+            .context("change_ir_resolution")?;
+        self.image.change_resolution(resolution);
+        Ok(())
+    }
+
     pub fn load_calibration(&mut self) -> Result<()> {
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
         let factory_settings = factory_result.imu_factory_calib().unwrap();
@@ -238,10 +248,6 @@ impl JoyCon {
             mcu_fw_version,
         });
         let reply = self.send_subcmd_wait(mcu_cmd)?;
-        ensure!(
-            unsafe { reply.ir_status().0 } == MCUReportId::BusyInitializing,
-            "mcu not busy"
-        );
 
         self.wait_mcu_cond(IRRequest::get_state(), |r| {
             r.as_ir_status()
