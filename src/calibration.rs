@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 
-type Entry = Euler<Deg<f32>>;
+type Entry = Vector3<f32>;
 
 #[derive(Clone, Debug)]
 pub struct Calibration {
@@ -31,19 +31,16 @@ impl Calibration {
     }
 
     pub fn get_average(&mut self) -> Entry {
-        let zero = Euler::new(Deg(0.), Deg(0.), Deg(0.));
+        let zero = Vector3::new(0., 0., 0.);
         let len = self.history.len() as f32;
         if len == 0. {
             return zero;
         }
-        let sum = self.history.iter().cloned().fold((0., 0., 0.), |acc, val| {
-            (
-                acc.0 + val.x.0 / len,
-                acc.1 + val.y.0 / len,
-                acc.2 + val.z.0 / len,
-            )
-        });
-        Euler::new(Deg(sum.0), Deg(sum.1), Deg(sum.2))
+        self.history
+            .iter()
+            .cloned()
+            .fold(zero, |acc, val| acc + val)
+            / len
     }
 }
 

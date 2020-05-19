@@ -6,6 +6,7 @@ use joycon_sys::*;
 pub struct Position {
     pub last_delta_rotation: Euler<Deg<f32>>,
     pub rotation: Quaternion<f32>,
+    pub accel: Vector3<f32>,
     pub speed: Vector3<f32>,
     pub position: Vector3<f32>,
 }
@@ -36,6 +37,7 @@ impl Handler {
             position: Position {
                 last_delta_rotation: zero,
                 rotation: Quaternion::from(zero),
+                accel: Vector3::zero(),
                 speed: Vector3::zero(),
                 position: Vector3::zero(),
             },
@@ -55,6 +57,12 @@ impl Handler {
         self.imu_cb = Some(cb);
     }
 
+    fn acc_calib(&self) -> Vector3<f32> {
+        self.user_calibration
+            .acc_offset()
+            .unwrap_or_else(|| self.factory_calibration.acc_offset())
+    }
+
     fn gyro_calib(&self) -> Vector3<f32> {
         self.user_calibration
             .gyro_offset()
@@ -62,21 +70,30 @@ impl Handler {
     }
 
     pub fn handle_frames(&mut self, frames: &[imu::Frame]) {
-        let offset = self.gyro_calib();
+        let gyro_offset = self.gyro_calib();
+        let acc_offset = self.acc_calib();
         for frame in frames.iter().rev() {
-            let raw_delta_rotation = frame.rotation(offset, self.gyro_sens);
+            let raw_delta_rotation = frame.rotation(gyro_offset, self.gyro_sens);
+            let raw_acc = frame.accel_g(acc_offset, self.accel_sens);
             if self.calib_nb > 0 {
-                self.calib_gyro.push(raw_delta_rotation);
+                self.calib_gyro.push(Vector3::new(
+                    raw_delta_rotation.x.0,
+                    raw_delta_rotation.y.0,
+                    raw_delta_rotation.z.0,
+                ));
+                self.calib_accel.push(raw_acc);
                 self.calib_nb -= 1;
             }
             let c = self.calib_gyro.get_average();
             let delta_rotation = Euler::new(
-                raw_delta_rotation.x - c.x,
-                raw_delta_rotation.y - c.y,
-                raw_delta_rotation.z - c.z,
+                raw_delta_rotation.x - Deg(c.x),
+                raw_delta_rotation.y - Deg(c.y),
+                raw_delta_rotation.z - Deg(c.z),
             );
             self.position.last_delta_rotation = delta_rotation;
             self.position.rotation = self.position.rotation * Quaternion::from(delta_rotation);
+            self.position.accel = raw_acc - self.calib_accel.get_average();
+
             if let Some(ref mut cb) = self.imu_cb {
                 cb(&self.position);
             }
