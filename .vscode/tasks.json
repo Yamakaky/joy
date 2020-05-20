@@ -26,6 +26,18 @@
 		},
 		{
 			"type": "cargo",
+			"command": "doc",
+			"args": [
+				"--open",
+				"--workspace"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"label": "rust: cargo doc --open --workspace"
+		},
+		{
+			"type": "cargo",
 			"command": "check",
 			"args": [
 				"--workspace"
