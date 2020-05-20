@@ -78,7 +78,7 @@ pub struct IRReadRegisters {
 pub enum MCUIRMode {
     IRSensorReset = 0,
     IRSensorSleep = 1,
-    Unknown2 = 2,
+    WaitingForConfigurationMaybe = 2,
     Moment = 3,
     /// Wii-style pointing
     Dpd = 4,
