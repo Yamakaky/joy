@@ -7,6 +7,7 @@ pub struct Parameters {
     flip: Flip,
     denoise: bool,
     leds: Leds,
+    ext_light_filter: ExternalLightFilter,
 }
 
 impl Parameters {
@@ -16,6 +17,7 @@ impl Parameters {
             flip: Flip::Normal,
             denoise: true,
             leds: Leds(0),
+            ext_light_filter: ExternalLightFilter::X1,
         }
     }
     pub fn input(
@@ -64,6 +66,19 @@ impl Parameters {
                     self.denoise = !self.denoise;
                     thread_contact
                         .send(JoyconCmd::SetRegister(Register::denoise(self.denoise)))
+                        .unwrap();
+                    true
+                }
+                VirtualKeyCode::X => {
+                    self.ext_light_filter = if self.ext_light_filter == ExternalLightFilter::X1 {
+                        ExternalLightFilter::Off
+                    } else {
+                        ExternalLightFilter::X1
+                    };
+                    thread_contact
+                        .send(JoyconCmd::SetRegister(Register::external_light_filter(
+                            self.ext_light_filter,
+                        )))
                         .unwrap();
                     true
                 }
