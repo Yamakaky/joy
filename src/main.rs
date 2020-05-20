@@ -127,11 +127,7 @@ fn hid_main(
                         gui_still_running = false;
                     }
                     JoyconCmd::SetResolution(resolution) => {
-                        dbg!(device.set_ir_image_mode(resolution.max_fragment_id())?);
-                        dbg!(device.set_ir_registers(&[
-                            Register::resolution(resolution),
-                            Register::finish(),
-                        ])?);
+                        dbg!(device.change_ir_resolution(resolution)?);
                     }
                     JoyconCmd::SetRegister(register) => {
                         assert!(!register.same_address(Register::resolution(Resolution::R320x240)));

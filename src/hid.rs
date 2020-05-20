@@ -107,11 +107,12 @@ impl JoyCon {
     }
 
     pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
-        // TODO: doesn't work while an image is in progress
-        self.set_ir_image_mode(resolution.max_fragment_id())
-            .context("change_ir_resolution")?;
+        self.set_ir_wait_conf()
+            .context("change_ir_resolution reset")?;
         self.set_ir_registers(&[Register::resolution(resolution), Register::finish()])
             .context("change_ir_resolution")?;
+        self.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
+            .context("change_ir_resolution enable")?;
         self.image.change_resolution(resolution);
         Ok(())
     }
@@ -232,7 +233,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_ir_image_mode(&mut self, frags: u8) -> Result<()> {
+    pub fn set_ir_wait_conf(&mut self) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
             if let Some(status) = r.as_status() {
@@ -243,15 +244,41 @@ impl JoyCon {
             }
         })?;
         let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
-            ir_mode: MCUIRMode::ImageTransfer,
-            no_of_frags: frags,
+            ir_mode: MCUIRMode::IRSensorReset,
+            no_of_frags: 0,
             mcu_fw_version,
         });
-        let reply = self.send_subcmd_wait(mcu_cmd)?;
+        self.send_subcmd_wait(mcu_cmd)?;
 
         self.wait_mcu_cond(IRRequest::get_state(), |r| {
             r.as_ir_status()
-                .map(|status| status.ir_mode == MCUIRMode::ImageTransfer)
+                .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
+                .unwrap_or(false)
+        })
+        .context("check sensor state")?;
+        Ok(())
+    }
+
+    pub fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
+        let mut mcu_fw_version = Default::default();
+        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
+            if let Some(status) = r.as_status() {
+                mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
+                true
+            } else {
+                false
+            }
+        })?;
+        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
+            ir_mode,
+            no_of_frags: frags,
+            mcu_fw_version,
+        });
+        self.send_subcmd_wait(mcu_cmd)?;
+
+        self.wait_mcu_cond(IRRequest::get_state(), |r| {
+            r.as_ir_status()
+                .map(|status| dbg!(status.ir_mode) == ir_mode)
                 .unwrap_or(false)
         })
         .context("check sensor state")?;
