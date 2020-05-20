@@ -12,7 +12,6 @@ members = [
 [dependencies]
 anyhow = "1.0"
 enigo = "0.0.14"
-image = { version = "0.23", features = ["png"], default_features = false }
 hidapi = "1.2"
 joycon-sys = { path = "joycon-sys" }
 wgpu = "0.5"
