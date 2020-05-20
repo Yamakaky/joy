@@ -6,6 +6,7 @@ pub struct Parameters {
     resolution: Resolution,
     flip: Flip,
     denoise: bool,
+    leds: Leds,
 }
 
 impl Parameters {
@@ -14,6 +15,7 @@ impl Parameters {
             resolution: Resolution::R320x240,
             flip: Flip::Normal,
             denoise: true,
+            leds: Leds(0),
         }
     }
     pub fn input(
@@ -62,6 +64,24 @@ impl Parameters {
                     self.denoise = !self.denoise;
                     thread_contact
                         .send(JoyconCmd::SetRegister(Register::denoise(self.denoise)))
+                        .unwrap();
+                    true
+                }
+                VirtualKeyCode::L => {
+                    let (far, near) = match (
+                        self.leds.disable_far_narrow12(),
+                        self.leds.disable_near_wide34(),
+                    ) {
+                        (false, false) => (true, false),
+                        (true, false) => (true, true),
+                        (true, true) => (false, true),
+                        (false, true) => (false, false),
+                    };
+                    self.leds.set_disable_far_narrow12(far);
+                    self.leds.set_disable_near_wide34(near);
+                    dbg!(self.leds);
+                    thread_contact
+                        .send(JoyconCmd::SetRegister(Register::ir_leds(self.leds)))
                         .unwrap();
                     true
                 }
