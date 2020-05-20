@@ -70,10 +70,8 @@ impl Register {
     }
 
     // default value: 0x10 TODO
-    pub fn ir_leds(far: bool, near: bool) -> Register {
-        //todo: strobe + flashlight
-        //todo: bitmap
-        Register::new(IRLeds, ((!far) as u8) << 5 | ((!near) as u8) << 6)
+    pub fn ir_leds(leds: Leds) -> Register {
+        Register::new(IRLeds, leds.0)
     }
 
     // default value: X1
@@ -273,4 +271,15 @@ pub enum Flip {
     Vertically = 1,
     Horizontally = 2,
     Both = 3,
+}
+
+bitfield::bitfield! {
+    #[repr(transparent)]
+    #[derive(Copy, Clone)]
+    pub struct Leds(u8);
+    impl Debug;
+    pub flashlight, set_flashlight: 0;
+    pub disable_far_narrow12, set_disable_far_narrow12: 5;
+    pub disable_near_wide34, set_disable_near_wide34: 6;
+    pub strobe, set_strobe: 7;
 }
