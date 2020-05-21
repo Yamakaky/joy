@@ -1,3 +1,4 @@
+use buffer::StagedBuffer;
 use object::Vertex;
 use std::sync::mpsc;
 use winit::{
@@ -6,6 +7,7 @@ use winit::{
     window::Window,
 };
 
+mod buffer;
 mod camera;
 mod object;
 mod parameters;
@@ -100,9 +102,9 @@ struct GUI {
     render_pipeline: wgpu::RenderPipeline,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
-    vertex_buffer: wgpu::Buffer,
+    vertex_buffer: StagedBuffer,
     uniforms: uniforms::Uniforms,
-    uniform_buffer: wgpu::Buffer,
+    uniform_buffer: StagedBuffer,
     uniform_bind_group: wgpu::BindGroup,
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
@@ -147,16 +149,11 @@ impl GUI {
         let camera = camera::Camera::new(&sc_desc);
         let mut uniforms = uniforms::Uniforms::new();
         uniforms.update_view_proj(&camera);
-        let uniform_buffer = device.create_buffer_with_data(
-            bytemuck::cast_slice(&[uniforms]),
-            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        );
+        let uniform_buffer =
+            StagedBuffer::with_data(&device, &[uniforms], wgpu::BufferUsage::UNIFORM);
 
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            size: Vertex::BUF_SIZE,
-            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::COPY_DST,
-            label: Some("vertex_buffer"),
-        });
+        let vertex_buffer =
+            StagedBuffer::with_size(&device, Vertex::BUF_SIZE, wgpu::BufferUsage::VERTEX);
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -241,30 +238,12 @@ impl GUI {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("update encoder"),
             });
-        let staging_buffer = self.device.create_buffer_with_data(
-            bytemuck::cast_slice(&[self.uniforms]),
-            wgpu::BufferUsage::COPY_SRC,
-        );
-        encoder.copy_buffer_to_buffer(
-            &staging_buffer,
-            0,
-            &self.uniform_buffer,
-            0,
-            std::mem::size_of::<uniforms::Uniforms>() as wgpu::BufferAddress,
-        );
+        self.uniform_buffer
+            .update(&self.device, &mut encoder, &[self.uniforms]);
         if self.irdata.len() > 0 {
             let vertices = Vertex::from_ir(&self.irdata, self.uniforms.width, self.uniforms.height);
-            let data = bytemuck::cast_slice(&vertices);
-            let staging_buffer2 = self
-                .device
-                .create_buffer_with_data(data, wgpu::BufferUsage::COPY_SRC);
-            encoder.copy_buffer_to_buffer(
-                &staging_buffer2,
-                0,
-                &self.vertex_buffer,
-                0,
-                data.len() as wgpu::BufferAddress,
-            );
+            self.vertex_buffer
+                .update(&self.device, &mut encoder, &vertices);
         }
         self.queue.submit(&[encoder.finish()]);
     }
