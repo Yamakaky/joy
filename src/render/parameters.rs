@@ -8,6 +8,7 @@ pub struct Parameters {
     denoise: bool,
     leds: Leds,
     ext_light_filter: ExternalLightFilter,
+    edge_smoothing: u8,
 }
 
 impl Parameters {
@@ -18,6 +19,7 @@ impl Parameters {
             denoise: true,
             leds: Leds(0),
             ext_light_filter: ExternalLightFilter::X1,
+            edge_smoothing: 0x23,
         }
     }
     pub fn input(
@@ -78,6 +80,24 @@ impl Parameters {
                     thread_contact
                         .send(JoyconCmd::SetRegister(Register::external_light_filter(
                             self.ext_light_filter,
+                        )))
+                        .unwrap();
+                    true
+                }
+                VirtualKeyCode::P => {
+                    self.edge_smoothing = self.edge_smoothing.saturating_add(10);
+                    thread_contact
+                        .send(JoyconCmd::SetRegister(Register::edge_smoothing_threshold(
+                            self.edge_smoothing,
+                        )))
+                        .unwrap();
+                    true
+                }
+                VirtualKeyCode::M => {
+                    self.edge_smoothing = self.edge_smoothing.saturating_sub(10);
+                    thread_contact
+                        .send(JoyconCmd::SetRegister(Register::edge_smoothing_threshold(
+                            self.edge_smoothing,
                         )))
                         .unwrap();
                     true
