@@ -1,4 +1,4 @@
-use buffer::StagedBuffer;
+use buffer::Staged;
 use object::Vertex;
 use std::sync::mpsc;
 use winit::{
@@ -102,14 +102,15 @@ struct GUI {
     render_pipeline: wgpu::RenderPipeline,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
-    vertex_buffer: StagedBuffer,
+    vertex_buffer: Staged<wgpu::Buffer>,
     uniforms: uniforms::Uniforms,
-    uniform_buffer: StagedBuffer,
+    uniform_buffer: Staged<wgpu::Buffer>,
     uniform_bind_group: wgpu::BindGroup,
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
     irdata: Box<[u8]>,
+    ir_texture: Option<Staged<texture::Texture>>,
 }
 
 impl GUI {
@@ -149,11 +150,9 @@ impl GUI {
         let camera = camera::Camera::new(&sc_desc);
         let mut uniforms = uniforms::Uniforms::new();
         uniforms.update_view_proj(&camera);
-        let uniform_buffer =
-            StagedBuffer::with_data(&device, &[uniforms], wgpu::BufferUsage::UNIFORM);
+        let uniform_buffer = Staged::with_data(&device, &[uniforms], wgpu::BufferUsage::UNIFORM);
 
-        let vertex_buffer =
-            StagedBuffer::with_size(&device, Vertex::BUF_SIZE, wgpu::BufferUsage::VERTEX);
+        let vertex_buffer = Staged::with_size(&device, Vertex::BUF_SIZE, wgpu::BufferUsage::VERTEX);
 
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -207,6 +206,7 @@ impl GUI {
             size,
             camera,
             irdata: vec![].into(),
+            ir_texture: None,
         }
     }
 
@@ -240,11 +240,36 @@ impl GUI {
             });
         self.uniform_buffer
             .update(&self.device, &mut encoder, &[self.uniforms]);
-        if self.irdata.len() > 0 {
-            let vertices = Vertex::from_ir(&self.irdata, self.uniforms.width, self.uniforms.height);
-            self.vertex_buffer
-                .update(&self.device, &mut encoder, &vertices);
+        self.queue.submit(&[encoder.finish()]);
+    }
+
+    fn push_ir_data(&mut self, ir_data: Box<[u8]>, width: u32, height: u32) {
+        self.irdata = ir_data;
+        self.uniforms.width = width;
+        self.uniforms.height = height;
+
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("IR data upload"),
+            });
+        let vertices = Vertex::from_ir(&self.irdata, self.uniforms.width, self.uniforms.height);
+        self.vertex_buffer
+            .update(&self.device, &mut encoder, &vertices);
+
+        if self.ir_texture.is_none() {
+            self.ir_texture = Some(Staged::new(texture::Texture::create_ir_texture(
+                &self.device,
+                (width, height),
+            )));
         }
+        self.ir_texture.as_mut().unwrap().update(
+            &self.device,
+            &mut encoder,
+            &self.irdata,
+            (width, height),
+        );
+
         self.queue.submit(&[encoder.finish()]);
     }
 
@@ -343,9 +368,7 @@ pub async fn run(
                 height,
             }) => {
                 assert_eq!(buffer.len(), width as usize * height as usize);
-                gui.irdata = buffer;
-                gui.uniforms.width = width;
-                gui.uniforms.height = height;
+                gui.push_ir_data(buffer, width, height);
                 window.request_redraw();
             }
             Event::WindowEvent {
