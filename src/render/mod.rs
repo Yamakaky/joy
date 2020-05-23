@@ -109,6 +109,9 @@ struct GUI {
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
+    static_compute_binding: wgpu::BindGroup,
+    dynamic_compute_binding_layout: wgpu::BindGroupLayout,
+    compute_pipeline: wgpu::ComputePipeline,
     irdata: Box<[u8]>,
     ir_texture: Option<Staged<texture::Texture>>,
 }
@@ -128,6 +131,7 @@ impl GUI {
         )
         .await
         .unwrap();
+        dbg!(adapter.get_info());
 
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
@@ -189,6 +193,90 @@ impl GUI {
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
+        let compute_vertex_buffer_size = 320 * 240 * 2 * 4;
+        let compute_vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("compute vertex buffer"),
+            size: compute_vertex_buffer_size,
+            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::STORAGE,
+        });
+        let ir_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            lod_min_clamp: -100.0,
+            lod_max_clamp: 100.0,
+            compare: wgpu::CompareFunction::Always,
+        });
+        let static_compute_binding_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                bindings: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::COMPUTE,
+                        ty: wgpu::BindingType::StorageBuffer {
+                            dynamic: false,
+                            readonly: false,
+                        },
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStage::COMPUTE,
+                        ty: wgpu::BindingType::Sampler { comparison: false },
+                    },
+                ],
+                label: Some("static compute binding layout"),
+            });
+        let static_compute_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &static_compute_binding_layout,
+            bindings: &[
+                wgpu::Binding {
+                    binding: 0,
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: &compute_vertex_buffer,
+                        range: 0..compute_vertex_buffer_size,
+                    },
+                },
+                wgpu::Binding {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&ir_sampler),
+                },
+            ],
+            label: Some("static compute binding"),
+        });
+        let dynamic_compute_binding_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                bindings: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::COMPUTE,
+                    ty: wgpu::BindingType::SampledTexture {
+                        dimension: wgpu::TextureViewDimension::D2,
+                        component_type: wgpu::TextureComponentType::Uint,
+                        multisampled: false,
+                    },
+                }],
+                label: Some("dynamic compute binding layout"),
+            });
+        let compute_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                bind_group_layouts: &[
+                    &static_compute_binding_layout,
+                    &dynamic_compute_binding_layout,
+                ],
+            });
+        let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+            layout: &compute_pipeline_layout,
+            compute_stage: wgpu::ProgrammableStageDescriptor {
+                module: &device.create_shader_module(vk_shader_macros::include_glsl!(
+                    "src/render/compute.comp",
+                    kind: comp
+                )),
+                entry_point: "main",
+            },
+        });
+
         Self {
             surface,
             device,
@@ -203,6 +291,9 @@ impl GUI {
             uniform_buffer,
             uniform_bind_group,
             depth_texture,
+            static_compute_binding,
+            dynamic_compute_binding_layout,
+            compute_pipeline,
             size,
             camera,
             irdata: vec![].into(),
@@ -269,6 +360,25 @@ impl GUI {
             &self.irdata,
             (width, height),
         );
+
+        {
+            let dynamic_compute_binding =
+                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    layout: &self.dynamic_compute_binding_layout,
+                    bindings: &[wgpu::Binding {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(
+                            &self.ir_texture.as_ref().unwrap().view,
+                        ),
+                    }],
+                    label: Some("dynamic compute group"),
+                });
+            let mut cpass = encoder.begin_compute_pass();
+            cpass.set_pipeline(&self.compute_pipeline);
+            cpass.set_bind_group(0, &self.static_compute_binding, &[]);
+            cpass.set_bind_group(1, &dynamic_compute_binding, &[]);
+            cpass.dispatch(width, height, 1);
+        }
 
         self.queue.submit(&[encoder.finish()]);
     }

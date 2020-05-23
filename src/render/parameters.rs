@@ -14,7 +14,7 @@ pub struct Parameters {
 impl Parameters {
     pub fn new() -> Self {
         Self {
-            resolution: Resolution::R320x240,
+            resolution: Resolution::R160x120,
             flip: Flip::Normal,
             denoise: true,
             leds: Leds(0),

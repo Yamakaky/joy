@@ -1,0 +1,36 @@
+#version 450
+
+struct Vertex {
+    vec3 position;
+    vec3 normal;
+};
+
+layout(set = 0, binding = 0) buffer Out {
+    Vertex[] vertices;
+};
+layout(set = 0, binding = 1) uniform sampler ir_sampler;
+
+layout(set = 1, binding = 0) uniform texture2D ir_pixels;
+
+vec3 pos(int u, int v) {
+    return vec3(u, v, texture(sampler2D(ir_pixels, ir_sampler), vec2(u, v)));
+}
+
+vec3 norm(vec3 z, vec3 a, vec3 b) {
+    return cross(a - z, b - z);
+}
+
+void main() {
+    int x = int(gl_GlobalInvocationID.x);
+    int y = int(gl_GlobalInvocationID.y);
+    vec3 z = pos(x    , y    );
+    vec3 a = pos(x    , y - 1);
+    vec3 b = pos(x + 1, y - 1);
+    vec3 c = pos(x + 1, y    );
+    vec3 d = pos(x    , y + 1);
+    vec3 e = pos(x - 1, y + 1);
+    vec3 f = pos(x - 1, y    );
+
+    vec3 sum_norm = norm(z, a, b) + norm(z, b, c) + norm(z, c, d) + norm(z, d, e) + norm(z, e, f) + norm(z, f, a);
+    vertices[gl_GlobalInvocationID.y * gl_NumWorkGroups.x + gl_GlobalInvocationID.x] = Vertex(a, normalize(sum_norm));
+}
