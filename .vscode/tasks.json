@@ -22,6 +22,11 @@
 			"problemMatcher": [
 				"$rustc"
 			],
+			"options": {
+				"env": {
+					"RUST_BACKTRACE": "1",
+				}
+			},
 			"label": "rust: cargo run"
 		},
 		{
