@@ -17,7 +17,6 @@ impl Texture {
         let desc = wgpu::TextureDescriptor {
             label: Some("IR Texture"),
             size,
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -37,6 +36,7 @@ impl Texture {
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
             compare: wgpu::CompareFunction::Undefined,
+            label: Some("IR texture sampler"),
         });
 
         Self {
@@ -61,7 +61,6 @@ impl Texture {
         let desc = wgpu::TextureDescriptor {
             label,
             size,
-            array_layer_count: 1,
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
@@ -83,6 +82,7 @@ impl Texture {
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
             compare: wgpu::CompareFunction::LessEqual,
+            label: Some("Depth texture sampler"),
         });
 
         Self {

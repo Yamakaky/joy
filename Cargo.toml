@@ -15,7 +15,7 @@ enigo = "0.0.14"
 hidapi = "1.2"
 image = { version = "0.23", default-features = false }
 joycon-sys = { path = "joycon-sys" }
-wgpu = "0.5"
+wgpu = { git = "https://github.com/gfx-rs/wgpu-rs" }
 winit = "0.22"
 futures = "0.3"
 vk-shader-macros = "0.2"

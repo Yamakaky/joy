@@ -63,7 +63,7 @@ impl Staged<Texture> {
         let old_size = self.buffer.size;
         if old_size.width != width || old_size.height != height {
             self.buffer = Texture::create_ir_texture(device, (width, height));
-        }
+        } 
         let staging_buffer = device.create_buffer_with_data(raw, wgpu::BufferUsage::COPY_SRC);
         encoder.copy_buffer_to_texture(
             wgpu::BufferCopyView {

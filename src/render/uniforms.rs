@@ -22,10 +22,6 @@ impl Uniforms {
         self.view_proj = camera.build_view_projection_matrix(self.width, self.height);
     }
 
-    pub fn instance_count(&self) -> u32 {
-        self.width * self.height
-    }
-
     pub const fn layout() -> [wgpu::BindGroupLayoutEntry; 1] {
         [wgpu::BindGroupLayoutEntry {
             binding: 0,
@@ -37,10 +33,7 @@ impl Uniforms {
     pub fn bindings<'a>(&self, uniform_buffer: &'a wgpu::Buffer) -> [wgpu::Binding<'a>; 1] {
         [wgpu::Binding {
             binding: 0,
-            resource: wgpu::BindingResource::Buffer {
-                buffer: uniform_buffer,
-                range: 0..std::mem::size_of::<Self>() as wgpu::BufferAddress,
-            },
+            resource: wgpu::BindingResource::Buffer(uniform_buffer.slice(..)),
         }]
     }
 }

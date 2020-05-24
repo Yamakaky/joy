@@ -1,5 +1,4 @@
 use buffer::Staged;
-use object::Vertex;
 use std::sync::mpsc;
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
@@ -79,7 +78,6 @@ fn create_multisampled_framebuffer(
     };
     let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
         size: multisampled_texture_extent,
-        array_layer_count: 1,
         mip_level_count: 1,
         sample_count: sample_count,
         dimension: wgpu::TextureDimension::D2,
@@ -120,27 +118,32 @@ impl GUI {
     async fn new(window: &Window) -> Self {
         let sample_count = 16;
         let size = window.inner_size();
-        let surface = wgpu::Surface::create(window);
+        let instance = wgpu::Instance::new();
+        let surface = unsafe { instance.create_surface(window) };
 
-        let adapter = wgpu::Adapter::request(
-            &wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::Default,
-                compatible_surface: Some(&surface),
-            },
-            wgpu::BackendBit::PRIMARY,
-        )
-        .await
-        .unwrap();
-        dbg!(adapter.get_info());
+        let adapter = instance
+            .request_adapter(
+                &wgpu::RequestAdapterOptions {
+                    power_preference: wgpu::PowerPreference::Default,
+                    compatible_surface: Some(&surface),
+                },
+                wgpu::BackendBit::PRIMARY,
+            )
+            .await
+            .unwrap();
 
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                extensions: wgpu::Extensions {
-                    anisotropic_filtering: false,
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    extensions: wgpu::Extensions {
+                        anisotropic_filtering: false,
+                    },
+                    limits: wgpu::Limits::default(),
                 },
-                limits: wgpu::Limits::default(),
-            })
-            .await;
+                None,
+            )
+            .await
+            .unwrap();
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -244,17 +247,15 @@ impl GUI {
             bindings: &[
                 wgpu::Binding {
                     binding: 0,
-                    resource: wgpu::BindingResource::Buffer {
-                        buffer: &compute_vertex_buffer,
-                        range: 0..compute_vertex_buffer_size,
-                    },
+                    resource: wgpu::BindingResource::Buffer(
+                        compute_vertex_buffer.slice(0..compute_vertex_buffer_size),
+                    ),
                 },
                 wgpu::Binding {
                     binding: 1,
-                    resource: wgpu::BindingResource::Buffer {
-                        buffer: &compute_index_buffer,
-                        range: 0..compute_index_buffer_size,
-                    },
+                    resource: wgpu::BindingResource::Buffer(
+                        compute_index_buffer.slice(0..compute_index_buffer_size),
+                    ),
                 },
             ],
             label: Some("static compute binding"),
@@ -351,7 +352,7 @@ impl GUI {
             });
         self.uniform_buffer
             .update(&self.device, &mut encoder, &[self.uniforms]);
-        self.queue.submit(&[encoder.finish()]);
+        self.queue.submit(std::iter::once(encoder.finish()));
     }
 
     fn push_ir_data(&mut self, image: image::GrayImage) {
@@ -405,7 +406,7 @@ impl GUI {
             cpass.dispatch(width, height, 1);
         }
 
-        self.queue.submit(&[encoder.finish()]);
+        self.queue.submit(std::iter::once(encoder.finish()));
     }
 
     fn render(&mut self) {
@@ -447,8 +448,8 @@ impl GUI {
                 }),
             });
             rpass.set_pipeline(&self.render_pipeline);
-            rpass.set_vertex_buffer(0, &self.compute_vertex_buffer, 0, 0);
-            rpass.set_index_buffer(&self.compute_index_buffer, 0, 0);
+            rpass.set_vertex_buffer(0, self.compute_vertex_buffer.slice(..));
+            rpass.set_index_buffer(self.compute_index_buffer.slice(..));
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
             if self.uniforms.width > 0 && self.uniforms.height > 0 {
                 rpass.draw_indexed(
@@ -461,7 +462,7 @@ impl GUI {
             }
         }
 
-        self.queue.submit(&[encoder.finish()]);
+        self.queue.submit(std::iter::once(encoder.finish()));
     }
 }
 
