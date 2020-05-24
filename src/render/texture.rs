@@ -21,7 +21,7 @@ impl Texture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Uint,
+            format: wgpu::TextureFormat::R8Unorm,
             usage: wgpu::TextureUsage::COPY_DST | wgpu::TextureUsage::SAMPLED,
         };
         let texture = device.create_texture(&desc);

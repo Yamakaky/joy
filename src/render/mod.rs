@@ -61,7 +61,7 @@ fn create_render_pipeline(
         sample_mask: !0,
         alpha_to_coverage_enabled: false,
         vertex_state: wgpu::VertexStateDescriptor {
-            index_format: wgpu::IndexFormat::Uint16,
+            index_format: wgpu::IndexFormat::Uint32,
             vertex_buffers: vertex_descs,
         },
     })
@@ -102,13 +102,14 @@ struct GUI {
     render_pipeline: wgpu::RenderPipeline,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
-    vertex_buffer: Staged<wgpu::Buffer>,
     uniforms: uniforms::Uniforms,
     uniform_buffer: Staged<wgpu::Buffer>,
     uniform_bind_group: wgpu::BindGroup,
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
+    compute_vertex_buffer: wgpu::Buffer,
+    compute_index_buffer: wgpu::Buffer,
     static_compute_binding: wgpu::BindGroup,
     dynamic_compute_binding_layout: wgpu::BindGroupLayout,
     compute_pipeline: wgpu::ComputePipeline,
@@ -156,8 +157,6 @@ impl GUI {
         uniforms.update_view_proj(&camera);
         let uniform_buffer = Staged::with_data(&device, &[uniforms], wgpu::BufferUsage::UNIFORM);
 
-        let vertex_buffer = Staged::with_size(&device, Vertex::BUF_SIZE, wgpu::BufferUsage::VERTEX);
-
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 bindings: &uniforms::Uniforms::layout(),
@@ -185,30 +184,39 @@ impl GUI {
             &pipeline_layout,
             wgpu::TextureFormat::Bgra8UnormSrgb,
             Some(texture::Texture::DEPTH_FORMAT),
-            &[Vertex::descriptor()],
-            vk_shader_macros::include_glsl!("src/render/shader.vert", kind: vert),
-            vk_shader_macros::include_glsl!("src/render/shader.frag", kind: frag),
+            &[wgpu::VertexBufferDescriptor {
+                stride: 4 * 4 * 2,
+                step_mode: wgpu::InputStepMode::Vertex,
+                attributes: &wgpu::vertex_attr_array![0 => Float4, 1 => Float4],
+            }],
+            vk_shader_macros::include_glsl!(
+                "src/render/shader.vert",
+                kind: vert,
+                debug,
+                optimize: zero
+            ),
+            vk_shader_macros::include_glsl!(
+                "src/render/shader.frag",
+                kind: frag,
+                debug,
+                optimize: zero
+            ),
             sample_count,
         );
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
-        let compute_vertex_buffer_size = 320 * 240 * 2 * 4;
+        let compute_vertex_buffer_size = 320 * 240 * 2 * 4 * 4;
         let compute_vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("compute vertex buffer"),
             size: compute_vertex_buffer_size,
             usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::STORAGE,
         });
-        let ir_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            lod_min_clamp: -100.0,
-            lod_max_clamp: 100.0,
-            compare: wgpu::CompareFunction::Always,
+        let compute_index_buffer_size = 320 * 240 * 6 * 4;
+        let compute_index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("compute vertex buffer"),
+            size: compute_index_buffer_size,
+            usage: wgpu::BufferUsage::INDEX | wgpu::BufferUsage::STORAGE,
         });
         let static_compute_binding_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -224,7 +232,10 @@ impl GUI {
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStage::COMPUTE,
-                        ty: wgpu::BindingType::Sampler { comparison: false },
+                        ty: wgpu::BindingType::StorageBuffer {
+                            dynamic: false,
+                            readonly: false,
+                        },
                     },
                 ],
                 label: Some("static compute binding layout"),
@@ -241,22 +252,32 @@ impl GUI {
                 },
                 wgpu::Binding {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&ir_sampler),
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: &compute_index_buffer,
+                        range: 0..compute_index_buffer_size,
+                    },
                 },
             ],
             label: Some("static compute binding"),
         });
         let dynamic_compute_binding_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                bindings: &[wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStage::COMPUTE,
-                    ty: wgpu::BindingType::SampledTexture {
-                        dimension: wgpu::TextureViewDimension::D2,
-                        component_type: wgpu::TextureComponentType::Uint,
-                        multisampled: false,
+                bindings: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStage::COMPUTE,
+                        ty: wgpu::BindingType::SampledTexture {
+                            dimension: wgpu::TextureViewDimension::D2,
+                            component_type: wgpu::TextureComponentType::Uint,
+                            multisampled: false,
+                        },
                     },
-                }],
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStage::COMPUTE,
+                        ty: wgpu::BindingType::Sampler { comparison: false },
+                    },
+                ],
                 label: Some("dynamic compute binding layout"),
             });
         let compute_pipeline_layout =
@@ -286,11 +307,12 @@ impl GUI {
             render_pipeline,
             sample_count,
             multisampled_framebuffer,
-            vertex_buffer,
             uniforms,
             uniform_buffer,
             uniform_bind_group,
             depth_texture,
+            compute_vertex_buffer,
+            compute_index_buffer,
             static_compute_binding,
             dynamic_compute_binding_layout,
             compute_pipeline,
@@ -344,9 +366,6 @@ impl GUI {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("IR data upload"),
             });
-        let vertices = Vertex::from_ir(&self.irdata, self.uniforms.width, self.uniforms.height);
-        self.vertex_buffer
-            .update(&self.device, &mut encoder, &vertices);
 
         if self.ir_texture.is_none() {
             self.ir_texture = Some(Staged::new(texture::Texture::create_ir_texture(
@@ -365,19 +384,27 @@ impl GUI {
             let dynamic_compute_binding =
                 self.device.create_bind_group(&wgpu::BindGroupDescriptor {
                     layout: &self.dynamic_compute_binding_layout,
-                    bindings: &[wgpu::Binding {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(
-                            &self.ir_texture.as_ref().unwrap().view,
-                        ),
-                    }],
+                    bindings: &[
+                        wgpu::Binding {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(
+                                &self.ir_texture.as_ref().unwrap().view,
+                            ),
+                        },
+                        wgpu::Binding {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(
+                                &self.ir_texture.as_ref().unwrap().sampler,
+                            ),
+                        },
+                    ],
                     label: Some("dynamic compute group"),
                 });
             let mut cpass = encoder.begin_compute_pass();
             cpass.set_pipeline(&self.compute_pipeline);
             cpass.set_bind_group(0, &self.static_compute_binding, &[]);
             cpass.set_bind_group(1, &dynamic_compute_binding, &[]);
-            cpass.dispatch(width, height, 1);
+            cpass.dispatch(height, width, 1);
         }
 
         self.queue.submit(&[encoder.finish()]);
@@ -422,15 +449,17 @@ impl GUI {
                 }),
             });
             rpass.set_pipeline(&self.render_pipeline);
-            rpass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
+            rpass.set_vertex_buffer(0, &self.compute_vertex_buffer, 0, 0);
+            rpass.set_index_buffer(&self.compute_index_buffer, 0, 0);
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
             if self.uniforms.width > 0 && self.uniforms.height > 0 {
-                rpass.draw(
+                rpass.draw_indexed(
                     0..(self.uniforms.width - 1) * (self.uniforms.height - 1) * 6,
+                    0,
                     0..1,
                 );
             } else {
-                rpass.draw(0..0, 0..1);
+                rpass.draw_indexed(0..0, 0, 0..1);
             }
         }
 

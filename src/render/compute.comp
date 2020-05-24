@@ -1,19 +1,24 @@
 #version 450
 
 struct Vertex {
-    vec3 position;
-    vec3 normal;
+    vec4 position;
+    vec4 normal;
 };
 
-layout(set = 0, binding = 0) buffer Out {
+layout(std430, set = 0, binding = 0) buffer VertOut {
     Vertex[] vertices;
 };
-layout(set = 0, binding = 1) uniform sampler ir_sampler;
+layout(std430, set = 0, binding = 1) buffer IndexOut {
+    uint[] indices;
+};
 
 layout(set = 1, binding = 0) uniform texture2D ir_pixels;
+layout(set = 1, binding = 1) uniform sampler ir_sampler;
 
-vec3 pos(int u, int v) {
-    return vec3(u, v, texture(sampler2D(ir_pixels, ir_sampler), vec2(u, v)));
+vec3 pos(float x, float y) {
+    uint width = gl_NumWorkGroups.x;
+    uint height = gl_NumWorkGroups.y;
+    return vec3(x, y, texture(sampler2D(ir_pixels, ir_sampler), vec2((height - y)/height, (width - x)/width)).r * 255. - 255.);
 }
 
 vec3 norm(vec3 z, vec3 a, vec3 b) {
@@ -21,8 +26,11 @@ vec3 norm(vec3 z, vec3 a, vec3 b) {
 }
 
 void main() {
-    int x = int(gl_GlobalInvocationID.x);
-    int y = int(gl_GlobalInvocationID.y);
+    uint width = gl_NumWorkGroups.x;
+    uint height = gl_NumWorkGroups.y;
+
+    float x = float(gl_GlobalInvocationID.x);
+    float y = float(gl_GlobalInvocationID.y);
     vec3 z = pos(x    , y    );
     vec3 a = pos(x    , y - 1);
     vec3 b = pos(x + 1, y - 1);
@@ -32,5 +40,18 @@ void main() {
     vec3 f = pos(x - 1, y    );
 
     vec3 sum_norm = norm(z, a, b) + norm(z, b, c) + norm(z, c, d) + norm(z, d, e) + norm(z, e, f) + norm(z, f, a);
-    vertices[gl_GlobalInvocationID.y * gl_NumWorkGroups.x + gl_GlobalInvocationID.x] = Vertex(a, normalize(sum_norm));
+    
+    uint ux = gl_GlobalInvocationID.x;
+    uint uy = gl_GlobalInvocationID.y;
+    uint id = uy * width + ux;
+    vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm),1.0));
+    if (ux < width - 1 && uy < height - 1) {
+        indices[id * 6    ] = id;
+        indices[id * 6 + 1] = id + 1;
+        indices[id * 6 + 2] = id + width;
+        indices[id * 6 + 3] = id + width;
+        indices[id * 6 + 4] = id + 1;
+        indices[id * 6 + 5] = id + width + 1;
+    }
+
 }
