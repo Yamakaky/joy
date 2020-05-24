@@ -6,7 +6,7 @@ pub struct Image {
     resolution: ir::Resolution,
     prev_fragment_id: u8,
     changing_resolution: bool,
-    cb: Option<Box<dyn FnMut(Box<[u8]>, u32, u32)>>,
+    cb: Option<Box<dyn FnMut(image::GrayImage)>>,
 }
 
 impl Image {
@@ -20,7 +20,7 @@ impl Image {
         }
     }
 
-    pub fn set_cb(&mut self, cb: Box<dyn FnMut(Box<[u8]>, u32, u32)>) {
+    pub fn set_cb(&mut self, cb: Box<dyn FnMut(image::GrayImage)>) {
         self.cb = Some(cb);
     }
 
@@ -63,7 +63,8 @@ impl Image {
                         {
                             buffer.extend(fragment.iter());
                         }
-                        cb(buffer.into(), width, height);
+                        let img = image::GrayImage::from_raw(width, height, buffer).unwrap();
+                        cb(image::imageops::rotate90(&img));
                     }
                     self.buffer = Box::new([[0; 300]; 0x100]);
                 }

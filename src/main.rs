@@ -2,7 +2,7 @@ use hidapi::HidApi;
 use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::output::*;
-use render::JoyconCmd;
+use render::*;
 use std::rc::Rc;
 use std::sync::mpsc;
 use winit::event_loop::*;
@@ -31,7 +31,7 @@ fn main() -> ! {
 
 #[allow(dead_code, unused_mut, unused_variables)]
 fn hid_main(
-    proxy: EventLoopProxy<render::IRData>,
+    proxy: EventLoopProxy<JoyconData>,
     recv: mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<()> {
     let val = OutputReport::default();
@@ -52,12 +52,8 @@ fn hid_main(
         let mut gui_still_running = true;
 
         let proxy = proxy_rc.clone();
-        device.set_ir_callback(Box::new(move |buffer, width, height| {
-            if let Err(_) = proxy.send_event(render::IRData {
-                buffer,
-                width,
-                height,
-            }) {
+        device.set_ir_callback(Box::new(move |image| {
+            if let Err(_) = proxy.send_event(JoyconData::IRImage(image)) {
                 dbg!("shutdown ");
                 gui_still_running = false;
             }

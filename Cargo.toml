@@ -13,10 +13,11 @@ members = [
 anyhow = "1.0"
 enigo = "0.0.14"
 hidapi = "1.2"
+image = { version = "0.23", default-features = false }
 joycon-sys = { path = "joycon-sys" }
 wgpu = "0.5"
 winit = "0.22"
 futures = "0.3"
 vk-shader-macros = "0.2"
-cgmath = "0.17"
+cgmath = { version = "0.17", default-features = false }
 bytemuck = "1.2"

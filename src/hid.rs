@@ -61,7 +61,7 @@ impl JoyCon {
         Ok(joycon)
     }
 
-    pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(Box<[u8]>, u32, u32)>) {
+    pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(image::GrayImage)>) {
         self.image.set_cb(cb);
     }
 

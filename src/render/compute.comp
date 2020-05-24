@@ -18,7 +18,7 @@ layout(set = 1, binding = 1) uniform sampler ir_sampler;
 vec3 pos(float x, float y) {
     uint width = gl_NumWorkGroups.x;
     uint height = gl_NumWorkGroups.y;
-    return vec3(x, y, texture(sampler2D(ir_pixels, ir_sampler), vec2((height - y)/height, (width - x)/width)).r * 255. - 255.);
+    return vec3(x, y, texture(sampler2D(ir_pixels, ir_sampler), vec2(x / width, (height - y) / height)).r * 255. - 255.);
 }
 
 vec3 norm(vec3 z, vec3 a, vec3 b) {

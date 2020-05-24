@@ -113,7 +113,6 @@ struct GUI {
     static_compute_binding: wgpu::BindGroup,
     dynamic_compute_binding_layout: wgpu::BindGroupLayout,
     compute_pipeline: wgpu::ComputePipeline,
-    irdata: Box<[u8]>,
     ir_texture: Option<Staged<texture::Texture>>,
 }
 
@@ -318,7 +317,6 @@ impl GUI {
             compute_pipeline,
             size,
             camera,
-            irdata: vec![].into(),
             ir_texture: None,
         }
     }
@@ -356,8 +354,8 @@ impl GUI {
         self.queue.submit(&[encoder.finish()]);
     }
 
-    fn push_ir_data(&mut self, ir_data: Box<[u8]>, width: u32, height: u32) {
-        self.irdata = ir_data;
+    fn push_ir_data(&mut self, image: image::GrayImage) {
+        let (width, height) = image.dimensions();
         self.uniforms.width = width;
         self.uniforms.height = height;
 
@@ -376,7 +374,7 @@ impl GUI {
         self.ir_texture.as_mut().unwrap().update(
             &self.device,
             &mut encoder,
-            &self.irdata,
+            &image.as_flat_samples().samples,
             (width, height),
         );
 
@@ -404,7 +402,7 @@ impl GUI {
             cpass.set_pipeline(&self.compute_pipeline);
             cpass.set_bind_group(0, &self.static_compute_binding, &[]);
             cpass.set_bind_group(1, &dynamic_compute_binding, &[]);
-            cpass.dispatch(height, width, 1);
+            cpass.dispatch(width, height, 1);
         }
 
         self.queue.submit(&[encoder.finish()]);
@@ -468,7 +466,7 @@ impl GUI {
 }
 
 pub async fn run(
-    event_loop: EventLoop<IRData>,
+    event_loop: EventLoop<JoyconData>,
     window: Window,
     thread_contact: mpsc::Sender<JoyconCmd>,
     thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
@@ -501,13 +499,8 @@ pub async fn run(
                 gui.update();
                 gui.render();
             }
-            Event::UserEvent(IRData {
-                buffer,
-                width,
-                height,
-            }) => {
-                assert_eq!(buffer.len(), width as usize * height as usize);
-                gui.push_ir_data(buffer, width, height);
+            Event::UserEvent(JoyconData::IRImage(image)) => {
+                gui.push_ir_data(image);
                 window.request_redraw();
             }
             Event::WindowEvent {
@@ -544,11 +537,8 @@ pub async fn run(
     });
 }
 
-#[derive(Debug)]
-pub struct IRData {
-    pub buffer: Box<[u8]>,
-    pub width: u32,
-    pub height: u32,
+pub enum JoyconData {
+    IRImage(image::GrayImage),
 }
 
 pub enum JoyconCmd {
