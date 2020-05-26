@@ -102,7 +102,7 @@ struct GUI {
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
     uniforms: uniforms::Uniforms,
-    uniform_buffer: Staged<wgpu::Buffer>,
+    uniform_buffer: wgpu::Buffer,
     uniform_bind_group: wgpu::BindGroup,
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
@@ -153,8 +153,11 @@ impl GUI {
         let camera = camera::Camera::new(&sc_desc);
         let mut uniforms = uniforms::Uniforms::new();
         uniforms.update_view_proj(&camera);
-        let uniform_buffer = Staged::with_data(&device, &[uniforms], wgpu::BufferUsage::UNIFORM);
-
+        let uniform_buffer = device.create_buffer_with_data(
+            bytemuck::bytes_of(&[uniforms]),
+            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
+        );
+        
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 bindings: &uniforms::Uniforms::layout(),
