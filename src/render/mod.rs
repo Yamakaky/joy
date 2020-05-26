@@ -8,6 +8,7 @@ use winit::{
 
 mod buffer;
 mod camera;
+mod ir_compute;
 mod object;
 mod parameters;
 mod texture;
@@ -106,12 +107,7 @@ struct GUI {
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
-    compute_vertex_buffer: wgpu::Buffer,
-    compute_index_buffer: wgpu::Buffer,
-    static_compute_binding: wgpu::BindGroup,
-    dynamic_compute_binding_layout: wgpu::BindGroupLayout,
-    compute_pipeline: wgpu::ComputePipeline,
-    ir_texture: Option<Staged<texture::Texture>>,
+    compute: ir_compute::IRCompute,
 }
 
 impl GUI {
@@ -208,95 +204,7 @@ impl GUI {
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
-        let compute_vertex_buffer_size = 320 * 240 * 2 * 4 * 4;
-        let compute_vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("compute vertex buffer"),
-            size: compute_vertex_buffer_size,
-            usage: wgpu::BufferUsage::VERTEX | wgpu::BufferUsage::STORAGE,
-        });
-        let compute_index_buffer_size = 320 * 240 * 6 * 4;
-        let compute_index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("compute vertex buffer"),
-            size: compute_index_buffer_size,
-            usage: wgpu::BufferUsage::INDEX | wgpu::BufferUsage::STORAGE,
-        });
-        let static_compute_binding_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                bindings: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::COMPUTE,
-                        ty: wgpu::BindingType::StorageBuffer {
-                            dynamic: false,
-                            readonly: false,
-                        },
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::COMPUTE,
-                        ty: wgpu::BindingType::StorageBuffer {
-                            dynamic: false,
-                            readonly: false,
-                        },
-                    },
-                ],
-                label: Some("static compute binding layout"),
-            });
-        let static_compute_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &static_compute_binding_layout,
-            bindings: &[
-                wgpu::Binding {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(
-                        compute_vertex_buffer.slice(0..compute_vertex_buffer_size),
-                    ),
-                },
-                wgpu::Binding {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Buffer(
-                        compute_index_buffer.slice(0..compute_index_buffer_size),
-                    ),
-                },
-            ],
-            label: Some("static compute binding"),
-        });
-        let dynamic_compute_binding_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                bindings: &[
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: wgpu::ShaderStage::COMPUTE,
-                        ty: wgpu::BindingType::SampledTexture {
-                            dimension: wgpu::TextureViewDimension::D2,
-                            component_type: wgpu::TextureComponentType::Uint,
-                            multisampled: false,
-                        },
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 1,
-                        visibility: wgpu::ShaderStage::COMPUTE,
-                        ty: wgpu::BindingType::Sampler { comparison: false },
-                    },
-                ],
-                label: Some("dynamic compute binding layout"),
-            });
-        let compute_pipeline_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-                bind_group_layouts: &[
-                    &static_compute_binding_layout,
-                    &dynamic_compute_binding_layout,
-                ],
-            });
-        let compute_pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            layout: &compute_pipeline_layout,
-            compute_stage: wgpu::ProgrammableStageDescriptor {
-                module: &device.create_shader_module(vk_shader_macros::include_glsl!(
-                    "src/render/compute.comp",
-                    kind: comp
-                )),
-                entry_point: "main",
-            },
-        });
+        let compute = ir_compute::IRCompute::new(&device);
 
         Self {
             surface,
@@ -311,14 +219,9 @@ impl GUI {
             uniform_buffer,
             uniform_bind_group,
             depth_texture,
-            compute_vertex_buffer,
-            compute_index_buffer,
-            static_compute_binding,
-            dynamic_compute_binding_layout,
-            compute_pipeline,
             size,
             camera,
-            ir_texture: None,
+            compute,
         }
     }
 
@@ -359,54 +262,9 @@ impl GUI {
         let (width, height) = image.dimensions();
         self.uniforms.width = width;
         self.uniforms.height = height;
-
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("IR data upload"),
-            });
-
-        if self.ir_texture.is_none() {
-            self.ir_texture = Some(Staged::new(texture::Texture::create_ir_texture(
-                &self.device,
-                (width, height),
-            )));
-        }
-        self.ir_texture.as_mut().unwrap().update(
-            &self.device,
-            &mut encoder,
-            &image.as_flat_samples().samples,
-            (width, height),
-        );
-
-        {
-            let dynamic_compute_binding =
-                self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    layout: &self.dynamic_compute_binding_layout,
-                    bindings: &[
-                        wgpu::Binding {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(
-                                &self.ir_texture.as_ref().unwrap().view,
-                            ),
-                        },
-                        wgpu::Binding {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(
-                                &self.ir_texture.as_ref().unwrap().sampler,
-                            ),
-                        },
-                    ],
-                    label: Some("dynamic compute group"),
-                });
-            let mut cpass = encoder.begin_compute_pass();
-            cpass.set_pipeline(&self.compute_pipeline);
-            cpass.set_bind_group(0, &self.static_compute_binding, &[]);
-            cpass.set_bind_group(1, &dynamic_compute_binding, &[]);
-            cpass.dispatch(width, height, 1);
-        }
-
-        self.queue.submit(std::iter::once(encoder.finish()));
+        self.queue.submit(std::iter::once(
+            self.compute.push_ir_data(&self.device, image),
+        ));
     }
 
     fn render(&mut self) {
@@ -448,8 +306,8 @@ impl GUI {
                 }),
             });
             rpass.set_pipeline(&self.render_pipeline);
-            rpass.set_vertex_buffer(0, self.compute_vertex_buffer.slice(..));
-            rpass.set_index_buffer(self.compute_index_buffer.slice(..));
+            rpass.set_vertex_buffer(0, self.compute.vertices().slice(..));
+            rpass.set_index_buffer(self.compute.indices().slice(..));
             rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
             if self.uniforms.width > 0 && self.uniforms.height > 0 {
                 rpass.draw_indexed(

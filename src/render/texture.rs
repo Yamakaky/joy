@@ -92,4 +92,35 @@ impl Texture {
             size,
         }
     }
+
+    pub fn update(
+        &mut self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        texture: image::GrayImage,
+    ) {
+        let flat_samples = texture.as_flat_samples();
+        let old_size = self.size;
+        let (width, height) = texture.dimensions();
+        if old_size.width != width || old_size.height != height {
+            *self = Texture::create_ir_texture(device, (width, height));
+        }
+        let staging_buffer =
+            device.create_buffer_with_data(flat_samples.samples, wgpu::BufferUsage::COPY_SRC);
+        encoder.copy_buffer_to_texture(
+            wgpu::BufferCopyView {
+                buffer: &staging_buffer,
+                offset: 0,
+                bytes_per_row: flat_samples.layout.height_stride as u32,
+                rows_per_image: 0,
+            },
+            wgpu::TextureCopyView {
+                texture: &self.texture,
+                mip_level: 0,
+                array_layer: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            self.size,
+        );
+    }
 }
