@@ -4,7 +4,7 @@ layout(location = 0) in vec3 f_normal;
 
 layout(location = 0) out vec4 outColor;
 
-const vec3 LIGHT_DIRECTION = vec3(0., -1., -1.);
+const vec3 LIGHT_DIRECTION = vec3(0., 1., 1.);
 const vec3 LIGHT_COLOR = vec3(1., 0., 0.);
 const vec3 LIGHT_COLOR_AMBIENT = vec3(0., 0., 1.);
 const float LIGHT_AMBIENT_INTENSITY = 0.1;
