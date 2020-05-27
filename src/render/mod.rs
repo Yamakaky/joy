@@ -10,7 +10,6 @@ mod buffer;
 mod camera;
 mod d2;
 mod ir_compute;
-mod object;
 mod parameters;
 mod texture;
 mod uniforms;
