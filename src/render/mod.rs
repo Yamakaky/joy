@@ -122,7 +122,7 @@ impl GUI {
         let adapter = instance
             .request_adapter(
                 &wgpu::RequestAdapterOptions {
-                    power_preference: wgpu::PowerPreference::Default,
+                    power_preference: wgpu::PowerPreference::LowPower,
                     compatible_surface: Some(&surface),
                 },
                 wgpu::BackendBit::PRIMARY,
@@ -159,7 +159,7 @@ impl GUI {
             bytemuck::bytes_of(&[uniforms]),
             wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         );
-        
+
         let uniform_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 bindings: &uniforms::Uniforms::layout(),
@@ -308,7 +308,7 @@ impl GUI {
                 rpass3d.set_bind_group(0, &self.uniform_bind_group, &[]);
                 rpass3d.draw_indexed(0..self.compute.indices_count(), 0, 0..1);
             }
-            }
+        }
 
         if let Some(ref texture) = self.compute.texture_binding {
             let mut rpass2d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -380,9 +380,9 @@ pub async fn run(
             }
             Event::RedrawRequested(_) => {
                 if !hidden {
-                gui.update();
-                gui.render();
-            }
+                    gui.update();
+                    gui.render();
+                }
             }
             Event::UserEvent(JoyconData::IRImage(image)) => {
                 gui.push_ir_data(image);
@@ -409,7 +409,7 @@ pub async fn run(
                         WindowEvent::Resized(physical_size) => {
                             if physical_size.height != 0 && physical_size.height != 0 {
                                 hidden = false;
-                            gui.resize(*physical_size);
+                                gui.resize(*physical_size);
                             } else {
                                 hidden = true;
                             }
@@ -417,7 +417,7 @@ pub async fn run(
                         WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                             if new_inner_size.height != 0 && new_inner_size.height != 0 {
                                 hidden = false;
-                            gui.resize(**new_inner_size);
+                                gui.resize(**new_inner_size);
                             } else {
                                 hidden = true;
                             }
