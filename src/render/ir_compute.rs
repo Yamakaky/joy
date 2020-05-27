@@ -17,6 +17,13 @@ impl IRCompute {
         &self.index_buffer
     }
 
+    pub fn indices_count(&self) -> u32 {
+        self.texture
+            .as_ref()
+            .map(|texture| (texture.size.width - 1) * (texture.size.height - 1) * 6)
+            .unwrap_or(0)
+    }
+
     pub fn new(device: &wgpu::Device) -> Self {
         let vertex_buffer_size = 320 * 240 * 2 * 4 * 4;
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -75,7 +82,7 @@ impl IRCompute {
                 bindings: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
-                        visibility: wgpu::ShaderStage::COMPUTE,
+                        visibility: wgpu::ShaderStage::COMPUTE | wgpu::ShaderStage::FRAGMENT,
                         ty: wgpu::BindingType::SampledTexture {
                             dimension: wgpu::TextureViewDimension::D2,
                             component_type: wgpu::TextureComponentType::Uint,
@@ -84,7 +91,7 @@ impl IRCompute {
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
-                        visibility: wgpu::ShaderStage::COMPUTE,
+                        visibility: wgpu::ShaderStage::COMPUTE | wgpu::ShaderStage::FRAGMENT,
                         ty: wgpu::BindingType::Sampler { comparison: false },
                     },
                 ],
