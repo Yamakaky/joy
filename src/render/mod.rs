@@ -359,6 +359,7 @@ pub async fn run(
     let mut thread_handle = Some(thread_handle);
 
     let mut parameters = parameters::Parameters::new();
+    let mut hidden = false;
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
@@ -378,8 +379,10 @@ pub async fn run(
                 }
             }
             Event::RedrawRequested(_) => {
+                if !hidden {
                 gui.update();
                 gui.render();
+            }
             }
             Event::UserEvent(JoyconData::IRImage(image)) => {
                 gui.push_ir_data(image);
@@ -404,11 +407,20 @@ pub async fn run(
                             ..
                         } => *control_flow = ControlFlow::Exit,
                         WindowEvent::Resized(physical_size) => {
+                            if physical_size.height != 0 && physical_size.height != 0 {
+                                hidden = false;
                             gui.resize(*physical_size);
+                            } else {
+                                hidden = true;
+                            }
                         }
                         WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            // new_inner_size is &mut so w have to dereference it twice
+                            if new_inner_size.height != 0 && new_inner_size.height != 0 {
+                                hidden = false;
                             gui.resize(**new_inner_size);
+                            } else {
+                                hidden = true;
+                            }
                         }
                         _ => {}
                     }
