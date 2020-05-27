@@ -14,7 +14,12 @@ mod imu_handler;
 mod mouse;
 mod render;
 
-fn main() -> ! {
+fn main() {
+    std::panic::set_hook(Box::new(|x| {
+        println!("{}", x);
+        std::thread::sleep(std::time::Duration::from_secs(5));
+    }));
+
     let event_loop = EventLoop::with_user_event();
     let window = winit::window::Window::new(&event_loop).unwrap();
     let proxy = event_loop.create_proxy();
@@ -26,7 +31,7 @@ fn main() -> ! {
         window,
         thread_contact,
         thread_handle,
-    ))
+    ));
 }
 
 #[allow(dead_code, unused_mut, unused_variables)]
