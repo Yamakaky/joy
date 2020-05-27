@@ -7,6 +7,7 @@ layout(location = 0) out vec3 f_normal;
 
 layout(set = 0, binding = 0)
 uniform Uniforms {
+    mat4 u_ir_proj;
     mat4 u_mvp;
     uint width;
     uint height;

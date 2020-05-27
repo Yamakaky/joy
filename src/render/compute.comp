@@ -15,10 +15,19 @@ layout(std430, set = 0, binding = 1) buffer IndexOut {
 layout(set = 1, binding = 0) uniform texture2D ir_pixels;
 layout(set = 1, binding = 1) uniform sampler ir_sampler;
 
+layout(std140, set = 2, binding = 0)
+uniform Uniforms {
+    mat4 u_ir_proj;
+    mat4 u_mvp;
+    uint u_width;
+    uint u_height;
+};
+
 vec3 pos(float x, float y) {
-    uint width = gl_NumWorkGroups.x;
-    uint height = gl_NumWorkGroups.y;
-    return vec3(x, y, texture(sampler2D(ir_pixels, ir_sampler), vec2(x / width, (height - y) / height)).r * 255. - 255.);
+    vec4 pos = vec4(x/u_width, y/u_height, texture(sampler2D(ir_pixels, ir_sampler), vec2(x / u_width, (u_height - y) / u_height)).r, 1.);
+    vec4 proj = u_ir_proj * pos;
+    //vec4 proj = pos;
+    return vec3(proj.xy, -proj.z) / proj.w;
 }
 
 vec3 norm(vec3 z, vec3 a, vec3 b) {
@@ -26,9 +35,6 @@ vec3 norm(vec3 z, vec3 a, vec3 b) {
 }
 
 void main() {
-    uint width = gl_NumWorkGroups.x;
-    uint height = gl_NumWorkGroups.y;
-
     float x = float(gl_GlobalInvocationID.x);
     float y = float(gl_GlobalInvocationID.y);
     vec3 z = pos(x    , y    );
@@ -43,15 +49,15 @@ void main() {
     
     uint ux = gl_GlobalInvocationID.x;
     uint uy = gl_GlobalInvocationID.y;
-    uint id = uy * width + ux;
+    uint id = uy * u_width + ux;
     vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm),1.0));
-    if (ux < width - 1 && uy < height - 1) {
+    if (ux < u_width - 1 && uy < u_height - 1) {
         indices[id * 6    ] = id;
         indices[id * 6 + 1] = id + 1;
-        indices[id * 6 + 2] = id + width;
-        indices[id * 6 + 3] = id + width;
+        indices[id * 6 + 2] = id + u_width;
+        indices[id * 6 + 3] = id + u_width;
         indices[id * 6 + 4] = id + 1;
-        indices[id * 6 + 5] = id + width + 1;
+        indices[id * 6 + 5] = id + u_width + 1;
     }
 
 }

@@ -24,7 +24,7 @@ impl IRCompute {
             .unwrap_or(0)
     }
 
-    pub fn new(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device, uniform_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
         let vertex_buffer_size = 320 * 240 * 2 * 4 * 4;
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("compute vertex buffer"),
@@ -99,7 +99,11 @@ impl IRCompute {
             });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[&mesh_binding_layout, &texture_binding_layout],
+            bind_group_layouts: &[
+                &mesh_binding_layout,
+                &texture_binding_layout,
+                uniform_bind_group_layout,
+            ],
         });
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             layout: &pipeline_layout,
@@ -125,6 +129,7 @@ impl IRCompute {
     pub fn push_ir_data(
         &mut self,
         device: &wgpu::Device,
+        uniform_bind_group: &wgpu::BindGroup,
         image: image::GrayImage,
     ) -> wgpu::CommandBuffer {
         let (width, height) = image.dimensions();
@@ -158,6 +163,7 @@ impl IRCompute {
             cpass.set_pipeline(&self.pipeline);
             cpass.set_bind_group(0, &self.mesh_binding, &[]);
             cpass.set_bind_group(1, &texture_binding, &[]);
+            cpass.set_bind_group(2, uniform_bind_group, &[]);
             cpass.dispatch(width, height, 1);
         }
 

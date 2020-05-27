@@ -209,7 +209,7 @@ impl GUI {
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
-        let compute = ir_compute::IRCompute::new(&device);
+        let compute = ir_compute::IRCompute::new(&device, &uniform_bind_group_layout);
         let render_d2 = d2::D2::new(
             &device,
             &uniform_bind_group_layout,
@@ -274,9 +274,11 @@ impl GUI {
         let (width, height) = image.dimensions();
         self.uniforms.width = width;
         self.uniforms.height = height;
-        self.queue.submit(std::iter::once(
-            self.compute.push_ir_data(&self.device, image),
-        ));
+        self.queue.submit(std::iter::once(self.compute.push_ir_data(
+            &self.device,
+            &self.uniform_bind_group,
+            image,
+        )));
     }
 
     fn render(&mut self) {
@@ -284,6 +286,7 @@ impl GUI {
             .swap_chain
             .get_next_texture()
             .expect("Timeout when acquiring next swap chain texture");
+
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });

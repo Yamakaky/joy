@@ -3,6 +3,7 @@ use crate::render::camera::Camera;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct Uniforms {
+    ir_proj: cgmath::Matrix4<f32>,
     view_proj: cgmath::Matrix4<f32>,
     pub width: u32,
     pub height: u32,
@@ -11,7 +12,11 @@ pub struct Uniforms {
 impl Uniforms {
     pub fn new() -> Uniforms {
         use cgmath::SquareMatrix;
+        let ir_proj = cgmath::perspective(cgmath::Deg(100.), 3. / 4., 0.1, 1.)
+            .invert()
+            .unwrap();
         Uniforms {
+            ir_proj,
             view_proj: cgmath::Matrix4::identity(),
             width: 0,
             height: 0,
@@ -22,10 +27,10 @@ impl Uniforms {
         self.view_proj = camera.build_view_projection_matrix(self.width, self.height);
     }
 
-    pub const fn layout() -> [wgpu::BindGroupLayoutEntry; 1] {
+    pub fn layout() -> [wgpu::BindGroupLayoutEntry; 1] {
         [wgpu::BindGroupLayoutEntry {
             binding: 0,
-            visibility: wgpu::ShaderStage::VERTEX,
+            visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::COMPUTE,
             ty: wgpu::BindingType::UniformBuffer { dynamic: false },
         }]
     }

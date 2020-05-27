@@ -12,8 +12,8 @@ pub struct Camera {
 impl Camera {
     pub fn new(sc_desc: &wgpu::SwapChainDescriptor) -> Camera {
         let mut camera = Camera {
-            eye: (120., 120., 20.).into(),
-            target: (120., 120., -50.).into(),
+            eye: (0.5, 0.5, 2.).into(),
+            target: (0.5, 0.5, -0.5).into(),
             up: cgmath::Vector3::unit_y(),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
             fovy: 45.0,
@@ -98,7 +98,7 @@ impl Camera {
 
 // from https://sotrh.github.io/learn-wgpu/beginner/tutorial6-uniforms/#a-perspective-camera
 #[cfg_attr(rustfmt, rustfmt_skip)]
- const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
+pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     1.0, 0.0, 0.0, 0.0,
     0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 0.5, 0.0,
