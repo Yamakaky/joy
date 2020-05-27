@@ -1,9 +1,9 @@
 pub struct IRCompute {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    texture_binding_layout: wgpu::BindGroupLayout,
+    pub texture_binding_layout: wgpu::BindGroupLayout,
     texture: Option<super::texture::Texture>,
-    texture_binding: Option<wgpu::BindGroup>,
+    pub texture_binding: Option<wgpu::BindGroup>,
     mesh_binding: wgpu::BindGroup,
     pipeline: wgpu::ComputePipeline,
 }

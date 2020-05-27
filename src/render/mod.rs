@@ -8,13 +8,14 @@ use winit::{
 
 mod buffer;
 mod camera;
+mod d2;
 mod ir_compute;
 mod object;
 mod parameters;
 mod texture;
 mod uniforms;
 
-fn create_render_pipeline(
+pub fn create_render_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
     color_format: wgpu::TextureFormat,
@@ -108,6 +109,7 @@ struct GUI {
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
     compute: ir_compute::IRCompute,
+    render_d2: d2::D2,
 }
 
 impl GUI {
@@ -208,6 +210,12 @@ impl GUI {
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
         let compute = ir_compute::IRCompute::new(&device);
+        let render_d2 = d2::D2::new(
+            &device,
+            &uniform_bind_group_layout,
+            &compute.texture_binding_layout,
+            sample_count,
+        );
 
         Self {
             surface,
@@ -225,6 +233,7 @@ impl GUI {
             size,
             camera,
             compute,
+            render_d2,
         }
     }
 
@@ -278,26 +287,10 @@ impl GUI {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
         {
-            let color_attachment = if self.sample_count == 1 {
-                wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.view,
-                    resolve_target: None,
-                    load_op: wgpu::LoadOp::Clear,
-                    store_op: wgpu::StoreOp::Store,
-                    clear_color: wgpu::Color::BLACK,
-                }
-            } else {
-                wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &self.multisampled_framebuffer,
-                    resolve_target: Some(&frame.view),
-                    load_op: wgpu::LoadOp::Clear,
-                    store_op: wgpu::StoreOp::Store,
-                    clear_color: wgpu::Color::BLACK,
-                }
-            };
-            let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[color_attachment],
+            let mut rpass3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[self.color_attachment(&frame, wgpu::LoadOp::Clear)],
                 depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
                     attachment: &self.depth_texture.view,
                     depth_load_op: wgpu::LoadOp::Clear,
@@ -308,22 +301,49 @@ impl GUI {
                     clear_stencil: 0,
                 }),
             });
-            rpass.set_pipeline(&self.render_pipeline);
-            rpass.set_vertex_buffer(0, self.compute.vertices().slice(..));
-            rpass.set_index_buffer(self.compute.indices().slice(..));
-            rpass.set_bind_group(0, &self.uniform_bind_group, &[]);
-            if self.uniforms.width > 0 && self.uniforms.height > 0 {
-                rpass.draw_indexed(
-                    0..(self.uniforms.width - 1) * (self.uniforms.height - 1) * 6,
-                    0,
-                    0..1,
-                );
-            } else {
-                rpass.draw_indexed(0..0, 0, 0..1);
+            if self.compute.texture_binding.is_some() {
+                rpass3d.set_pipeline(&self.render_pipeline);
+                rpass3d.set_vertex_buffer(0, self.compute.vertices().slice(..));
+                rpass3d.set_index_buffer(self.compute.indices().slice(..));
+                rpass3d.set_bind_group(0, &self.uniform_bind_group, &[]);
+                rpass3d.draw_indexed(0..self.compute.indices_count(), 0, 0..1);
             }
+            }
+
+        if let Some(ref texture) = self.compute.texture_binding {
+            let mut rpass2d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[self.color_attachment(&frame, wgpu::LoadOp::Load)],
+                depth_stencil_attachment: None,
+            });
+            self.render_d2
+                .render(&mut rpass2d, &self.uniform_bind_group, texture);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));
+    }
+
+    fn color_attachment<'a>(
+        &'a self,
+        frame: &'a wgpu::SwapChainOutput,
+        load_op: wgpu::LoadOp,
+    ) -> wgpu::RenderPassColorAttachmentDescriptor {
+        if self.sample_count == 1 {
+            wgpu::RenderPassColorAttachmentDescriptor {
+                attachment: &frame.view,
+                resolve_target: None,
+                load_op,
+                store_op: wgpu::StoreOp::Store,
+                clear_color: wgpu::Color::BLUE,
+            }
+        } else {
+            wgpu::RenderPassColorAttachmentDescriptor {
+                attachment: &self.multisampled_framebuffer,
+                resolve_target: Some(&frame.view),
+                load_op,
+                store_op: wgpu::StoreOp::Store,
+                clear_color: wgpu::Color::BLUE,
+            }
+        }
     }
 }
 
