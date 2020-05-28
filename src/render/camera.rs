@@ -15,9 +15,9 @@ pub struct Camera {
 impl Camera {
     pub fn new(sc_desc: &wgpu::SwapChainDescriptor) -> Camera {
         let mut camera = Camera {
-            eye: (0.5, 0.5, -2.).into(),
+            eye: (0., 0., 2.).into(),
             pitch: Deg(0.),
-            yaw: Deg(0.),
+            yaw: Deg(180.),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
             fovy: 45.0,
             znear: 0.1,
@@ -66,10 +66,10 @@ impl Camera {
         let c = &self.controller;
         let mut sum = Vector3::zero();
         if c.right {
-            sum -= Vector3::unit_x();
+            sum += Vector3::unit_x();
         }
         if c.left {
-            sum += Vector3::unit_x();
+            sum -= Vector3::unit_x();
         }
         if c.up {
             sum += Vector3::unit_y();
@@ -78,10 +78,10 @@ impl Camera {
             sum -= Vector3::unit_y();
         }
         if c.forward {
-            sum += Vector3::unit_z();
+            sum -= Vector3::unit_z();
         }
         if c.backward {
-            sum -= Vector3::unit_z();
+            sum += Vector3::unit_z();
         }
         if sum != Vector3::zero() {
             let speed_ups = 1.;
