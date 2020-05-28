@@ -192,13 +192,13 @@ impl GUI {
                 attributes: &wgpu::vertex_attr_array![0 => Float4, 1 => Float4],
             }],
             vk_shader_macros::include_glsl!(
-                "src/render/shader.vert",
+                "src/render/shaders/3d.vert",
                 kind: vert,
                 debug,
                 optimize: zero
             ),
             vk_shader_macros::include_glsl!(
-                "src/render/shader.frag",
+                "src/render/shaders/3d.frag",
                 kind: frag,
                 debug,
                 optimize: zero

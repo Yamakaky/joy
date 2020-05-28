@@ -15,13 +15,8 @@ layout(std430, set = 0, binding = 1) buffer IndexOut {
 layout(set = 1, binding = 0) uniform texture2D ir_pixels;
 layout(set = 1, binding = 1) uniform sampler ir_sampler;
 
-layout(std140, set = 2, binding = 0)
-uniform Uniforms {
-    mat4 u_ir_proj;
-    mat4 u_mvp;
-    uint u_width;
-    uint u_height;
-};
+layout(set = 2, binding = 0)
+#include "uniform.glsl"
 
 vec3 pos(float x, float y) {
     vec4 pos = vec4(x/u_width, y/u_height, texture(sampler2D(ir_pixels, ir_sampler), vec2(x / u_width, (u_height - y) / u_height)).r, 1.);

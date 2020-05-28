@@ -61,13 +61,13 @@ impl D2 {
                 attributes: &wgpu::vertex_attr_array![0 => Float2, 1 => Float2],
             }],
             vk_shader_macros::include_glsl!(
-                "src/render/2d.vert",
+                "src/render/shaders/2d.vert",
                 kind: vert,
                 debug,
                 optimize: zero
             ),
             vk_shader_macros::include_glsl!(
-                "src/render/2d.frag",
+                "src/render/shaders/2d.frag",
                 kind: frag,
                 debug,
                 optimize: zero
