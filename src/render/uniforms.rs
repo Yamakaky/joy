@@ -12,7 +12,7 @@ pub struct Uniforms {
 impl Uniforms {
     pub fn new() -> Uniforms {
         use cgmath::SquareMatrix;
-        let ir_proj = cgmath::perspective(cgmath::Deg(100.), 3. / 4., 0.1, 1.)
+        let ir_proj = cgmath::perspective(cgmath::Deg(110.), 3. / 4., 0.1, 1.)
             .invert()
             .unwrap();
         Uniforms {
@@ -24,7 +24,7 @@ impl Uniforms {
     }
 
     pub fn update_view_proj(&mut self, camera: &Camera) {
-        self.view_proj = camera.build_view_projection_matrix(self.width, self.height);
+        self.view_proj = camera.build_view_projection_matrix();
     }
 
     pub fn layout() -> [wgpu::BindGroupLayoutEntry; 1] {

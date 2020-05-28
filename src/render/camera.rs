@@ -1,25 +1,28 @@
+use cgmath::{prelude::*, Deg, Euler, Matrix4, Quaternion, Vector3};
+
 pub struct Camera {
-    pub eye: cgmath::Point3<f32>,
-    pub target: cgmath::Point3<f32>,
-    pub up: cgmath::Vector3<f32>,
-    pub aspect: f32,
-    pub fovy: f32,
-    pub znear: f32,
-    pub zfar: f32,
-    pub ortho: bool,
+    eye: Vector3<f32>,
+    pitch: Deg<f32>,
+    yaw: Deg<f32>,
+    aspect: f32,
+    fovy: f32,
+    znear: f32,
+    zfar: f32,
+
+    controller: CameraController,
 }
 
 impl Camera {
     pub fn new(sc_desc: &wgpu::SwapChainDescriptor) -> Camera {
         let mut camera = Camera {
-            eye: (0.5, 0.5, 2.).into(),
-            target: (0.5, 0.5, -0.5).into(),
-            up: cgmath::Vector3::unit_y(),
+            eye: (0.5, 0.5, -2.).into(),
+            pitch: Deg(0.),
+            yaw: Deg(0.),
             aspect: sc_desc.width as f32 / sc_desc.height as f32,
             fovy: 45.0,
             znear: 0.1,
             zfar: 10000.0,
-            ortho: false,
+            controller: CameraController::default(),
         };
         camera.update_aspect(sc_desc.width, sc_desc.height);
         camera
@@ -29,24 +32,78 @@ impl Camera {
         self.aspect = width as f32 / height as f32
     }
 
-    pub fn build_view_projection_matrix(&self, width: u32, height: u32) -> cgmath::Matrix4<f32> {
-        OPENGL_TO_WGPU_MATRIX
-            * if self.ortho {
-                cgmath::Ortho {
-                    left: 0.,
-                    right: height as f32,
-                    bottom: 0.,
-                    top: width as f32,
-                    far: 256.,
-                    near: -1.,
-                }
-                .into()
+    pub fn build_view_projection_matrix(&self) -> Matrix4<f32> {
+        let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
+        let view = Matrix4::from(Quaternion::from(Euler::new(self.pitch, self.yaw, Deg(0.))))
+            * Matrix4::from_translation(self.eye);
+        OPENGL_TO_WGPU_MATRIX * proj * view
+    }
+
+    pub fn input(&mut self, event: &winit::event::WindowEvent) -> bool {
+        self.controller.input(event)
+    }
+
+    pub fn mouse_move(&mut self, delta: (f64, f64)) {
+        self.controller.mouse_move(delta);
+    }
+
+    pub fn update(&mut self, dt: std::time::Duration) {
+        let sens_dpu = 1.;
+        self.pitch = Deg({
+            let pitch = self.pitch.0 + self.controller.mouse_delta.1 as f32 * sens_dpu;
+            if pitch > 90. {
+                90.
+            } else if pitch < -90. {
+                -90.
             } else {
-                let proj =
-                    cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
-                let view = cgmath::Matrix4::look_at(self.eye, self.target, self.up);
-                proj * view
+                pitch
             }
+        });
+        self.yaw += Deg(self.controller.mouse_delta.0 as f32 * sens_dpu);
+        self.yaw = self.yaw.normalize();
+        self.controller.mouse_delta = (0., 0.);
+
+        let c = &self.controller;
+        let mut sum = Vector3::zero();
+        if c.right {
+            sum -= Vector3::unit_x();
+        }
+        if c.left {
+            sum += Vector3::unit_x();
+        }
+        if c.up {
+            sum += Vector3::unit_y();
+        }
+        if c.down {
+            sum -= Vector3::unit_y();
+        }
+        if c.forward {
+            sum += Vector3::unit_z();
+        }
+        if c.backward {
+            sum -= Vector3::unit_z();
+        }
+        if sum != Vector3::zero() {
+            let speed_ups = 1.;
+            self.eye += sum.normalize() * speed_ups * dt.as_millis() as f32 / 1000.;
+        }
+    }
+}
+
+#[derive(Default)]
+struct CameraController {
+    mouse_delta: (f64, f64),
+    up: bool,
+    down: bool,
+    right: bool,
+    left: bool,
+    backward: bool,
+    forward: bool,
+}
+
+impl CameraController {
+    pub fn mouse_move(&mut self, delta: (f64, f64)) {
+        self.mouse_delta = delta;
     }
 
     pub fn input(&mut self, event: &winit::event::WindowEvent) -> bool {
@@ -55,42 +112,41 @@ impl Camera {
             WindowEvent::KeyboardInput {
                 input:
                     KeyboardInput {
-                        state: ElementState::Pressed,
+                        state,
                         virtual_keycode: Some(keycode),
                         ..
                     },
                 ..
-            } => match keycode {
-                VirtualKeyCode::Space => {
-                    self.ortho = !self.ortho;
-                    true
+            } => {
+                let pressed = *state == ElementState::Pressed;
+                match keycode {
+                    VirtualKeyCode::Z => {
+                        self.forward = pressed;
+                        true
+                    }
+                    VirtualKeyCode::Q => {
+                        self.left = pressed;
+                        true
+                    }
+                    VirtualKeyCode::S => {
+                        self.backward = pressed;
+                        true
+                    }
+                    VirtualKeyCode::D => {
+                        self.right = pressed;
+                        true
+                    }
+                    VirtualKeyCode::A => {
+                        self.up = pressed;
+                        true
+                    }
+                    VirtualKeyCode::E => {
+                        self.down = pressed;
+                        true
+                    }
+                    _ => false,
                 }
-                VirtualKeyCode::Z => {
-                    self.eye += (0., 1., 0.).into();
-                    true
-                }
-                VirtualKeyCode::Q => {
-                    self.eye -= (1., 0., 0.).into();
-                    true
-                }
-                VirtualKeyCode::S => {
-                    self.eye -= (0., 1., 0.).into();
-                    true
-                }
-                VirtualKeyCode::D => {
-                    self.eye += (1., 0., 0.).into();
-                    true
-                }
-                VirtualKeyCode::A => {
-                    self.eye -= (0., 0., 1.).into();
-                    true
-                }
-                VirtualKeyCode::E => {
-                    self.eye += (0., 0., 1.).into();
-                    true
-                }
-                _ => false,
-            },
+            }
             _ => false,
         }
     }

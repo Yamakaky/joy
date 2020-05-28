@@ -1,7 +1,8 @@
 use buffer::Staged;
 use std::sync::mpsc;
+use std::time::{Duration, Instant};
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
@@ -257,7 +258,8 @@ impl GUI {
         self.camera.input(event)
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, dt: Duration) {
+        self.camera.update(dt);
         self.uniforms.update_view_proj(&self.camera);
         let mut encoder = self
             .device
@@ -357,16 +359,31 @@ pub async fn run(
 ) -> ! {
     let mut gui = GUI::new(&window).await;
     window.set_maximized(true);
+    window.set_cursor_grab(true).unwrap();
+    window.set_cursor_visible(false);
 
     let mut thread_handle = Some(thread_handle);
 
     let mut parameters = parameters::Parameters::new();
     let mut hidden = false;
 
+    let mut last_tick = Instant::now();
+
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        *control_flow = ControlFlow::Poll;
         match event {
-            Event::MainEventsCleared => window.request_redraw(),
+            Event::MainEventsCleared => {
+                if !hidden {
+                    gui.update(last_tick.elapsed());
+                }
+                last_tick = Instant::now();
+                window.request_redraw();
+            }
+            Event::RedrawRequested(_) => {
+                if !hidden {
+                    gui.render();
+                }
+            }
             Event::LoopDestroyed => {
                 eprintln!("sending shutdown signal to thread");
                 let _ = thread_contact.send(JoyconCmd::Stop);
@@ -380,14 +397,15 @@ pub async fn run(
                     Err(_) => eprintln!("Joycon thread crashed"),
                 }
             }
-            Event::RedrawRequested(_) => {
-                if !hidden {
-                    gui.update();
-                    gui.render();
-                }
-            }
             Event::UserEvent(JoyconData::IRImage(image)) => {
                 gui.push_ir_data(image);
+                window.request_redraw();
+            }
+            Event::DeviceEvent {
+                event: DeviceEvent::MouseMotion { delta },
+                ..
+            } => {
+                gui.camera.mouse_move(delta);
                 window.request_redraw();
             }
             Event::WindowEvent {
