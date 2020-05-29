@@ -366,6 +366,7 @@ pub async fn run(
 
     let mut parameters = parameters::Parameters::new();
     let mut hidden = false;
+    let mut focused = true;
 
     let mut last_tick = Instant::now();
 
@@ -404,7 +405,7 @@ pub async fn run(
             Event::DeviceEvent {
                 event: DeviceEvent::MouseMotion { delta },
                 ..
-            } => {
+            } if focused => {
                 gui.camera.mouse_move(delta);
                 window.request_redraw();
             }
@@ -441,6 +442,9 @@ pub async fn run(
                             } else {
                                 hidden = true;
                             }
+                        }
+                        WindowEvent::Focused(focus) => {
+                            focused = *focus;
                         }
                         _ => {}
                     }
