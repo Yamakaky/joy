@@ -32,10 +32,13 @@ impl Camera {
         self.aspect = width as f32 / height as f32
     }
 
+    fn eye_rot(&self) -> Quaternion<f32> {
+        Quaternion::from(Euler::new(self.pitch, self.yaw, Deg(0.)))
+    }
+
     pub fn build_view_projection_matrix(&self) -> Matrix4<f32> {
         let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
-        let view = Matrix4::from(Quaternion::from(Euler::new(self.pitch, self.yaw, Deg(0.))))
-            * Matrix4::from_translation(self.eye);
+        let view = Matrix4::from(self.eye_rot()) * Matrix4::from_translation(self.eye);
         OPENGL_TO_WGPU_MATRIX * proj * view
     }
 
@@ -66,10 +69,10 @@ impl Camera {
         let c = &self.controller;
         let mut sum = Vector3::zero();
         if c.right {
-            sum += Vector3::unit_x();
+            sum -= Vector3::unit_x();
         }
         if c.left {
-            sum -= Vector3::unit_x();
+            sum += Vector3::unit_x();
         }
         if c.up {
             sum += Vector3::unit_y();
@@ -78,14 +81,17 @@ impl Camera {
             sum -= Vector3::unit_y();
         }
         if c.forward {
-            sum -= Vector3::unit_z();
-        }
-        if c.backward {
             sum += Vector3::unit_z();
         }
+        if c.backward {
+            sum -= Vector3::unit_z();
+        }
         if sum != Vector3::zero() {
-            let speed_ups = 1.;
-            self.eye += sum.normalize() * speed_ups * dt.as_millis() as f32 / 1000.;
+            let speed_ups = 2.;
+            self.eye += self.eye_rot().invert().rotate_vector(sum.normalize())
+                * speed_ups
+                * dt.as_millis() as f32
+                / 1000.;
         }
     }
 }
