@@ -51,12 +51,14 @@ void main() {
     uint id = uy * u_width + ux;
     vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm),1.0));
     if (ux < u_width - 1 && uy < u_height - 1) {
-        indices[id * 6    ] = id;
-        indices[id * 6 + 1] = id + 1;
-        indices[id * 6 + 2] = id + u_width;
-        indices[id * 6 + 3] = id + u_width;
-        indices[id * 6 + 4] = id + 1;
-        indices[id * 6 + 5] = id + u_width + 1;
+        // since we skip the last row and column, we remove uy to not leave a gap.
+        uint base_id = (id - uy) * 6;
+        indices[base_id    ] = id;
+        indices[base_id + 1] = id + 1;
+        indices[base_id + 2] = id + u_width;
+        indices[base_id + 3] = id + u_width;
+        indices[base_id + 4] = id + 1;
+        indices[base_id + 5] = id + u_width + 1;
     }
 
 }
