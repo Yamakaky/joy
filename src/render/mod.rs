@@ -355,14 +355,14 @@ pub async fn run(
     event_loop: EventLoop<JoyconData>,
     window: Window,
     thread_contact: mpsc::Sender<JoyconCmd>,
-    thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
+    _thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
 ) -> ! {
     let mut gui = GUI::new(&window).await;
     window.set_maximized(true);
     window.set_cursor_grab(true).unwrap();
     window.set_cursor_visible(false);
 
-    let mut thread_handle = Some(thread_handle);
+    //let mut thread_handle = Some(thread_handle);
 
     let mut parameters = parameters::Parameters::new();
     let mut hidden = false;
@@ -388,7 +388,9 @@ pub async fn run(
             Event::LoopDestroyed => {
                 eprintln!("sending shutdown signal to thread");
                 let _ = thread_contact.send(JoyconCmd::Stop);
-                match thread_handle
+                // TODO: join thread with timeout
+                std::thread::sleep(Duration::from_millis(500));
+                /*match thread_handle
                     .take()
                     .expect("thread already exited???")
                     .join()
@@ -396,7 +398,7 @@ pub async fn run(
                     Ok(Ok(())) => {}
                     Ok(Err(e)) => eprintln!("Joycon thread exited with error: {:?}", e),
                     Err(_) => eprintln!("Joycon thread crashed"),
-                }
+                }*/
             }
             Event::UserEvent(JoyconData::IRImage(image, position)) => {
                 gui.push_ir_data(image);
