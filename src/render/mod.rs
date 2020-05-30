@@ -272,9 +272,6 @@ impl GUI {
     }
 
     fn push_ir_data(&mut self, image: image::GrayImage) {
-        let (width, height) = image.dimensions();
-        self.uniforms.width = width;
-        self.uniforms.height = height;
         self.queue.submit(std::iter::once(self.compute.push_ir_data(
             &self.device,
             &self.uniform_bind_group,

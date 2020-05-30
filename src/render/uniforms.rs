@@ -6,8 +6,6 @@ pub struct Uniforms {
     ir_proj: cgmath::Matrix4<f32>,
     pub ir_rotation: cgmath::Matrix4<f32>,
     view_proj: cgmath::Matrix4<f32>,
-    pub width: u32,
-    pub height: u32,
 }
 
 impl Uniforms {
@@ -20,8 +18,6 @@ impl Uniforms {
             ir_proj,
             ir_rotation: cgmath::Matrix4::identity(),
             view_proj: cgmath::Matrix4::identity(),
-            width: 0,
-            height: 0,
         }
     }
 

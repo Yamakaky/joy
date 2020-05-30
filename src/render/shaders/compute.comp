@@ -18,11 +18,14 @@ layout(set = 1, binding = 1) uniform sampler ir_sampler;
 layout(set = 2, binding = 0)
 #include "uniform.glsl"
 
+#define ir sampler2D(ir_pixels, ir_sampler)
+#define tex_size textureSize(ir, 0)
+
 vec3 pos(int x, int y) {
     vec4 pos = vec4(
-        1. - 2. * x / (u_width - 1),
-        2. * y / (u_height - 1) - 1.,
-        1. - texelFetch(sampler2D(ir_pixels, ir_sampler), ivec2(x, u_height - y), 0).r,
+        1. - 2. * x / (tex_size.x - 1),
+        2. * y / (tex_size.y - 1) - 1.,
+        1. - texelFetch(ir, ivec2(x, tex_size.y - 1 - y), 0).r,
         1.);
     vec4 proj = u_ir_proj * pos;
     return vec3(proj.xy, -proj.z) / proj.w;
@@ -45,17 +48,17 @@ void main() {
 
     vec3 sum_norm = norm(z, a, b) + norm(z, b, c) + norm(z, c, d) + norm(z, d, e) + norm(z, e, f) + norm(z, f, a);
     
-    uint id = y * u_width + x;
+    uint id = y * tex_size.x + x;
     vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm),1.0));
-    if (x < u_width - 1 && y < u_height - 1) {
+    if (x < tex_size.x - 1 && y < tex_size.y - 1) {
         // since we skip the last row and column, we remove uy to not leave a gap.
         uint base_id = (id - y) * 6;
         indices[base_id    ] = id;
         indices[base_id + 1] = id + 1;
-        indices[base_id + 2] = id + u_width;
-        indices[base_id + 3] = id + u_width;
+        indices[base_id + 2] = id + tex_size.x;
+        indices[base_id + 3] = id + tex_size.x;
         indices[base_id + 4] = id + 1;
-        indices[base_id + 5] = id + u_width + 1;
+        indices[base_id + 5] = id + tex_size.x + 1;
     }
 
 }
