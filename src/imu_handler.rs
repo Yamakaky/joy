@@ -24,6 +24,12 @@ impl Position {
     }
 }
 
+impl Default for Position {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct Handler {
     imu_cb: Option<Box<dyn FnMut(&Position)>>,
     calib_gyro: Calibration,

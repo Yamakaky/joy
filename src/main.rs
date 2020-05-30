@@ -3,7 +3,7 @@ use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::output::*;
 use render::*;
-use std::cell::Cell;
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc;
 use winit::event_loop::*;
@@ -77,10 +77,16 @@ fn hid_main(
     println!("new dev: {:?}", device.get_dev_info()?);
     let mut gui_still_running = true;
 
-    let last_position = Rc::new(Cell::new(imu_handler::Position::new()));
-    let mut last_position2 = Rc::clone(&last_position);
+    // We get the orientation of the camera just after the last frame since it
+    // should be close from the capture time of the IR picture.
+    let last_position = Rc::new(RefCell::new(None));
+    let last_position2 = Rc::clone(&last_position);
     device.set_ir_callback(Box::new(move |image| {
-        if let Err(_) = proxy.send_event(JoyconData::IRImage(image, last_position.get())) {
+        let mut last_position = last_position.borrow_mut();
+        if let Err(_) = proxy.send_event(JoyconData::IRImage(
+            image,
+            last_position.take().unwrap_or_default(),
+        )) {
             dbg!("shutdown ");
             gui_still_running = false;
         }
@@ -92,7 +98,10 @@ fn hid_main(
     println!("Running...");
 
     device.set_imu_callback(Box::new(move |position| {
-        last_position2.set(*position);
+        let mut last_position = last_position2.borrow_mut();
+        if last_position.is_none() {
+            *last_position = Some(*position);
+        }
     }));
 
     dbg!(device.set_home_light(light::HomeLight::new(
