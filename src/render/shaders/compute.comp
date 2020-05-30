@@ -27,7 +27,7 @@ vec3 pos(int x, int y) {
         2. * y / (tex_size.y - 1) - 1.,
         1. - texelFetch(ir, ivec2(x, tex_size.y - 1 - y), 0).r,
         1.);
-    vec4 proj = u_ir_proj * pos;
+    vec4 proj = u.ir_proj * pos;
     return vec3(proj.xy, -proj.z) / proj.w;
 }
 

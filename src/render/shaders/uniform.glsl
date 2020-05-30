@@ -1,6 +1,6 @@
 layout(std140)
 uniform Uniforms {
-    mat4 u_ir_proj;
-    mat4 u_ir_rotation;
-    mat4 u_mvp;
-};
+    mat4 ir_proj;
+    mat4 ir_rotation;
+    mat4 view_proj;
+} u;

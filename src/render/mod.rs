@@ -210,12 +210,7 @@ impl GUI {
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
         let compute = ir_compute::IRCompute::new(&device, &uniform_bind_group_layout);
-        let render_d2 = d2::D2::new(
-            &device,
-            &uniform_bind_group_layout,
-            &compute.texture_binding_layout,
-            sample_count,
-        );
+        let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
 
         Self {
             surface,
@@ -316,8 +311,7 @@ impl GUI {
                 color_attachments: &[self.color_attachment(&frame, wgpu::LoadOp::Load)],
                 depth_stencil_attachment: None,
             });
-            self.render_d2
-                .render(&mut rpass2d, &self.uniform_bind_group, texture);
+            self.render_d2.render(&mut rpass2d, texture);
         }
 
         self.queue.submit(std::iter::once(encoder.finish()));

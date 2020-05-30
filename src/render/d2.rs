@@ -18,8 +18,7 @@ pub struct D2 {
 impl D2 {
     pub fn new(
         device: &wgpu::Device,
-        uniform_bind_group_layout: &wgpu::BindGroupLayout,
-        texture_bind_group_layout: &wgpu::BindGroupLayout,
+        texture_binding_layout: &wgpu::BindGroupLayout,
         sample_count: u32,
     ) -> Self {
         let vertices = &[
@@ -47,7 +46,7 @@ impl D2 {
             device.create_buffer_with_data(bytemuck::cast_slice(indices), wgpu::BufferUsage::INDEX);
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[uniform_bind_group_layout, texture_bind_group_layout],
+            bind_group_layouts: &[texture_binding_layout],
         });
 
         let pipeline = super::create_render_pipeline(
@@ -81,17 +80,11 @@ impl D2 {
         }
     }
 
-    pub fn render<'a>(
-        &'a self,
-        pass: &mut wgpu::RenderPass<'a>,
-        uniforms: &'a wgpu::BindGroup,
-        texture: &'a wgpu::BindGroup,
-    ) {
+    pub fn render<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>, texture: &'a wgpu::BindGroup) {
         pass.set_pipeline(&self.pipeline);
         pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
         pass.set_index_buffer(self.index_buffer.slice(..));
-        pass.set_bind_group(0, uniforms, &[]);
-        pass.set_bind_group(1, texture, &[]);
+        pass.set_bind_group(0, texture, &[]);
         pass.draw_indexed(0..6, 0, 0..1);
     }
 }
