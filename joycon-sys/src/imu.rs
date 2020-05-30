@@ -83,7 +83,7 @@ impl GyroSens {
 
     /// factor from raw unit to dps
     pub fn factor(self) -> f64 {
-        self.range_dps() as f64 / u16::MAX as f64
+        self.range_dps() as f64 * 1.147 / u16::MAX as f64
     }
 }
 
