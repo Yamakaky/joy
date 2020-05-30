@@ -10,7 +10,7 @@ layout(set = 0, binding = 0)
 #include "uniform.glsl"
 
 void main() {
-    gl_Position = u_mvp * a_position;
+    gl_Position = u_mvp * u_ir_rotation * a_position;
     f_normal = a_normal.xyz;
     f_depth = a_position.z;
 }

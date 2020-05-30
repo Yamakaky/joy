@@ -4,6 +4,7 @@ use crate::render::camera::Camera;
 #[derive(Debug, Copy, Clone)]
 pub struct Uniforms {
     ir_proj: cgmath::Matrix4<f32>,
+    pub ir_rotation: cgmath::Matrix4<f32>,
     view_proj: cgmath::Matrix4<f32>,
     pub width: u32,
     pub height: u32,
@@ -17,6 +18,7 @@ impl Uniforms {
             .unwrap();
         Uniforms {
             ir_proj,
+            ir_rotation: cgmath::Matrix4::identity(),
             view_proj: cgmath::Matrix4::identity(),
             width: 0,
             height: 0,

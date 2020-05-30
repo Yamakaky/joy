@@ -30,6 +30,7 @@ impl Frame {
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
     pub fn rotation(&self, offset: Vector3<f64>, sens: GyroSens) -> Euler<Deg<f64>> {
         let dps = (self.raw_gyro() - offset) * sens.factor() * IMU_SAMPLE_DURATION;
+        // TODO: define axis and make sure it's accurate
         Euler {
             x: Deg(dps.x),
             y: Deg(dps.y),

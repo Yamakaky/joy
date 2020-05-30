@@ -398,8 +398,9 @@ pub async fn run(
                     Err(_) => eprintln!("Joycon thread crashed"),
                 }
             }
-            Event::UserEvent(JoyconData::IRImage(image)) => {
+            Event::UserEvent(JoyconData::IRImage(image, position)) => {
                 gui.push_ir_data(image);
+                gui.uniforms.ir_rotation = cgmath::Matrix4::from(position.rotation).cast().unwrap();
                 window.request_redraw();
             }
             Event::DeviceEvent {
@@ -456,7 +457,7 @@ pub async fn run(
 }
 
 pub enum JoyconData {
-    IRImage(image::GrayImage),
+    IRImage(image::GrayImage, crate::imu_handler::Position),
 }
 
 pub enum JoyconCmd {

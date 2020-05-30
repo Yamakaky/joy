@@ -11,6 +11,19 @@ pub struct Position {
     pub position: Vector3<f64>,
 }
 
+impl Position {
+    pub fn new() -> Self {
+        let zero = Euler::new(Deg(0.), Deg(0.), Deg(0.));
+        Self {
+            last_delta_rotation: zero,
+            rotation: Quaternion::from(zero),
+            accel: Vector3::zero(),
+            speed: Vector3::zero(),
+            position: Vector3::zero(),
+        }
+    }
+}
+
 pub struct Handler {
     imu_cb: Option<Box<dyn FnMut(&Position)>>,
     calib_gyro: Calibration,
@@ -25,7 +38,6 @@ pub struct Handler {
 
 impl Handler {
     pub fn new(gyro_sens: imu::GyroSens, accel_sens: imu::AccSens) -> Self {
-        let zero = Euler::new(Deg(0.), Deg(0.), Deg(0.));
         Handler {
             imu_cb: None,
             calib_gyro: Calibration::with_capacity(200),
@@ -34,13 +46,7 @@ impl Handler {
             accel_sens,
             factory_calibration: spi::SensorCalibration::default(),
             user_calibration: spi::UserSensorCalibration::default(),
-            position: Position {
-                last_delta_rotation: zero,
-                rotation: Quaternion::from(zero),
-                accel: Vector3::zero(),
-                speed: Vector3::zero(),
-                position: Vector3::zero(),
-            },
+            position: Position::new(),
             calib_nb: 0,
         }
     }
@@ -74,6 +80,12 @@ impl Handler {
         let acc_offset = self.acc_calib();
         for frame in frames.iter().rev() {
             let raw_delta_rotation = frame.rotation(gyro_offset, self.gyro_sens);
+            // TODO: define axis and make sure it's accurate
+            let raw_delta_rotation = Euler {
+                x: raw_delta_rotation.y,
+                y: -raw_delta_rotation.z,
+                z: -raw_delta_rotation.x,
+            };
             let raw_acc = frame.accel_g(acc_offset, self.accel_sens);
             if self.calib_nb > 0 {
                 self.calib_gyro.push(Vector3::new(

@@ -3,6 +3,7 @@ use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::output::*;
 use render::*;
+use std::cell::Cell;
 use std::rc::Rc;
 use std::sync::mpsc;
 use winit::event_loop::*;
@@ -24,7 +25,7 @@ fn main() {
     let window = winit::window::Window::new(&event_loop).unwrap();
     let proxy = event_loop.create_proxy();
     let (thread_contact, recv) = mpsc::channel();
-    let thread_handle = std::thread::spawn(|| hid_main(proxy, recv));
+    let thread_handle = std::thread::spawn(|| real_main(proxy, recv));
 
     futures::executor::block_on(render::run(
         event_loop,
@@ -34,118 +35,133 @@ fn main() {
     ));
 }
 
-#[allow(dead_code, unused_mut, unused_variables)]
-fn hid_main(
+fn real_main(
     proxy: EventLoopProxy<JoyconData>,
     recv: mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<()> {
+    let mut api = HidApi::new()?;
+    loop {
+        api.refresh_devices()?;
+        if let Some(device_info) = api
+            .device_list()
+            .filter(|x| x.vendor_id() == joycon_sys::NINTENDO_VENDOR_ID)
+            .next()
+        {
+            let device = device_info.open_device(&api)?;
+            match hid_main(device, device_info, proxy.clone(), &recv) {
+                Ok(true) => {}
+                Ok(false) => return Ok(()),
+                Err(e) => println!("Joycon error: {}", e),
+            }
+        } else {
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+    }
+}
+
+#[allow(dead_code, unused_mut, unused_variables)]
+fn hid_main(
+    device: hidapi::HidDevice,
+    device_info: &hidapi::DeviceInfo,
+    proxy: EventLoopProxy<JoyconData>,
+    recv: &mpsc::Receiver<JoyconCmd>,
+) -> anyhow::Result<bool> {
     let val = OutputReport::default();
 
-    let api = HidApi::new()?;
     let mut enigo = enigo::Enigo::new();
     let mut mouse = mouse::Mouse::default();
-    let proxy_rc = Rc::new(proxy);
 
-    for device in api
-        .device_list()
-        .filter(|x| x.vendor_id() == joycon_sys::NINTENDO_VENDOR_ID)
-    {
-        let resolution = Resolution::R160x120;
+    let resolution = Resolution::R160x120;
 
-        let mut device = hid::JoyCon::new(device.open_device(&api)?, device.clone(), resolution)?;
-        println!("new dev: {:?}", device.get_dev_info()?);
-        let mut gui_still_running = true;
+    let mut device = hid::JoyCon::new(device, device_info.clone(), resolution)?;
+    println!("new dev: {:?}", device.get_dev_info()?);
+    let mut gui_still_running = true;
 
-        let proxy = proxy_rc.clone();
-        device.set_ir_callback(Box::new(move |image| {
-            if let Err(_) = proxy.send_event(JoyconData::IRImage(image)) {
-                dbg!("shutdown ");
-                gui_still_running = false;
+    let last_position = Rc::new(Cell::new(imu_handler::Position::new()));
+    let mut last_position2 = Rc::clone(&last_position);
+    device.set_ir_callback(Box::new(move |image| {
+        if let Err(_) = proxy.send_event(JoyconData::IRImage(image, last_position.get())) {
+            dbg!("shutdown ");
+            gui_still_running = false;
+        }
+    }));
+
+    println!("Calibrating...");
+    device.enable_imu()?;
+    device.load_calibration()?;
+    println!("Running...");
+
+    device.set_imu_callback(Box::new(move |position| {
+        last_position2.set(*position);
+    }));
+
+    dbg!(device.set_home_light(light::HomeLight::new(
+        0x8,
+        0x2,
+        0x0,
+        &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
+    ))?);
+
+    device.set_player_light(light::PlayerLights::new(
+        true, false, false, true, false, true, true, false,
+    ))?;
+
+    dbg!(device.set_report_mode_mcu()?);
+    dbg!(device.enable_mcu()?);
+    dbg!(device.set_mcu_mode_ir()?);
+    device.change_ir_resolution(resolution)?;
+
+    //device.set_imu_sens()?;
+    //device.enable_imu()?;
+
+    let mut i = 0;
+    device.enable_ir_loop = true;
+    while gui_still_running {
+        /*
+
+        device.max_raw_gyro = 0;
+        let mouse_factor = 1920. * 8.;
+        let mut sleep = false;
+        for delta in &device.get_gyro_rot_delta(true)? {
+            if sleep {
+                std::thread::sleep(std::time::Duration::from_millis(5));
             }
-        }));
+            sleep = true;
+            rotation += *delta;
+            mouse.move_relative(&mut enigo, -delta.2 * mouse_factor, delta.1 * mouse_factor);
+        }*/
+        let stick = device.get_sticks()?;
 
-        println!("Calibrating...");
-        device.enable_imu()?;
-        device.load_calibration()?;
-        println!("Running...");
+        if i % 60 == 0 {
+            println!("joycon thread still running");
+        }
+        i += 1;
 
-        let mut i2 = 0;
-        device.set_imu_callback(Box::new(move |position| {
-            if i2 % 200 == 0 {
-                // dbg!(position.rotation * cgmath::Vector3::new(1., 0., 0.));
-            }
-            i2 += 1;
-        }));
+        //println!("{:?}", stick);
 
-        dbg!(device.set_home_light(light::HomeLight::new(
-            0x8,
-            0x2,
-            0x0,
-            &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
-        ))?);
-
-        device.set_player_light(light::PlayerLights::new(
-            true, false, false, true, false, true, true, false,
-        ))?;
-
-        dbg!(device.set_report_mode_mcu()?);
-        dbg!(device.enable_mcu()?);
-        dbg!(device.set_mcu_mode_ir()?);
-        device.change_ir_resolution(resolution)?;
-
-        //device.set_imu_sens()?;
-        //device.enable_imu()?;
-
-        let mut i = 0;
-        device.enable_ir_loop = true;
-        while gui_still_running {
-            /*
-
-            device.max_raw_gyro = 0;
-            let mouse_factor = 1920. * 8.;
-            let mut sleep = false;
-            for delta in &device.get_gyro_rot_delta(true)? {
-                if sleep {
-                    std::thread::sleep(std::time::Duration::from_millis(5));
+        while let Ok(cmd) = recv.try_recv() {
+            match cmd {
+                JoyconCmd::Stop => {
+                    eprintln!("shutting down thread");
+                    gui_still_running = false;
                 }
-                sleep = true;
-                rotation += *delta;
-                mouse.move_relative(&mut enigo, -delta.2 * mouse_factor, delta.1 * mouse_factor);
-            }*/
-            let stick = device.get_sticks()?;
-
-            if i % 60 == 0 {
-                println!("joycon thread still running");
-            }
-            i += 1;
-
-            //println!("{:?}", stick);
-
-            while let Ok(cmd) = recv.try_recv() {
-                match cmd {
-                    JoyconCmd::Stop => {
-                        eprintln!("shutting down thread");
-                        gui_still_running = false;
-                    }
-                    JoyconCmd::SetResolution(resolution) => {
-                        dbg!(device.change_ir_resolution(resolution)?);
-                    }
-                    JoyconCmd::SetRegister(register) => {
-                        assert!(!register.same_address(Register::resolution(Resolution::R320x240)));
-                        dbg!(device.set_ir_registers(&[register, Register::finish(),])?);
-                    }
+                JoyconCmd::SetResolution(resolution) => {
+                    dbg!(device.change_ir_resolution(resolution)?);
+                }
+                JoyconCmd::SetRegister(register) => {
+                    assert!(!register.same_address(Register::resolution(Resolution::R320x240)));
+                    dbg!(device.set_ir_registers(&[register, Register::finish(),])?);
                 }
             }
         }
-
-        dbg!(device.set_report_mode_standard()?);
-        dbg!(device.disable_mcu()?);
-
-        device.set_player_light(light::PlayerLights::new(
-            true, false, false, true, false, false, false, false,
-        ))?;
-
-        break;
     }
-    Ok(())
+
+    dbg!(device.set_report_mode_standard()?);
+    dbg!(device.disable_mcu()?);
+
+    device.set_player_light(light::PlayerLights::new(
+        true, false, false, true, false, false, false, false,
+    ))?;
+
+    Ok(false)
 }
