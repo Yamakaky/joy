@@ -18,12 +18,11 @@ layout(set = 1, binding = 1) uniform sampler ir_sampler;
 layout(set = 2, binding = 0)
 #include "uniform.glsl"
 
-vec3 pos(float x, float y) {
-    vec2 uv = vec2(x / u_width, (u_height - y) / u_height);
+vec3 pos(int x, int y) {
     vec4 pos = vec4(
         1. - 2. * x / (u_width - 1),
         2. * y / (u_height - 1) - 1.,
-        1. - texture(sampler2D(ir_pixels, ir_sampler), uv).r,
+        1. - texelFetch(sampler2D(ir_pixels, ir_sampler), ivec2(x, u_height - y), 0).r,
         1.);
     vec4 proj = u_ir_proj * pos;
     return vec3(proj.xy, -proj.z) / proj.w;
@@ -34,8 +33,8 @@ vec3 norm(vec3 z, vec3 a, vec3 b) {
 }
 
 void main() {
-    float x = float(gl_GlobalInvocationID.x);
-    float y = float(gl_GlobalInvocationID.y);
+    int x = int(gl_GlobalInvocationID.x);
+    int y = int(gl_GlobalInvocationID.y);
     vec3 z = pos(x    , y    );
     vec3 a = pos(x    , y - 1);
     vec3 b = pos(x + 1, y - 1);
@@ -46,13 +45,11 @@ void main() {
 
     vec3 sum_norm = norm(z, a, b) + norm(z, b, c) + norm(z, c, d) + norm(z, d, e) + norm(z, e, f) + norm(z, f, a);
     
-    uint ux = gl_GlobalInvocationID.x;
-    uint uy = gl_GlobalInvocationID.y;
-    uint id = uy * u_width + ux;
+    uint id = y * u_width + x;
     vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm),1.0));
-    if (ux < u_width - 1 && uy < u_height - 1) {
+    if (x < u_width - 1 && y < u_height - 1) {
         // since we skip the last row and column, we remove uy to not leave a gap.
-        uint base_id = (id - uy) * 6;
+        uint base_id = (id - y) * 6;
         indices[base_id    ] = id;
         indices[base_id + 1] = id + 1;
         indices[base_id + 2] = id + u_width;
