@@ -122,7 +122,7 @@ impl GUI {
         let adapter = instance
             .request_adapter(
                 &wgpu::RequestAdapterOptions {
-                    power_preference: wgpu::PowerPreference::LowPower,
+                    power_preference: wgpu::PowerPreference::Default,
                     compatible_surface: Some(&surface),
                 },
                 wgpu::BackendBit::PRIMARY,
