@@ -121,7 +121,7 @@ impl GUI {
                     power_preference: wgpu::PowerPreference::Default,
                     compatible_surface: Some(&surface),
                 },
-                wgpu::BackendBit::PRIMARY,
+                wgpu::BackendBit::VULKAN,
             )
             .await
             .unwrap();
