@@ -192,18 +192,8 @@ impl GUI {
                 step_mode: wgpu::InputStepMode::Vertex,
                 attributes: &wgpu::vertex_attr_array![0 => Float4, 1 => Float4],
             }],
-            vk_shader_macros::include_glsl!(
-                "src/render/shaders/3d.vert",
-                kind: vert,
-                debug,
-                optimize: zero
-            ),
-            vk_shader_macros::include_glsl!(
-                "src/render/shaders/3d.frag",
-                kind: frag,
-                debug,
-                optimize: zero
-            ),
+            vk_shader_macros::include_glsl!("src/render/shaders/3d.vert", kind: vert),
+            vk_shader_macros::include_glsl!("src/render/shaders/3d.frag", kind: frag),
             sample_count,
         );
         let multisampled_framebuffer =
