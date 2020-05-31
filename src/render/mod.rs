@@ -9,6 +9,7 @@ use winit::{
 mod buffer;
 mod camera;
 mod d2;
+mod d3;
 mod ir_compute;
 mod parameters;
 mod texture;
@@ -98,15 +99,13 @@ struct GUI {
     queue: wgpu::Queue,
     sc_desc: wgpu::SwapChainDescriptor,
     swap_chain: wgpu::SwapChain,
-    render_pipeline: wgpu::RenderPipeline,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
     uniforms: uniforms::UniformHandler,
-    depth_texture: texture::Texture,
-    size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
     compute: ir_compute::IRCompute,
     render_d2: d2::D2,
+    render_d3: d3::D3,
 }
 
 impl GUI {
@@ -153,36 +152,12 @@ impl GUI {
         let mut uniforms = uniforms::UniformHandler::new(&device);
         uniforms.update_view_proj(&camera);
 
-        let depth_texture = texture::Texture::create_depth_texture(
-            &device,
-            &sc_desc,
-            sample_count,
-            Some("depth_texture"),
-        );
-
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[uniforms.bind_group_layout()],
-        });
-
-        let render_pipeline = create_render_pipeline(
-            &device,
-            &pipeline_layout,
-            wgpu::TextureFormat::Bgra8UnormSrgb,
-            Some(texture::Texture::DEPTH_FORMAT),
-            &[wgpu::VertexBufferDescriptor {
-                stride: 4 * 4 * 2,
-                step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &wgpu::vertex_attr_array![0 => Float4, 1 => Float4],
-            }],
-            vk_shader_macros::include_glsl!("src/render/shaders/3d.vert", kind: vert),
-            vk_shader_macros::include_glsl!("src/render/shaders/3d.frag", kind: frag),
-            sample_count,
-        );
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
+        let render_d3 = d3::D3::new(&device, &uniforms, &sc_desc, sample_count);
 
         Self {
             surface,
@@ -190,32 +165,26 @@ impl GUI {
             queue,
             sc_desc,
             swap_chain,
-            render_pipeline,
             sample_count,
             multisampled_framebuffer,
             uniforms,
-            depth_texture,
-            size,
             camera,
             compute,
             render_d2,
+            render_d3,
         }
     }
 
     fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        self.size = new_size;
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
         self.multisampled_framebuffer =
             create_multisampled_framebuffer(&self.device, &self.sc_desc, self.sample_count);
-        self.depth_texture = texture::Texture::create_depth_texture(
-            &self.device,
-            &self.sc_desc,
-            self.sample_count,
-            Some("depth_texture"),
-        );
-        self.camera.update_aspect(self.size.width, self.size.height);
+        self.render_d3
+            .resize(&self.device, &self.sc_desc, self.sample_count);
+        self.camera
+            .update_aspect(self.sc_desc.width, self.sc_desc.height);
     }
 
     // input() won't deal with GPU code, so it can be synchronous
@@ -261,22 +230,11 @@ impl GUI {
         {
             let mut rpass3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[self.color_attachment(&frame, wgpu::LoadOp::Clear)],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
-                    attachment: &self.depth_texture.view,
-                    depth_load_op: wgpu::LoadOp::Clear,
-                    depth_store_op: wgpu::StoreOp::Store,
-                    clear_depth: 1.0,
-                    stencil_load_op: wgpu::LoadOp::Clear,
-                    stencil_store_op: wgpu::StoreOp::Store,
-                    clear_stencil: 0,
-                }),
+                depth_stencil_attachment: Some(self.render_d3.depth_stencil_attachement()),
             });
             if self.compute.texture_binding.is_some() {
-                rpass3d.set_pipeline(&self.render_pipeline);
-                rpass3d.set_vertex_buffer(0, self.compute.vertices().slice(..));
-                rpass3d.set_index_buffer(self.compute.indices().slice(..));
-                rpass3d.set_bind_group(0, &self.uniforms.bind_group(), &[]);
-                rpass3d.draw_indexed(0..self.compute.indices_count(), 0, 0..1);
+                self.render_d3
+                    .render(&mut rpass3d, &self.compute, &self.uniforms);
             }
         }
 
