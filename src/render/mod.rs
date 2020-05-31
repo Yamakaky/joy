@@ -282,14 +282,18 @@ pub async fn run(
 ) -> ! {
     let mut gui = GUI::new(&window).await;
     window.set_maximized(true);
-    window.set_cursor_grab(true).unwrap();
-    window.set_cursor_visible(false);
 
     //let mut thread_handle = Some(thread_handle);
 
     let mut parameters = parameters::Parameters::new();
     let mut hidden = false;
-    let mut focused = true;
+
+    fn set_grabbed(window: &Window, grabbed: bool) -> bool {
+        window.set_cursor_grab(grabbed).unwrap();
+        window.set_cursor_visible(!grabbed);
+        grabbed
+    };
+    let mut grabbed = set_grabbed(&window, false);
 
     let mut last_tick = Instant::now();
 
@@ -331,7 +335,7 @@ pub async fn run(
             Event::DeviceEvent {
                 event: DeviceEvent::MouseMotion { delta },
                 ..
-            } if focused => {
+            } if grabbed => {
                 gui.camera.mouse_move(delta);
                 window.request_redraw();
             }
@@ -353,6 +357,17 @@ pub async fn run(
                                 },
                             ..
                         } => *control_flow = ControlFlow::Exit,
+                        WindowEvent::KeyboardInput {
+                            input:
+                                KeyboardInput {
+                                    state: ElementState::Pressed,
+                                    virtual_keycode: Some(VirtualKeyCode::Space),
+                                    ..
+                                },
+                            ..
+                        } => {
+                            grabbed = set_grabbed(&window, !grabbed);
+                        }
                         WindowEvent::Resized(physical_size) => {
                             if physical_size.height != 0 && physical_size.height != 0 {
                                 hidden = false;
@@ -369,8 +384,8 @@ pub async fn run(
                                 hidden = true;
                             }
                         }
-                        WindowEvent::Focused(focus) => {
-                            focused = *focus;
+                        WindowEvent::Focused(false) => {
+                            grabbed = set_grabbed(&window, false);
                         }
                         _ => {}
                     }
