@@ -12,6 +12,7 @@ members = [
 [dependencies]
 anyhow = "1.0"
 enigo = "0.0.14"
+env_logger = "0.7"
 hidapi = "1.2"
 image = { version = "0.23", default-features = false }
 joycon-sys = { path = "joycon-sys" }

@@ -697,6 +697,7 @@ dependencies = [
  "bytemuck",
  "cgmath",
  "enigo",
+ "env_logger",
  "futures",
  "hidapi",
  "image",
