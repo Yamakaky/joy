@@ -33,7 +33,7 @@ impl IRCompute {
         });
         let index_buffer_size = 320 * 240 * 6 * 4;
         let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("compute vertex buffer"),
+            label: Some("compute index buffer"),
             size: index_buffer_size,
             usage: wgpu::BufferUsage::INDEX | wgpu::BufferUsage::STORAGE,
         });
