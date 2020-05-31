@@ -279,7 +279,7 @@ bitfield::bitfield! {
     pub struct Leds(u8);
     impl Debug;
     pub flashlight, set_flashlight: 0;
-    pub disable_far_narrow12, set_disable_far_narrow12: 5;
-    pub disable_near_wide34, set_disable_near_wide34: 6;
+    pub disable_far_narrow12, set_disable_far_narrow12: 4;
+    pub disable_near_wide34, set_disable_near_wide34: 5;
     pub strobe, set_strobe: 7;
 }
