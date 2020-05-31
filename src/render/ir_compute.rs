@@ -129,19 +129,15 @@ impl IRCompute {
     pub fn push_ir_data(
         &mut self,
         device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
         uniform_bind_group: &wgpu::BindGroup,
         image: image::GrayImage,
-    ) -> wgpu::CommandBuffer {
+    ) {
         let (width, height) = image.dimensions();
-
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("IR data upload"),
-        });
-
         let texture = self.texture.get_or_insert_with(|| {
             super::texture::Texture::create_ir_texture(device, (width, height))
         });
-        texture.update(device, &mut encoder, image);
+        texture.update(device, encoder, image);
 
         let texture_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &self.texture_binding_layout,
@@ -168,7 +164,5 @@ impl IRCompute {
         }
 
         self.texture_binding = Some(texture_binding);
-
-        encoder.finish()
     }
 }

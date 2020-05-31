@@ -1,4 +1,3 @@
-use buffer::Staged;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 use winit::{
@@ -102,9 +101,7 @@ struct GUI {
     render_pipeline: wgpu::RenderPipeline,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
-    uniforms: uniforms::Uniforms,
-    uniform_buffer: wgpu::Buffer,
-    uniform_bind_group: wgpu::BindGroup,
+    uniforms: uniforms::UniformHandler,
     depth_texture: texture::Texture,
     size: winit::dpi::PhysicalSize<u32>,
     camera: camera::Camera,
@@ -153,23 +150,8 @@ impl GUI {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
         let camera = camera::Camera::new(&sc_desc);
-        let mut uniforms = uniforms::Uniforms::new();
+        let mut uniforms = uniforms::UniformHandler::new(&device);
         uniforms.update_view_proj(&camera);
-        let uniform_buffer = device.create_buffer_with_data(
-            bytemuck::bytes_of(&[uniforms]),
-            wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
-        );
-
-        let uniform_bind_group_layout =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                bindings: &uniforms::Uniforms::layout(),
-                label: Some("uniform_bind_group_layout"),
-            });
-        let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &uniform_bind_group_layout,
-            bindings: &uniforms.bindings(&uniform_buffer),
-            label: Some("uniform_bind_group"),
-        });
 
         let depth_texture = texture::Texture::create_depth_texture(
             &device,
@@ -179,7 +161,7 @@ impl GUI {
         );
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[&uniform_bind_group_layout],
+            bind_group_layouts: &[uniforms.bind_group_layout()],
         });
 
         let render_pipeline = create_render_pipeline(
@@ -199,7 +181,7 @@ impl GUI {
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
-        let compute = ir_compute::IRCompute::new(&device, &uniform_bind_group_layout);
+        let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
 
         Self {
@@ -212,8 +194,6 @@ impl GUI {
             sample_count,
             multisampled_framebuffer,
             uniforms,
-            uniform_buffer,
-            uniform_bind_group,
             depth_texture,
             size,
             camera,
@@ -246,22 +226,22 @@ impl GUI {
     fn update(&mut self, dt: Duration) {
         self.camera.update(dt);
         self.uniforms.update_view_proj(&self.camera);
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("update encoder"),
-            });
-        self.uniform_buffer
-            .update(&self.device, &mut encoder, &[self.uniforms]);
-        self.queue.submit(std::iter::once(encoder.finish()));
     }
 
     fn push_ir_data(&mut self, image: image::GrayImage) {
-        self.queue.submit(std::iter::once(self.compute.push_ir_data(
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("IR compute shader"),
+            });
+        self.uniforms.upload(&self.device, &mut encoder);
+        self.compute.push_ir_data(
             &self.device,
-            &self.uniform_bind_group,
+            &mut encoder,
+            &self.uniforms.bind_group(),
             image,
-        )));
+        );
+        self.queue.submit(std::iter::once(encoder.finish()));
     }
 
     fn render(&mut self) {
@@ -272,7 +252,11 @@ impl GUI {
 
         let mut encoder = self
             .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("Rendering"),
+            });
+
+        self.uniforms.upload(&self.device, &mut encoder);
 
         {
             let mut rpass3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -291,7 +275,7 @@ impl GUI {
                 rpass3d.set_pipeline(&self.render_pipeline);
                 rpass3d.set_vertex_buffer(0, self.compute.vertices().slice(..));
                 rpass3d.set_index_buffer(self.compute.indices().slice(..));
-                rpass3d.set_bind_group(0, &self.uniform_bind_group, &[]);
+                rpass3d.set_bind_group(0, &self.uniforms.bind_group(), &[]);
                 rpass3d.draw_indexed(0..self.compute.indices_count(), 0, 0..1);
             }
         }
@@ -383,7 +367,7 @@ pub async fn run(
             }
             Event::UserEvent(JoyconData::IRImage(image, position)) => {
                 gui.push_ir_data(image);
-                gui.uniforms.ir_rotation = cgmath::Matrix4::from(position.rotation).cast().unwrap();
+                gui.uniforms.set_ir_rotation(position.rotation);
                 window.request_redraw();
             }
             Event::DeviceEvent {
