@@ -64,15 +64,17 @@ impl IRCompute {
             bindings: &[
                 wgpu::Binding {
                     binding: 0,
-                    resource: wgpu::BindingResource::Buffer(
-                        vertex_buffer.slice(0..vertex_buffer_size),
-                    ),
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: &vertex_buffer,
+                        range: 0..vertex_buffer_size,
+                    },
                 },
                 wgpu::Binding {
                     binding: 1,
-                    resource: wgpu::BindingResource::Buffer(
-                        index_buffer.slice(0..index_buffer_size),
-                    ),
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: &index_buffer,
+                        range: 0..index_buffer_size,
+                    },
                 },
             ],
             label: Some("static compute binding"),

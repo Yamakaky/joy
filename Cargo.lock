@@ -883,18 +883,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "naga"
-version = "0.1.0"
-source = "git+https://github.com/gfx-rs/naga?rev=bce6358eb1026c13d2f1c6d365af37afe8869a86#bce6358eb1026c13d2f1c6d365af37afe8869a86"
-dependencies = [
- "bitflags",
- "fxhash",
- "log",
- "num-traits",
- "spirv_headers",
-]
-
-[[package]]
 name = "ndk"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1495,16 +1483,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spirv_headers"
-version = "1.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f1418983d16481227ffa3ab3cf44ef92eebc9a76c092fbcd4c51a64ff032622"
-dependencies = [
- "bitflags",
- "num-traits",
-]
-
-[[package]]
 name = "stb_truetype"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1673,18 +1651,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-bindgen-futures"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a369c5e1dfb7569e14d62af4da642a3cbc2f9a3652fe586e26ac22222aa4b04"
-dependencies = [
- "cfg-if",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
 name = "wasm-bindgen-macro"
 version = "0.2.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1774,39 +1740,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "web-sys"
-version = "0.3.39"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bc359e5dd3b46cb9687a051d50a2fdd228e4ba7cf6fcf861a5365c3d671a642"
-dependencies = [
- "js-sys",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "wgpu"
 version = "0.5.0"
-source = "git+https://github.com/gfx-rs/wgpu-rs#4b16959e3e5e35178ba7b22cf0ad182344615da6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbf715eb8571da470b856ecc67b057221360d9fce16f3e38001b2fb158d04012"
 dependencies = [
  "arrayvec",
- "env_logger",
- "futures",
- "js-sys",
- "objc",
  "parking_lot",
  "raw-window-handle",
  "smallvec",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
  "wgpu-core",
+ "wgpu-native",
  "wgpu-types",
 ]
 
 [[package]]
 name = "wgpu-core"
-version = "0.5.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a203333c3e144cfd431c812213966ee32ae59d98#a203333c3e144cfd431c812213966ee32ae59d98"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b093098e0782b0f46f154fac5c670ba27b7a5bff98dc943422c13852c696a2b0"
 dependencies = [
  "arrayvec",
  "bitflags",
@@ -1821,20 +1773,34 @@ dependencies = [
  "gfx-hal",
  "gfx-memory",
  "log",
- "naga",
  "parking_lot",
  "peek-poke",
- "raw-window-handle",
  "smallvec",
- "spirv_headers",
  "vec_map",
  "wgpu-types",
 ]
 
 [[package]]
-name = "wgpu-types"
+name = "wgpu-native"
 version = "0.5.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a203333c3e144cfd431c812213966ee32ae59d98#a203333c3e144cfd431c812213966ee32ae59d98"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19a5051a357d071fd69c24671e0ea6d644a83c7418e47eac3511427379007403"
+dependencies = [
+ "arrayvec",
+ "lazy_static",
+ "libc",
+ "objc",
+ "parking_lot",
+ "raw-window-handle",
+ "wgpu-core",
+ "wgpu-types",
+]
+
+[[package]]
+name = "wgpu-types"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3474b5ce2ed628e158c2fe4387a469b2ee119604556aa2debd10d830cedc3bc"
 dependencies = [
  "bitflags",
  "peek-poke",

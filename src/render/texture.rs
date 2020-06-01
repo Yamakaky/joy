@@ -18,6 +18,7 @@ impl Texture {
             label: Some("IR Texture"),
             size,
             mip_level_count: 1,
+            array_layer_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
@@ -36,7 +37,6 @@ impl Texture {
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
             compare: wgpu::CompareFunction::Undefined,
-            label: Some("IR texture sampler"),
         });
 
         Self {
@@ -62,6 +62,7 @@ impl Texture {
             label,
             size,
             mip_level_count: 1,
+            array_layer_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: Self::DEPTH_FORMAT,
@@ -82,7 +83,6 @@ impl Texture {
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
             compare: wgpu::CompareFunction::LessEqual,
-            label: Some("Depth texture sampler"),
         });
 
         Self {

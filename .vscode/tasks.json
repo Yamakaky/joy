@@ -67,6 +67,19 @@
 				"isDefault": true
 			},
 			"label": "rust: cargo build --workspace"
+		},
+		{
+			"type": "cargo",
+			"command": "build",
+			"args": [
+				"--workspace",
+				"--release"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "rust: cargo build --workspace --release"
 		}
 	]
 }

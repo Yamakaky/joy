@@ -12,8 +12,9 @@ pub struct UniformHandler {
 impl UniformHandler {
     pub fn new(device: &wgpu::Device) -> Self {
         let uniforms = Uniforms::new();
+        let raw_uniforms = bytemuck::bytes_of(&uniforms);
         let buffer = device.create_buffer_with_data(
-            bytemuck::bytes_of(&uniforms),
+            raw_uniforms,
             wgpu::BufferUsage::UNIFORM | wgpu::BufferUsage::COPY_DST,
         );
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -28,7 +29,10 @@ impl UniformHandler {
             layout: &bind_group_layout,
             bindings: &[wgpu::Binding {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer(buffer.slice(..)),
+                resource: wgpu::BindingResource::Buffer {
+                    buffer: &buffer,
+                    range: 0..raw_uniforms.len() as wgpu::BufferAddress,
+                },
             }],
             label: Some("Uniform bind group"),
         });

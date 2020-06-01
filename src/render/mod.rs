@@ -81,7 +81,8 @@ fn create_multisampled_framebuffer(
     let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
         size: multisampled_texture_extent,
         mip_level_count: 1,
-        sample_count: sample_count,
+        array_layer_count: 1,
+        sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: sc_desc.format,
         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -112,32 +113,26 @@ impl GUI {
     async fn new(window: &Window) -> Self {
         let sample_count = 16;
         let size = window.inner_size();
-        let instance = wgpu::Instance::new();
-        let surface = unsafe { instance.create_surface(window) };
+        let surface = wgpu::Surface::create(window);
 
-        let adapter = instance
-            .request_adapter(
-                &wgpu::RequestAdapterOptions {
-                    power_preference: wgpu::PowerPreference::Default,
-                    compatible_surface: Some(&surface),
-                },
-                wgpu::BackendBit::VULKAN,
-            )
-            .await
-            .unwrap();
+        let adapter = wgpu::Adapter::request(
+            &wgpu::RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::Default,
+                compatible_surface: Some(&surface),
+            },
+            wgpu::BackendBit::VULKAN,
+        )
+        .await
+        .unwrap();
 
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    extensions: wgpu::Extensions {
-                        anisotropic_filtering: false,
-                    },
-                    limits: wgpu::Limits::default(),
+            .request_device(&wgpu::DeviceDescriptor {
+                extensions: wgpu::Extensions {
+                    anisotropic_filtering: false,
                 },
-                None,
-            )
-            .await
-            .unwrap();
+                limits: wgpu::Limits::default(),
+            })
+            .await;
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -210,7 +205,7 @@ impl GUI {
             &self.uniforms.bind_group(),
             image,
         );
-        self.queue.submit(std::iter::once(encoder.finish()));
+        self.queue.submit(&[encoder.finish()]);
     }
 
     fn render(&mut self) {
@@ -246,7 +241,7 @@ impl GUI {
             self.render_d2.render(&mut rpass2d, texture);
         }
 
-        self.queue.submit(std::iter::once(encoder.finish()));
+        self.queue.submit(&[encoder.finish()]);
     }
 
     fn color_attachment<'a>(

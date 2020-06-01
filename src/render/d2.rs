@@ -72,8 +72,8 @@ impl D2 {
 
     pub fn render<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>, texture: &'a wgpu::BindGroup) {
         pass.set_pipeline(&self.pipeline);
-        pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-        pass.set_index_buffer(self.index_buffer.slice(..));
+        pass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
+        pass.set_index_buffer(&self.index_buffer, 0,0);
         pass.set_bind_group(0, texture, &[]);
         pass.draw_indexed(0..6, 0, 0..1);
     }
