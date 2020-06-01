@@ -1,4 +1,8 @@
 use cgmath::{prelude::*, Deg, Euler, Matrix4, Quaternion, Vector3};
+use iced_wgpu::wgpu;
+
+use iced_winit::winit;
+use iced_winit::winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
 
 pub struct Camera {
     eye: Vector3<f32>,
@@ -112,8 +116,7 @@ impl CameraController {
         self.mouse_delta = delta;
     }
 
-    pub fn input(&mut self, event: &winit::event::WindowEvent) -> bool {
-        use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+    pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput {
                 input:

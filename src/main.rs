@@ -6,7 +6,8 @@ use render::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc;
-use winit::event_loop::*;
+use iced_winit::winit::event_loop::*;
+use iced_winit::winit;
 
 mod calibration;
 mod hid;

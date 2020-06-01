@@ -1,5 +1,6 @@
 use crate::render::buffer::Staged;
 use crate::render::camera::Camera;
+use iced_wgpu::wgpu;
 
 pub struct UniformHandler {
     uniforms: Uniforms,

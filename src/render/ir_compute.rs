@@ -1,3 +1,5 @@
+use iced_wgpu::wgpu;
+
 pub struct IRCompute {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,

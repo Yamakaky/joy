@@ -1,4 +1,5 @@
 use super::JoyconCmd;
+use iced_winit::winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
 use joycon_sys::mcu::ir::*;
 use std::sync::mpsc;
 
@@ -22,12 +23,7 @@ impl Parameters {
             edge_smoothing: 0x23,
         }
     }
-    pub fn input(
-        &mut self,
-        event: &winit::event::WindowEvent,
-        thread_contact: &mpsc::Sender<JoyconCmd>,
-    ) -> bool {
-        use winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+    pub fn input(&mut self, event: &WindowEvent, thread_contact: &mpsc::Sender<JoyconCmd>) -> bool {
         match event {
             WindowEvent::KeyboardInput {
                 input:

@@ -1,6 +1,7 @@
 use super::ir_compute::IRCompute;
 use super::texture::Texture;
 use super::uniforms::UniformHandler;
+use iced_wgpu::wgpu;
 
 pub struct D3 {
     pipeline: wgpu::RenderPipeline,
@@ -71,8 +72,8 @@ impl D3 {
         uniforms: &'a UniformHandler,
     ) {
         pass.set_pipeline(&self.pipeline);
-        pass.set_vertex_buffer(0, compute.vertices(), 0,0);
-        pass.set_index_buffer(compute.indices(), 0,0);
+        pass.set_vertex_buffer(0, compute.vertices(), 0, 0);
+        pass.set_index_buffer(compute.indices(), 0, 0);
         pass.set_bind_group(0, &uniforms.bind_group(), &[]);
         pass.draw_indexed(0..compute.indices_count(), 0, 0..1);
     }

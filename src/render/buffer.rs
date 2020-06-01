@@ -1,4 +1,5 @@
 use bytemuck::Pod;
+use iced_wgpu::wgpu;
 
 pub trait Staged {
     fn update<A: Pod>(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, data: &[A]);

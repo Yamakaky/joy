@@ -1,10 +1,11 @@
-use std::sync::mpsc;
-use std::time::{Duration, Instant};
-use winit::{
+use iced_wgpu::wgpu;
+use iced_winit::winit::{
     event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
+use std::sync::mpsc;
+use std::time::{Duration, Instant};
 
 mod buffer;
 mod camera;
@@ -170,7 +171,7 @@ impl GUI {
         }
     }
 
-    fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, new_size: iced_winit::winit::dpi::PhysicalSize<u32>) {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
