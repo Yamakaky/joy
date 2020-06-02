@@ -1,14 +1,19 @@
-use iced_wgpu::wgpu;
+use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
 use iced_winit::winit::{
-    event::{DeviceEvent, ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{
+        DeviceEvent, ElementState, Event, KeyboardInput, ModifiersState, VirtualKeyCode,
+        WindowEvent,
+    },
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
+use iced_winit::{program, Debug, Size};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 mod buffer;
 mod camera;
+mod controls;
 mod d2;
 mod d3;
 mod ir_compute;
@@ -100,6 +105,7 @@ struct GUI {
     device: wgpu::Device,
     queue: wgpu::Queue,
     sc_desc: wgpu::SwapChainDescriptor,
+    viewport: Viewport,
     swap_chain: wgpu::SwapChain,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
@@ -108,12 +114,17 @@ struct GUI {
     compute: ir_compute::IRCompute,
     render_d2: d2::D2,
     render_d3: d3::D3,
+    renderer: Renderer,
+    state: program::State<controls::Controls>,
+    debug: Debug,
 }
 
 impl GUI {
     async fn new(window: &Window) -> Self {
         let sample_count = 16;
         let size = window.inner_size();
+        let viewport =
+            Viewport::with_physical_size(Size::new(size.width, size.height), window.scale_factor());
         let surface = wgpu::Surface::create(window);
 
         let adapter = wgpu::Adapter::request(
@@ -154,12 +165,21 @@ impl GUI {
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
         let render_d3 = d3::D3::new(&device, &uniforms, &sc_desc, sample_count);
+        let controls = controls::Controls::new();
+
+        // Initialize iced
+        let mut debug = Debug::new();
+        let mut renderer = Renderer::new(Backend::new(&device, Settings::default()));
+
+        let state =
+            program::State::new(controls, viewport.logical_size(), &mut renderer, &mut debug);
 
         Self {
             surface,
             device,
             queue,
             sc_desc,
+            viewport,
             swap_chain,
             sample_count,
             multisampled_framebuffer,
@@ -168,10 +188,13 @@ impl GUI {
             compute,
             render_d2,
             render_d3,
+            renderer,
+            state,
+            debug,
         }
     }
 
-    fn resize(&mut self, new_size: iced_winit::winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, window: &Window, new_size: iced_winit::winit::dpi::PhysicalSize<u32>) {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
@@ -181,6 +204,11 @@ impl GUI {
             .resize(&self.device, &self.sc_desc, self.sample_count);
         self.camera
             .update_aspect(self.sc_desc.width, self.sc_desc.height);
+
+        self.viewport = Viewport::with_physical_size(
+            Size::new(new_size.width, new_size.height),
+            window.scale_factor(),
+        );
     }
 
     // input() won't deal with GPU code, so it can be synchronous
@@ -191,6 +219,12 @@ impl GUI {
     fn update(&mut self, dt: Duration) {
         self.camera.update(dt);
         self.uniforms.update_view_proj(&self.camera);
+        let _ = self.state.update(
+            None,
+            self.viewport.logical_size(),
+            &mut self.renderer,
+            &mut self.debug,
+        );
     }
 
     fn push_ir_data(&mut self, image: image::GrayImage) {
@@ -209,7 +243,7 @@ impl GUI {
         self.queue.submit(&[encoder.finish()]);
     }
 
-    fn render(&mut self) {
+    fn render(&mut self, window: &Window) {
         let frame = self
             .swap_chain
             .get_next_texture()
@@ -242,7 +276,20 @@ impl GUI {
             self.render_d2.render(&mut rpass2d, texture);
         }
 
+        // And then iced on top
+        let mouse_interaction = self.renderer.backend_mut().draw(
+            &self.device,
+            &mut encoder,
+            &frame.view,
+            &self.viewport,
+            self.state.primitive(),
+            &self.debug.overlay(),
+        );
+
         self.queue.submit(&[encoder.finish()]);
+
+        // And update the mouse cursor
+        window.set_cursor_icon(iced_winit::conversion::mouse_interaction(mouse_interaction));
     }
 
     fn color_attachment<'a>(
@@ -292,6 +339,7 @@ pub async fn run(
     let mut grabbed = set_grabbed(&window, false);
 
     let mut last_tick = Instant::now();
+    let mut modifiers = ModifiersState::default();
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -305,7 +353,7 @@ pub async fn run(
             }
             Event::RedrawRequested(_) => {
                 if !hidden {
-                    gui.render();
+                    gui.render(&window);
                 }
             }
             Event::LoopDestroyed => {
@@ -344,6 +392,9 @@ pub async fn run(
                 } else {
                     match event {
                         WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                        WindowEvent::ModifiersChanged(new_modifiers) => {
+                            modifiers = *new_modifiers;
+                        }
                         WindowEvent::KeyboardInput {
                             input:
                                 KeyboardInput {
@@ -367,7 +418,7 @@ pub async fn run(
                         WindowEvent::Resized(physical_size) => {
                             if physical_size.height != 0 && physical_size.height != 0 {
                                 hidden = false;
-                                gui.resize(*physical_size);
+                                gui.resize(&window, *physical_size);
                             } else {
                                 hidden = true;
                             }
@@ -375,7 +426,7 @@ pub async fn run(
                         WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
                             if new_inner_size.height != 0 && new_inner_size.height != 0 {
                                 hidden = false;
-                                gui.resize(**new_inner_size);
+                                gui.resize(&window, **new_inner_size);
                             } else {
                                 hidden = true;
                             }
@@ -385,6 +436,13 @@ pub async fn run(
                         }
                         _ => {}
                     }
+                }
+
+                // Map window event to iced event
+                if let Some(event) =
+                    iced_winit::conversion::window_event(&event, window.scale_factor(), modifiers)
+                {
+                    gui.state.queue_event(event);
                 }
             }
             _ => {}
