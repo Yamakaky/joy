@@ -17,7 +17,6 @@ mod controls;
 mod d2;
 mod d3;
 mod ir_compute;
-mod parameters;
 mod texture;
 mod uniforms;
 
@@ -420,7 +419,6 @@ pub fn run(
 
     //let mut thread_handle = Some(thread_handle);
 
-    let mut parameters = parameters::Parameters::new();
     let mut hidden = false;
 
     fn set_grabbed(window: &Window, grabbed: bool) -> bool {
@@ -479,7 +477,7 @@ pub fn run(
                 ref event,
                 window_id,
             } if window_id == window.id() => {
-                if gui.input(event) || parameters.input(event, &thread_contact) {
+                if gui.input(event) {
                     window.request_redraw();
                 } else {
                     match event {
