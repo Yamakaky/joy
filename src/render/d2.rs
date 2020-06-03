@@ -53,7 +53,7 @@ impl D2 {
         let pipeline = super::create_render_pipeline(
             &device,
             &pipeline_layout,
-            wgpu::TextureFormat::Bgra8UnormSrgb,
+            &[wgpu::TextureFormat::Bgra8UnormSrgb],
             None,
             &[wgpu::VertexBufferDescriptor {
                 stride: std::mem::size_of::<Vertex2D>() as wgpu::BufferAddress,

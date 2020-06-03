@@ -24,7 +24,7 @@ mod uniforms;
 pub fn create_render_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
-    color_format: wgpu::TextureFormat,
+    color_formats: &[wgpu::TextureFormat],
     depth_format: Option<wgpu::TextureFormat>,
     vertex_descs: &[wgpu::VertexBufferDescriptor],
     vs_spv: &[u32],
@@ -49,12 +49,15 @@ pub fn create_render_pipeline(
             depth_bias_clamp: 0.0,
         }),
         primitive_topology: wgpu::PrimitiveTopology::TriangleList,
-        color_states: &[wgpu::ColorStateDescriptor {
-            format: color_format,
-            color_blend: wgpu::BlendDescriptor::REPLACE,
-            alpha_blend: wgpu::BlendDescriptor::REPLACE,
-            write_mask: wgpu::ColorWrite::ALL,
-        }],
+        color_states: &color_formats
+            .iter()
+            .map(|color_format| wgpu::ColorStateDescriptor {
+                format: *color_format,
+                color_blend: wgpu::BlendDescriptor::REPLACE,
+                alpha_blend: wgpu::BlendDescriptor::REPLACE,
+                write_mask: wgpu::ColorWrite::ALL,
+            })
+            .collect::<Vec<_>>(),
         depth_stencil_state: depth_format.map(|format| wgpu::DepthStencilStateDescriptor {
             format,
             depth_write_enabled: true,
@@ -109,6 +112,9 @@ struct GUI {
     swap_chain: wgpu::SwapChain,
     sample_count: u32,
     multisampled_framebuffer: wgpu::TextureView,
+    pointer_target: wgpu::Texture,
+    pointer_target_view: wgpu::TextureView,
+    mouse_position: iced_winit::winit::dpi::PhysicalPosition<f64>,
     uniforms: uniforms::UniformHandler,
     camera: camera::Camera,
     compute: ir_compute::IRCompute,
@@ -120,31 +126,29 @@ struct GUI {
 }
 
 impl GUI {
-    async fn new(window: &Window, thread_contact: mpsc::Sender<JoyconCmd>) -> Self {
-        let sample_count = 16;
+    fn new(window: &Window, thread_contact: mpsc::Sender<JoyconCmd>) -> Self {
+        let sample_count = 1;
         let size = window.inner_size();
         let viewport =
             Viewport::with_physical_size(Size::new(size.width, size.height), window.scale_factor());
         let surface = wgpu::Surface::create(window);
 
-        let adapter = wgpu::Adapter::request(
+        let adapter = futures::executor::block_on(wgpu::Adapter::request(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::Default,
                 compatible_surface: Some(&surface),
             },
             wgpu::BackendBit::VULKAN,
-        )
-        .await
+        ))
         .unwrap();
 
-        let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
+        let (device, queue) =
+            futures::executor::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
                 extensions: wgpu::Extensions {
                     anisotropic_filtering: false,
                 },
                 limits: wgpu::Limits::default(),
-            })
-            .await;
+            }));
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -161,6 +165,24 @@ impl GUI {
 
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
+
+        let multisampled_texture_extent = wgpu::Extent3d {
+            width: sc_desc.width,
+            height: sc_desc.height,
+            depth: 1,
+        };
+        let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
+            size: multisampled_texture_extent,
+            mip_level_count: 1,
+            array_layer_count: 1,
+            sample_count,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Unorm,
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::COPY_SRC,
+            label: None,
+        };
+        let pointer_target = device.create_texture(multisampled_frame_descriptor);
+        let pointer_target_view = pointer_target.create_default_view();
 
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
@@ -183,6 +205,9 @@ impl GUI {
             swap_chain,
             sample_count,
             multisampled_framebuffer,
+            pointer_target,
+            pointer_target_view,
+            mouse_position: iced_winit::winit::dpi::PhysicalPosition::new(0., 0.),
             uniforms,
             camera,
             compute,
@@ -209,6 +234,24 @@ impl GUI {
             Size::new(new_size.width, new_size.height),
             window.scale_factor(),
         );
+
+        let multisampled_texture_extent = wgpu::Extent3d {
+            width: self.sc_desc.width,
+            height: self.sc_desc.height,
+            depth: 1,
+        };
+        let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
+            size: multisampled_texture_extent,
+            mip_level_count: 1,
+            array_layer_count: 1,
+            sample_count: self.sample_count,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Unorm,
+            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::COPY_SRC,
+            label: None,
+        };
+        self.pointer_target = self.device.create_texture(multisampled_frame_descriptor);
+        self.pointer_target_view = self.pointer_target.create_default_view();
     }
 
     // input() won't deal with GPU code, so it can be synchronous
@@ -225,6 +268,45 @@ impl GUI {
             &mut self.renderer,
             &mut self.debug,
         );
+    }
+
+    async fn get_depth(&mut self, encoder: &mut wgpu::CommandEncoder) {
+        let staging_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("depth reader"),
+            size: 1,
+            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
+        });
+        encoder.copy_texture_to_buffer(
+            wgpu::TextureCopyView {
+                texture: &self.pointer_target,
+                mip_level: 0,
+                array_layer: 0,
+                origin: wgpu::Origin3d {
+                    x: self.mouse_position.x as u32,
+                    y: self.mouse_position.y as u32,
+                    z: 0,
+                },
+            },
+            wgpu::BufferCopyView {
+                buffer: &staging_buffer,
+                offset: 0,
+                bytes_per_row: 1,
+                rows_per_image: 1,
+            },
+            wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth: 1,
+            },
+        );
+        let mapping_future = staging_buffer.map_read(0, 1);
+        self.device.poll(wgpu::Maintain::Wait);
+        let mapping = mapping_future.await.unwrap();
+        self.state.queue_message(controls::Message::Depth(
+            self.mouse_position.x as u32,
+            self.mouse_position.y as u32,
+            mapping.as_slice()[0],
+        ));
     }
 
     fn push_ir_data(&mut self, image: image::GrayImage) {
@@ -259,7 +341,16 @@ impl GUI {
 
         {
             let mut rpass3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[self.color_attachment(&frame, wgpu::LoadOp::Clear)],
+                color_attachments: &[
+                    self.color_attachment(&frame, wgpu::LoadOp::Clear),
+                    wgpu::RenderPassColorAttachmentDescriptor {
+                        attachment: &self.pointer_target_view,
+                        resolve_target: None,
+                        load_op: wgpu::LoadOp::Clear,
+                        store_op: wgpu::StoreOp::Store,
+                        clear_color: wgpu::Color::BLUE,
+                    },
+                ],
                 depth_stencil_attachment: Some(self.render_d3.depth_stencil_attachement()),
             });
             if self.compute.texture_binding.is_some() {
@@ -267,6 +358,8 @@ impl GUI {
                     .render(&mut rpass3d, &self.compute, &self.uniforms);
             }
         }
+
+        futures::executor::block_on(self.get_depth(&mut encoder));
 
         if let Some(ref texture) = self.compute.texture_binding {
             let mut rpass2d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -316,13 +409,13 @@ impl GUI {
     }
 }
 
-pub async fn run(
+pub fn run(
     event_loop: EventLoop<JoyconData>,
     window: Window,
     thread_contact: mpsc::Sender<JoyconCmd>,
     _thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
 ) -> ! {
-    let mut gui = GUI::new(&window, thread_contact.clone()).await;
+    let mut gui = GUI::new(&window, thread_contact.clone());
     window.set_maximized(true);
 
     //let mut thread_handle = Some(thread_handle);
@@ -432,6 +525,9 @@ pub async fn run(
                         }
                         WindowEvent::Focused(false) => {
                             grabbed = set_grabbed(&window, false);
+                        }
+                        WindowEvent::CursorMoved { position, .. } => {
+                            gui.mouse_position = *position;
                         }
                         _ => {}
                     }

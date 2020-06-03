@@ -25,7 +25,10 @@ impl D3 {
         let pipeline = super::create_render_pipeline(
             &device,
             &pipeline_layout,
-            wgpu::TextureFormat::Bgra8UnormSrgb,
+            &[
+                wgpu::TextureFormat::Bgra8UnormSrgb,
+                wgpu::TextureFormat::R8Unorm,
+            ],
             Some(Texture::DEPTH_FORMAT),
             &[wgpu::VertexBufferDescriptor {
                 stride: 4 * 4 * 2,

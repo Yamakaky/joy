@@ -6,6 +6,7 @@ layout(location = 0) in VertexData {
 } i;
 
 layout(location = 0) out vec4 out_color;
+layout(location = 1) out vec4 out_depth;
 
 const vec3 LIGHT_DIRECTION = vec3(0., -1., 1.);
 const vec3 LIGHT_COLOR = vec3(1., 0., 0.);
@@ -28,4 +29,5 @@ void main() {
 
         out_color = frag_color * vec4(ambient_color + diffuse_color, 1.0);
     }
+    out_depth.r = i.depth;
 }

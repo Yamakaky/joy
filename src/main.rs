@@ -1,4 +1,6 @@
 use hidapi::HidApi;
+use iced_winit::winit;
+use iced_winit::winit::event_loop::*;
 use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::output::*;
@@ -6,8 +8,6 @@ use render::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc;
-use iced_winit::winit::event_loop::*;
-use iced_winit::winit;
 
 mod calibration;
 mod hid;
@@ -29,12 +29,7 @@ fn main() {
     let (thread_contact, recv) = mpsc::channel();
     let thread_handle = std::thread::spawn(|| real_main(proxy, recv));
 
-    futures::executor::block_on(render::run(
-        event_loop,
-        window,
-        thread_contact,
-        thread_handle,
-    ));
+    render::run(event_loop, window, thread_contact, thread_handle);
 }
 
 fn real_main(

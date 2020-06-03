@@ -14,6 +14,7 @@ pub struct Controls {
     resolution: Resolution,
     edge_smoothing: f32,
     edge_state: slider::State,
+    depth: (u32, u32, u8),
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -21,6 +22,7 @@ pub enum Message {
     Leds(Leds),
     Resolution(Resolution),
     EdgeSmoothing(f32),
+    Depth(u32, u32, u8),
 }
 
 impl Controls {
@@ -31,6 +33,7 @@ impl Controls {
             resolution: Resolution::R160x120,
             edge_smoothing: 0x23 as f32,
             edge_state: slider::State::new(),
+            depth: (0, 0, 0),
         }
     }
 }
@@ -62,6 +65,7 @@ impl Program for Controls {
                     .send(JoyconCmd::SetResolution(res))
                     .unwrap();
             }
+            Message::Depth(x, y, depth) => self.depth = (x, y, depth),
         }
         Command::none()
     }
@@ -130,9 +134,19 @@ impl Program for Controls {
         ])
         .spacing(10);
 
+        let depth_ctrl = Text::new(format!(
+            "{},{}: {}",
+            self.depth.0, self.depth.1, self.depth.2
+        ));
+
         Container::new(
-            Column::with_children(vec![leds_ctrl.into(), res_ctrl.into(), edge_ctrl.into()])
-                .spacing(15),
+            Column::with_children(vec![
+                leds_ctrl.into(),
+                res_ctrl.into(),
+                edge_ctrl.into(),
+                depth_ctrl.into(),
+            ])
+            .spacing(15),
         )
         .max_width(300)
         .style(StyleSheet)
