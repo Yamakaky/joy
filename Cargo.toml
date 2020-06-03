@@ -16,6 +16,7 @@ env_logger = "0.7"
 hidapi = "1.2"
 image = { version = "0.23", optional = false, default-features = false }
 joycon-sys = { path = "joycon-sys" }
+iced_core = { git = "https://github.com/hecrj/iced", optional = false, default-features = false }
 iced_wgpu = { git = "https://github.com/hecrj/iced", optional = false, default-features = false }
 iced_winit = { git = "https://github.com/hecrj/iced", optional = false, default-features = false }
 futures = "0.3"

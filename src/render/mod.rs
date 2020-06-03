@@ -120,7 +120,7 @@ struct GUI {
 }
 
 impl GUI {
-    async fn new(window: &Window) -> Self {
+    async fn new(window: &Window, thread_contact: mpsc::Sender<JoyconCmd>) -> Self {
         let sample_count = 16;
         let size = window.inner_size();
         let viewport =
@@ -165,7 +165,7 @@ impl GUI {
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
         let render_d3 = d3::D3::new(&device, &uniforms, &sc_desc, sample_count);
-        let controls = controls::Controls::new();
+        let controls = controls::Controls::new(thread_contact);
 
         // Initialize iced
         let mut debug = Debug::new();
@@ -276,7 +276,6 @@ impl GUI {
             self.render_d2.render(&mut rpass2d, texture);
         }
 
-        // And then iced on top
         let mouse_interaction = self.renderer.backend_mut().draw(
             &self.device,
             &mut encoder,
@@ -323,7 +322,7 @@ pub async fn run(
     thread_contact: mpsc::Sender<JoyconCmd>,
     _thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
 ) -> ! {
-    let mut gui = GUI::new(&window).await;
+    let mut gui = GUI::new(&window, thread_contact.clone()).await;
     window.set_maximized(true);
 
     //let mut thread_handle = Some(thread_handle);

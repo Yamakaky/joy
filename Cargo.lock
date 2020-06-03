@@ -1098,6 +1098,7 @@ dependencies = [
  "env_logger",
  "futures",
  "hidapi",
+ "iced_core",
  "iced_wgpu",
  "iced_winit",
  "image",
