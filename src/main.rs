@@ -158,6 +158,11 @@ fn hid_main(
                     assert!(!register.same_address(Register::resolution(Resolution::R320x240)));
                     dbg!(device.set_ir_registers(&[register, Register::finish(),])?);
                 }
+                JoyconCmd::SetRegisters([r1, r2]) => {
+                    assert!(!r1.same_address(Register::resolution(Resolution::R320x240)));
+                    assert!(!r2.same_address(Register::resolution(Resolution::R320x240)));
+                    dbg!(device.set_ir_registers(&[r1, r2, Register::finish(),])?);
+                }
             }
         }
     }

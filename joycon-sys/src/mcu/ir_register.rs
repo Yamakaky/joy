@@ -85,11 +85,11 @@ impl Register {
     }
 
     // default: 0, 0xe, 1, 1
-    pub fn leds_intensity(l1: u8, l2: u8, l3: u8, l4: u8) -> [Register; 2] {
-        assert_eq!(0, (l1 | l2 | l3 | l4) & 0xf0);
+    pub fn leds_intensity(far: u8, near: u8) -> [Register; 2] {
+        assert_eq!(0, (far | near) & 0xf0);
         [
-            Register::new(IntensityLeds12, l1 << 4 | l2),
-            Register::new(IntensityLeds34, l3 << 4 | l4),
+            Register::new(IntensityLedsFar12, far),
+            Register::new(IntensityLedsNear34, near),
         ]
     }
 
@@ -148,8 +148,8 @@ enum Address {
     ExposureMode,
     ExternalLightFilter,
     WhitePixelThreshold,
-    IntensityLeds12,
-    IntensityLeds34,
+    IntensityLedsFar12,
+    IntensityLedsNear34,
     Flip,
     Denoise,
     EdgeSmoothingThreshold,
@@ -168,8 +168,8 @@ impl Address {
             Finish => (0, 0x07),
             ExternalLightFilter => (0, 0x0e),
             IRLeds => (0, 0x10),
-            IntensityLeds12 => (0, 0x11),
-            IntensityLeds34 => (0, 0x12),
+            IntensityLedsFar12 => (0, 0x11),
+            IntensityLedsNear34 => (0, 0x12),
             Flip => (0, 0x2d),
             Resolution => (0, 0x2e),
             DigitalGainLSB => (1, 0x2e),
@@ -193,8 +193,8 @@ const ALL_ADDRESSES: &[Address] = &[
     ExposureMode,
     ExternalLightFilter,
     WhitePixelThreshold,
-    IntensityLeds12,
-    IntensityLeds34,
+    IntensityLedsFar12,
+    IntensityLedsNear34,
     Flip,
     Denoise,
     EdgeSmoothingThreshold,

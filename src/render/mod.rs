@@ -551,4 +551,5 @@ pub enum JoyconCmd {
     Stop,
     SetResolution(joycon_sys::mcu::ir::Resolution),
     SetRegister(joycon_sys::mcu::ir::Register),
+    SetRegisters([joycon_sys::mcu::ir::Register; 2]),
 }

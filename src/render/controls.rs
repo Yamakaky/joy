@@ -11,6 +11,10 @@ use std::sync::mpsc;
 pub struct Controls {
     thread_contact: mpsc::Sender<JoyconCmd>,
     leds: Leds,
+    far_int: f32,
+    far_int_state: slider::State,
+    near_int: f32,
+    near_int_state: slider::State,
     resolution: Resolution,
     edge_smoothing: f32,
     edge_state: slider::State,
@@ -22,6 +26,7 @@ pub struct Controls {
 #[derive(Copy, Clone, Debug)]
 pub enum Message {
     Leds(Leds),
+    Intensity(f32, f32),
     Resolution(Resolution),
     EdgeSmoothing(f32),
     UpdateTime(f32),
@@ -35,6 +40,10 @@ impl Controls {
         Controls {
             thread_contact,
             leds,
+            far_int: 0xf as f32,
+            far_int_state: slider::State::new(),
+            near_int: 0xf as f32,
+            near_int_state: slider::State::new(),
             resolution: Resolution::R160x120,
             edge_smoothing: 0x23 as f32,
             edge_state: slider::State::new(),
@@ -56,6 +65,15 @@ impl Program for Controls {
                 self.leds = leds;
                 self.thread_contact
                     .send(JoyconCmd::SetRegister(Register::ir_leds(self.leds)))
+                    .unwrap();
+            }
+            Message::Intensity(far, near) => {
+                self.far_int = far;
+                self.near_int = near;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegisters(Register::leds_intensity(
+                        far as u8, near as u8,
+                    )))
                     .unwrap();
             }
             Message::EdgeSmoothing(threshold) => {
@@ -95,6 +113,7 @@ impl Program for Controls {
         };
 
         let leds = self.leds;
+        let (far_int, near_int) = (self.far_int, self.near_int);
         let leds_ctrl = Column::with_children(vec![
             title("Leds control"),
             Checkbox::new(
@@ -107,6 +126,15 @@ impl Program for Controls {
                 },
             )
             .into(),
+            {
+                Slider::new(
+                    &mut self.far_int_state,
+                    (0.)..=(15.),
+                    self.far_int,
+                    move |x| Message::Intensity(x, near_int),
+                )
+                .into()
+            },
             Checkbox::new(
                 !self.leds.disable_near_wide34(),
                 "Near and wide",
@@ -115,6 +143,13 @@ impl Program for Controls {
                     leds.set_disable_near_wide34(!b);
                     Message::Leds(leds)
                 },
+            )
+            .into(),
+            Slider::new(
+                &mut self.near_int_state,
+                (0.)..=(15.),
+                self.near_int,
+                move |x| Message::Intensity(far_int, x),
             )
             .into(),
             Checkbox::new(self.leds.strobe(), "Strobe", move |b| {
@@ -130,9 +165,11 @@ impl Program for Controls {
             })
             .into(),
         ])
-        .spacing(10);
+        .spacing(10)
+        .into();
 
-        let r = |a, b| Radio::new(a, b, Some(self.resolution), Message::Resolution).into();
+        let resolution = self.resolution;
+        let r = |a, b| Radio::new(a, b, Some(resolution), Message::Resolution).into();
         let res_ctrl = Column::with_children(vec![
             title("Resolution"),
             r(Resolution::R320x240, "320x240"),
@@ -140,7 +177,8 @@ impl Program for Controls {
             r(Resolution::R80x60, "80x60"),
             r(Resolution::R40x30, "40x30"),
         ])
-        .spacing(10);
+        .spacing(10)
+        .into();
 
         let edge_ctrl = Column::with_children(vec![
             title("Edge smoothing"),
@@ -159,7 +197,8 @@ impl Program for Controls {
             .spacing(10)
             .into(),
         ])
-        .spacing(10);
+        .spacing(10)
+        .into();
 
         let update_ctrl = Column::with_children(vec![
             title("Buffer update time"),
@@ -178,20 +217,22 @@ impl Program for Controls {
             .spacing(10)
             .into(),
         ])
-        .spacing(10);
+        .spacing(10)
+        .into();
 
         let depth_ctrl = Text::new(format!(
             "{},{}: {}",
             self.depth.0, self.depth.1, self.depth.2
-        ));
+        ))
+        .into();
 
         Container::new(
             Column::with_children(vec![
-                leds_ctrl.into(),
-                res_ctrl.into(),
-                edge_ctrl.into(),
-                update_ctrl.into(),
-                depth_ctrl.into(),
+                leds_ctrl,
+                res_ctrl,
+                edge_ctrl,
+                update_ctrl,
+                depth_ctrl,
             ])
             .spacing(15),
         )
