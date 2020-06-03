@@ -14,6 +14,8 @@ pub struct Controls {
     resolution: Resolution,
     edge_smoothing: f32,
     edge_state: slider::State,
+    buffer_update_time: f32,
+    buffer_update_time_state: slider::State,
     depth: (u32, u32, u8),
 }
 
@@ -22,6 +24,7 @@ pub enum Message {
     Leds(Leds),
     Resolution(Resolution),
     EdgeSmoothing(f32),
+    UpdateTime(f32),
     Depth(u32, u32, u8),
 }
 
@@ -35,6 +38,8 @@ impl Controls {
             resolution: Resolution::R160x120,
             edge_smoothing: 0x23 as f32,
             edge_state: slider::State::new(),
+            buffer_update_time: 0x23 as f32,
+            buffer_update_time_state: slider::State::new(),
             depth: (0, 0, 0),
         }
     }
@@ -58,6 +63,14 @@ impl Program for Controls {
                 self.thread_contact
                     .send(JoyconCmd::SetRegister(Register::edge_smoothing_threshold(
                         threshold as u8,
+                    )))
+                    .unwrap();
+            }
+            Message::UpdateTime(time) => {
+                self.buffer_update_time = time;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegister(Register::buffer_update_time(
+                        time as u8,
                     )))
                     .unwrap();
             }
@@ -136,6 +149,25 @@ impl Program for Controls {
         ])
         .spacing(10);
 
+        let update_ctrl = Column::with_children(vec![
+            title("Buffer update time"),
+            Row::with_children(vec![
+                Slider::new(
+                    &mut self.buffer_update_time_state,
+                    (0.)..=(255.),
+                    self.buffer_update_time,
+                    Message::UpdateTime,
+                )
+                .into(),
+                Text::new(format!("0x{:x}", self.buffer_update_time as u8))
+                    .vertical_alignment(VerticalAlignment::Center)
+                    .into(),
+            ])
+            .spacing(10)
+            .into(),
+        ])
+        .spacing(10);
+
         let depth_ctrl = Text::new(format!(
             "{},{}: {}",
             self.depth.0, self.depth.1, self.depth.2
@@ -146,6 +178,7 @@ impl Program for Controls {
                 leds_ctrl.into(),
                 res_ctrl.into(),
                 edge_ctrl.into(),
+                update_ctrl.into(),
                 depth_ctrl.into(),
             ])
             .spacing(15),
