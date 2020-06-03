@@ -31,9 +31,25 @@ impl D3 {
             ],
             Some(Texture::DEPTH_FORMAT),
             &[wgpu::VertexBufferDescriptor {
-                stride: 4 * 4 * 2,
+                stride: 16 * 3,
                 step_mode: wgpu::InputStepMode::Vertex,
-                attributes: &wgpu::vertex_attr_array![0 => Float4, 1 => Float4],
+                attributes: &[
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 0,
+                        format: wgpu::VertexFormat::Float4,
+                        shader_location: 0,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 16,
+                        format: wgpu::VertexFormat::Float4,
+                        shader_location: 1,
+                    },
+                    wgpu::VertexAttributeDescriptor {
+                        offset: 16 * 2,
+                        format: wgpu::VertexFormat::Float,
+                        shader_location: 2,
+                    },
+                ],
             }],
             vk_shader_macros::include_glsl!("src/render/shaders/3d.vert", kind: vert),
             vk_shader_macros::include_glsl!("src/render/shaders/3d.frag", kind: frag),

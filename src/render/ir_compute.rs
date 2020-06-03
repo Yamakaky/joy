@@ -27,7 +27,8 @@ impl IRCompute {
     }
 
     pub fn new(device: &wgpu::Device, uniform_bind_group_layout: &wgpu::BindGroupLayout) -> Self {
-        let vertex_buffer_size = 320 * 240 * 2 * 4 * 4;
+        // TODO: remove magic value
+        let vertex_buffer_size = 320 * 240 * 16 * 3;
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("compute vertex buffer"),
             size: vertex_buffer_size,

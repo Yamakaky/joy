@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec4 in_position;
 layout(location = 1) in vec4 in_normal;
+layout(location = 2) in float in_depth;
 
 layout(location = 0) out VertexData {
     vec3 normal;
@@ -14,5 +15,5 @@ layout(set = 0, binding = 0)
 void main() {
     gl_Position = u.view_proj * u.ir_rotation * in_position;
     o.normal = in_normal.xyz;
-    o.depth = in_position.z;
+    o.depth = in_depth;
 }

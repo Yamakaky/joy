@@ -3,6 +3,7 @@
 struct Vertex {
     vec4 position;
     vec4 normal;
+    float depth;
 };
 
 layout(std430, set = 0, binding = 0) buffer VertOut {
@@ -21,11 +22,15 @@ layout(set = 2, binding = 0)
 #define ir sampler2D(ir_pixels, ir_sampler)
 #define tex_size textureSize(ir, 0)
 
+float depth(int x, int y) {
+    return 1. - texelFetch(ir, ivec2(x, tex_size.y - 1 - y), 0).r;
+}
+
 vec3 pos(int x, int y) {
     vec4 pos = vec4(
         1. - 2. * x / (tex_size.x - 1),
         2. * y / (tex_size.y - 1) - 1.,
-        1. - texelFetch(ir, ivec2(x, tex_size.y - 1 - y), 0).r,
+        depth(x, y),
         1.);
     vec4 proj = u.ir_proj * pos;
     return vec3(proj.xy, -proj.z) / proj.w;
@@ -49,7 +54,7 @@ void main() {
     vec3 sum_norm = norm(z, a, b) + norm(z, b, c) + norm(z, c, d) + norm(z, d, e) + norm(z, e, f) + norm(z, f, a);
     
     uint id = y * tex_size.x + x;
-    vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm),1.0));
+    vertices[id] = Vertex(vec4(z, 1.0), vec4(normalize(sum_norm), 1.0), depth(x, y));
     if (x < tex_size.x - 1 && y < tex_size.y - 1) {
         // since we skip the last row and column, we remove uy to not leave a gap.
         uint base_id = (id - y) * 6;
