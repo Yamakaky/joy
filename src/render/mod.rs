@@ -348,7 +348,7 @@ impl GUI {
                         resolve_target: None,
                         load_op: wgpu::LoadOp::Clear,
                         store_op: wgpu::StoreOp::Store,
-                        clear_color: wgpu::Color::BLUE,
+                        clear_color: wgpu::Color::RED,
                     },
                 ],
                 depth_stencil_attachment: Some(self.render_d3.depth_stencil_attachement()),
