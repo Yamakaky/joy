@@ -27,9 +27,11 @@ pub enum Message {
 
 impl Controls {
     pub fn new(thread_contact: mpsc::Sender<JoyconCmd>) -> Controls {
+        let mut leds = Leds(0);
+        leds.set_disable_far_narrow12(true);
         Controls {
             thread_contact,
-            leds: Leds(0),
+            leds,
             resolution: Resolution::R160x120,
             edge_smoothing: 0x23 as f32,
             edge_state: slider::State::new(),
