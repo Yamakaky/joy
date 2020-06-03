@@ -117,6 +117,18 @@ impl Program for Controls {
                 },
             )
             .into(),
+            Checkbox::new(self.leds.strobe(), "Strobe", move |b| {
+                let mut leds = leds;
+                leds.set_strobe(b);
+                Message::Leds(leds)
+            })
+            .into(),
+            Checkbox::new(self.leds.flashlight(), "Flashlight", move |b| {
+                let mut leds = leds;
+                leds.set_flashlight(b);
+                Message::Leds(leds)
+            })
+            .into(),
         ])
         .spacing(10);
 
