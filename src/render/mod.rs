@@ -1,8 +1,8 @@
 use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
 use iced_winit::winit::{
     event::{
-        DeviceEvent, ElementState, Event, KeyboardInput, ModifiersState, VirtualKeyCode,
-        WindowEvent,
+        DeviceEvent, ElementState, Event, KeyboardInput, ModifiersState, StartCause,
+        VirtualKeyCode, WindowEvent,
     },
     event_loop::{ControlFlow, EventLoop},
     window::Window,
@@ -154,7 +154,7 @@ impl GUI {
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
             width: size.width,
             height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: wgpu::PresentMode::Mailbox,
         };
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
@@ -249,8 +249,10 @@ impl GUI {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::COPY_SRC,
             label: None,
         };
+
         self.pointer_target = self.device.create_texture(multisampled_frame_descriptor);
         self.pointer_target_view = self.pointer_target.create_default_view();
+        self.mouse_position = iced_winit::winit::dpi::PhysicalPosition::new(0., 0.);
     }
 
     // input() won't deal with GPU code, so it can be synchronous
@@ -415,9 +417,6 @@ pub fn run(
     _thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
 ) -> ! {
     let mut gui = GUI::new(&window, thread_contact.clone());
-    window.set_maximized(true);
-
-    //let mut thread_handle = Some(thread_handle);
 
     let mut hidden = false;
 
@@ -434,6 +433,15 @@ pub fn run(
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
         match event {
+            Event::NewEvents(StartCause::Init) => {
+                last_tick = Instant::now();
+            }
+            Event::Suspended => {
+                dbg!("suspended");
+            }
+            Event::Resumed => {
+                dbg!("resumed");
+            }
             Event::MainEventsCleared => {
                 if !hidden {
                     gui.update(last_tick.elapsed());

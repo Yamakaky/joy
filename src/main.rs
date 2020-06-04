@@ -24,7 +24,11 @@ fn main() {
     }));
 
     let event_loop = EventLoop::with_user_event();
-    let window = winit::window::Window::new(&event_loop).unwrap();
+    let window = winit::window::WindowBuilder::new()
+        .with_maximized(true)
+        .with_title("Joy")
+        .build(&event_loop)
+        .unwrap();
     let proxy = event_loop.create_proxy();
     let (thread_contact, recv) = mpsc::channel();
     let thread_handle = std::thread::spawn(|| real_main(proxy, recv));
