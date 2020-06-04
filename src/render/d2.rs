@@ -60,8 +60,8 @@ impl D2 {
                 step_mode: wgpu::InputStepMode::Vertex,
                 attributes: &wgpu::vertex_attr_array![0 => Float2, 1 => Float2],
             }],
-            vk_shader_macros::include_glsl!("src/render/shaders/2d.vert", kind: vert),
-            vk_shader_macros::include_glsl!("src/render/shaders/2d.frag", kind: frag),
+            vk_shader_macros::include_glsl!("src/render/shaders/2d.vert"),
+            vk_shader_macros::include_glsl!("src/render/shaders/2d.frag"),
             sample_count,
         );
         D2 {

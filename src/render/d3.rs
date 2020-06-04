@@ -51,8 +51,8 @@ impl D3 {
                     },
                 ],
             }],
-            vk_shader_macros::include_glsl!("src/render/shaders/3d.vert", kind: vert),
-            vk_shader_macros::include_glsl!("src/render/shaders/3d.frag", kind: frag),
+            vk_shader_macros::include_glsl!("src/render/shaders/3d.vert"),
+            vk_shader_macros::include_glsl!("src/render/shaders/3d.frag"),
             sample_count,
         );
 

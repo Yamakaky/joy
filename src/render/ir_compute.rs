@@ -114,8 +114,7 @@ impl IRCompute {
             layout: &pipeline_layout,
             compute_stage: wgpu::ProgrammableStageDescriptor {
                 module: &device.create_shader_module(vk_shader_macros::include_glsl!(
-                    "src/render/shaders/compute.comp",
-                    kind: comp
+                    "src/render/shaders/compute.comp"
                 )),
                 entry_point: "main",
             },
