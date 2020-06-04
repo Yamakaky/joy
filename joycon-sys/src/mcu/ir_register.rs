@@ -46,7 +46,7 @@ impl Register {
         Register::new(Resolution, resolution as u8)
     }
 
-    // default 0x1860
+    // default 200µs, max 600µs
     pub fn exposure_us(exposure: u32) -> [Register; 2] {
         let raw_exposure = exposure * 31200 / 1000;
         [

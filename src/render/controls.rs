@@ -11,6 +11,8 @@ use std::sync::mpsc;
 pub struct Controls {
     thread_contact: mpsc::Sender<JoyconCmd>,
     leds: Leds,
+    exposure: f32,
+    exposure_state: slider::State,
     far_int: f32,
     far_int_state: slider::State,
     near_int: f32,
@@ -29,6 +31,7 @@ pub enum Message {
     Intensity(f32, f32),
     Resolution(Resolution),
     EdgeSmoothing(f32),
+    Exposure(f32),
     UpdateTime(f32),
     Depth(u32, u32, u8),
 }
@@ -40,6 +43,8 @@ impl Controls {
         Controls {
             thread_contact,
             leds,
+            exposure: 200.,
+            exposure_state: slider::State::new(),
             far_int: 0xf as f32,
             far_int_state: slider::State::new(),
             near_int: 0xf as f32,
@@ -81,6 +86,14 @@ impl Program for Controls {
                 self.thread_contact
                     .send(JoyconCmd::SetRegister(Register::edge_smoothing_threshold(
                         threshold as u8,
+                    )))
+                    .unwrap();
+            }
+            Message::Exposure(exposure) => {
+                self.exposure = exposure;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegisters(Register::exposure_us(
+                        exposure as u32,
                     )))
                     .unwrap();
             }
@@ -220,6 +233,26 @@ impl Program for Controls {
         .spacing(10)
         .into();
 
+        let exposure_ctrl = Column::with_children(vec![
+            title("Exposure"),
+            Row::with_children(vec![
+                Slider::new(
+                    &mut self.exposure_state,
+                    (0.)..=(600.),
+                    self.exposure,
+                    Message::Exposure,
+                )
+                .into(),
+                Text::new(format!("{} µs", self.exposure as u32))
+                    .vertical_alignment(VerticalAlignment::Center)
+                    .into(),
+            ])
+            .spacing(10)
+            .into(),
+        ])
+        .spacing(10)
+        .into();
+
         let depth_ctrl = Text::new(format!(
             "{},{}: {}",
             self.depth.0, self.depth.1, self.depth.2
@@ -231,6 +264,7 @@ impl Program for Controls {
                 leds_ctrl,
                 res_ctrl,
                 edge_ctrl,
+                exposure_ctrl,
                 update_ctrl,
                 depth_ctrl,
             ])
