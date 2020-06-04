@@ -7,6 +7,7 @@ use crate::imu;
 use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::spi::*;
+use num::FromPrimitive;
 use std::fmt;
 
 /// Describes a HID report from the JoyCon.
@@ -184,35 +185,42 @@ impl fmt::Debug for InputReport {
     }
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct DeviceStatus(u8);
+bitfield::bitfield! {
+    #[repr(transparent)]
+    #[derive(Copy, Clone)]
+    pub struct DeviceStatus(u8);
+    impl Debug;
 
-impl fmt::Debug for DeviceStatus {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let battery = self.0 >> 4;
-        f.debug_struct("DeviceStatus")
-            .field(
-                "battery",
-                &match battery {
-                    8 => "full",
-                    6 => "medium",
-                    4 => "low",
-                    2 => "critical",
-                    0 => "empty",
-                    _ => "<unknown>",
-                },
-            )
-            .field(
-                "type",
-                &match (self.0 >> 1) & 3 {
-                    0 => "Pro Controller",
-                    3 => "JoyCon",
-                    _ => "<unknown",
-                },
-            )
-            .field("charging", &((self.0 & 1) == 1))
-            .finish()
+    pub connected, _: 0;
+    pub u8, into DeviceType, device_type, _: 2, 1;
+    pub charging, _: 4;
+    pub u8, into BatteryLevel, battery_level, _: 7, 5;
+}
+
+#[derive(Debug, Copy, Clone, FromPrimitive)]
+pub enum DeviceType {
+    ProController = 0,
+    Joycon = 3,
+}
+
+impl From<u8> for DeviceType {
+    fn from(v: u8) -> Self {
+        DeviceType::from_u8(v).expect("unexpected device type")
+    }
+}
+
+#[derive(Debug, Copy, Clone, FromPrimitive)]
+pub enum BatteryLevel {
+    Empty = 0,
+    Critical = 1,
+    Low = 2,
+    Medium = 3,
+    Full = 4,
+}
+
+impl From<u8> for BatteryLevel {
+    fn from(v: u8) -> Self {
+        BatteryLevel::from_u8(v).expect("unexpected battery level")
     }
 }
 
@@ -225,7 +233,7 @@ pub struct ButtonsStatus {
 }
 
 bitfield::bitfield! {
-    #[repr(packed)]
+    #[repr(transparent)]
     #[derive(Copy, Clone)]
     pub struct RightButtons(u8);
     impl Debug;
@@ -239,7 +247,7 @@ bitfield::bitfield! {
     pub zr, _: 7;
 }
 bitfield::bitfield! {
-    #[repr(packed)]
+    #[repr(transparent)]
     #[derive(Copy, Clone)]
     pub struct MiddleButtons(u8);
     impl Debug;
@@ -254,6 +262,7 @@ bitfield::bitfield! {
 }
 
 bitfield::bitfield! {
+    #[repr(transparent)]
     #[derive(Copy, Clone)]
     pub struct LeftButtons(u8);
     impl Debug;
