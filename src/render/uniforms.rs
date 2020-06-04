@@ -83,7 +83,7 @@ struct Uniforms {
 impl Uniforms {
     fn new() -> Uniforms {
         use cgmath::SquareMatrix;
-        let ir_proj = cgmath::perspective(cgmath::Deg(95.), 3. / 4., 0.1, 1.)
+        let ir_proj = cgmath::perspective(cgmath::Deg(110.), 3. / 4., 0.1, 1.)
             .invert()
             .unwrap();
         Uniforms {
