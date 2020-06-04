@@ -12,17 +12,12 @@ pub struct Controls {
     thread_contact: mpsc::Sender<JoyconCmd>,
     leds: Leds,
     max_exposure: bool,
-    exposure: f32,
-    exposure_state: slider::State,
-    far_int: f32,
-    far_int_state: slider::State,
-    near_int: f32,
-    near_int_state: slider::State,
+    exposure: Sliderf32,
+    far_int: Sliderf32,
+    near_int: Sliderf32,
     resolution: Resolution,
-    edge_smoothing: f32,
-    edge_state: slider::State,
-    buffer_update_time: f32,
-    buffer_update_time_state: slider::State,
+    edge_smoothing: Sliderf32,
+    buffer_update_time: Sliderf32,
     depth: (u32, u32, u8),
     ir_rotate: bool,
 }
@@ -48,17 +43,12 @@ impl Controls {
             thread_contact,
             leds,
             max_exposure: false,
-            exposure: 200.,
-            exposure_state: slider::State::new(),
-            far_int: 0xf as f32,
-            far_int_state: slider::State::new(),
-            near_int: 0xf as f32,
-            near_int_state: slider::State::new(),
+            exposure: Sliderf32::new(200., 600.),
+            far_int: Sliderf32::new(0xf as f32, 0xf as f32),
+            near_int: Sliderf32::new(0xf as f32, 0xf as f32),
             resolution: Resolution::R160x120,
-            edge_smoothing: 0x23 as f32,
-            edge_state: slider::State::new(),
-            buffer_update_time: 0x23 as f32,
-            buffer_update_time_state: slider::State::new(),
+            edge_smoothing: Sliderf32::new(0x23 as f32, 0xff as f32),
+            buffer_update_time: Sliderf32::new(0x32 as f32, 0xff as f32),
             depth: (0, 0, 0),
             ir_rotate: true,
         }
@@ -83,8 +73,8 @@ impl Program for Controls {
                     .unwrap();
             }
             Message::Intensity(far, near) => {
-                self.far_int = far;
-                self.near_int = near;
+                self.far_int.value = far;
+                self.near_int.value = near;
                 self.thread_contact
                     .send(JoyconCmd::SetRegisters(Register::leds_intensity(
                         far as u8, near as u8,
@@ -92,7 +82,7 @@ impl Program for Controls {
                     .unwrap();
             }
             Message::EdgeSmoothing(threshold) => {
-                self.edge_smoothing = threshold;
+                self.edge_smoothing.value = threshold;
                 self.thread_contact
                     .send(JoyconCmd::SetRegister(Register::edge_smoothing_threshold(
                         threshold as u8,
@@ -112,7 +102,7 @@ impl Program for Controls {
                     .unwrap();
             }
             Message::Exposure(exposure) => {
-                self.exposure = exposure;
+                self.exposure.value = exposure;
                 self.thread_contact
                     .send(JoyconCmd::SetRegisters(Register::exposure_us(
                         exposure as u32,
@@ -120,7 +110,7 @@ impl Program for Controls {
                     .unwrap();
             }
             Message::UpdateTime(time) => {
-                self.buffer_update_time = time;
+                self.buffer_update_time.value = time;
                 self.thread_contact
                     .send(JoyconCmd::SetRegister(Register::buffer_update_time(
                         time as u8,
@@ -158,7 +148,7 @@ impl Program for Controls {
         .into();
 
         let leds = self.leds;
-        let (far_int, near_int) = (self.far_int, self.near_int);
+        let (far_int, near_int) = (self.far_int.value, self.near_int.value);
         let leds_ctrl = Column::with_children(vec![
             title("Leds control"),
             Checkbox::new(
@@ -171,15 +161,12 @@ impl Program for Controls {
                 },
             )
             .into(),
-            {
-                Slider::new(
-                    &mut self.far_int_state,
-                    (0.)..=(15.),
-                    self.far_int,
+            self.far_int
+                .render(
                     move |x| Message::Intensity(x, near_int),
+                    format!("{}%", self.far_int.percent()),
                 )
-                .into()
-            },
+                .into(),
             Checkbox::new(
                 !self.leds.disable_near_wide34(),
                 "Near and wide",
@@ -190,13 +177,12 @@ impl Program for Controls {
                 },
             )
             .into(),
-            Slider::new(
-                &mut self.near_int_state,
-                (0.)..=(15.),
-                self.near_int,
-                move |x| Message::Intensity(far_int, x),
-            )
-            .into(),
+            self.near_int
+                .render(
+                    move |x| Message::Intensity(far_int, x),
+                    format!("{}%", self.near_int.percent()),
+                )
+                .into(),
             Checkbox::new(self.leds.strobe(), "Strobe", move |b| {
                 let mut leds = leds;
                 leds.set_strobe(b);
@@ -227,40 +213,24 @@ impl Program for Controls {
 
         let edge_ctrl = Column::with_children(vec![
             title("Edge smoothing"),
-            Row::with_children(vec![
-                Slider::new(
-                    &mut self.edge_state,
-                    (0.)..=(255.),
-                    self.edge_smoothing,
+            self.edge_smoothing
+                .render(
                     Message::EdgeSmoothing,
+                    format!("0x{:x}", self.edge_smoothing.value as u8),
                 )
                 .into(),
-                Text::new(format!("0x{:x}", self.edge_smoothing as u8))
-                    .vertical_alignment(VerticalAlignment::Center)
-                    .into(),
-            ])
-            .spacing(10)
-            .into(),
         ])
         .spacing(10)
         .into();
 
         let update_ctrl = Column::with_children(vec![
             title("Buffer update time"),
-            Row::with_children(vec![
-                Slider::new(
-                    &mut self.buffer_update_time_state,
-                    (0.)..=(255.),
-                    self.buffer_update_time,
+            self.buffer_update_time
+                .render(
                     Message::UpdateTime,
+                    format!("0x{:x}", self.buffer_update_time.value as u8),
                 )
                 .into(),
-                Text::new(format!("0x{:x}", self.buffer_update_time as u8))
-                    .vertical_alignment(VerticalAlignment::Center)
-                    .into(),
-            ])
-            .spacing(10)
-            .into(),
         ])
         .spacing(10)
         .into();
@@ -268,20 +238,12 @@ impl Program for Controls {
         let exposure_ctrl = Column::with_children(vec![
             title("Exposure"),
             Checkbox::new(self.max_exposure, "Max", Message::MaxExposure).into(),
-            Row::with_children(vec![
-                Slider::new(
-                    &mut self.exposure_state,
-                    (0.)..=(600.),
-                    self.exposure,
+            self.exposure
+                .render(
                     Message::Exposure,
+                    format!("{} µs", self.exposure.value as u32),
                 )
                 .into(),
-                Text::new(format!("{} µs", self.exposure as u32))
-                    .vertical_alignment(VerticalAlignment::Center)
-                    .into(),
-            ])
-            .spacing(10)
-            .into(),
         ])
         .spacing(10)
         .into();
@@ -322,5 +284,39 @@ impl container::StyleSheet for StyleSheet {
             border_radius: 10,
             border_width: 3,
         }
+    }
+}
+
+struct Sliderf32 {
+    value: f32,
+    max: f32,
+    state: slider::State,
+}
+
+impl Sliderf32 {
+    fn new(value: f32, max: f32) -> Self {
+        Self {
+            value,
+            max,
+            state: slider::State::new(),
+        }
+    }
+
+    fn percent(&self) -> u32 {
+        (self.value / self.max * 100.) as u32
+    }
+
+    fn render(
+        &mut self,
+        variant: impl 'static + Fn(f32) -> Message,
+        display: String,
+    ) -> Row<Message, Renderer> {
+        Row::with_children(vec![
+            Slider::new(&mut self.state, (0.)..=(self.max), self.value, variant).into(),
+            Text::new(display)
+                .vertical_alignment(VerticalAlignment::Center)
+                .into(),
+        ])
+        .spacing(10)
     }
 }
