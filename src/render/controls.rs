@@ -11,6 +11,7 @@ use std::sync::mpsc;
 pub struct Controls {
     thread_contact: mpsc::Sender<JoyconCmd>,
     leds: Leds,
+    max_exposure: bool,
     exposure: f32,
     exposure_state: slider::State,
     far_int: f32,
@@ -31,6 +32,7 @@ pub enum Message {
     Intensity(f32, f32),
     Resolution(Resolution),
     EdgeSmoothing(f32),
+    MaxExposure(bool),
     Exposure(f32),
     UpdateTime(f32),
     Depth(u32, u32, u8),
@@ -43,6 +45,7 @@ impl Controls {
         Controls {
             thread_contact,
             leds,
+            max_exposure: false,
             exposure: 200.,
             exposure_state: slider::State::new(),
             far_int: 0xf as f32,
@@ -86,6 +89,18 @@ impl Program for Controls {
                 self.thread_contact
                     .send(JoyconCmd::SetRegister(Register::edge_smoothing_threshold(
                         threshold as u8,
+                    )))
+                    .unwrap();
+            }
+            Message::MaxExposure(max) => {
+                self.max_exposure = max;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegister(Register::exposure_mode(
+                        if self.max_exposure {
+                            ExposureMode::Max
+                        } else {
+                            ExposureMode::Manual
+                        },
                     )))
                     .unwrap();
             }
@@ -235,6 +250,7 @@ impl Program for Controls {
 
         let exposure_ctrl = Column::with_children(vec![
             title("Exposure"),
+            Checkbox::new(self.max_exposure, "Max", Message::MaxExposure).into(),
             Row::with_children(vec![
                 Slider::new(
                     &mut self.exposure_state,
