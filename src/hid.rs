@@ -15,6 +15,13 @@ use joycon_sys::*;
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 const WAIT_TIMEOUT: u32 = 60;
 
+#[derive(Debug, Copy, Clone)]
+pub struct Report {
+    pub left_stick: (f64, f64),
+    pub right_stick: (f64, f64),
+    pub info: DeviceStatus,
+}
+
 pub struct JoyCon {
     device: hidapi::HidDevice,
     info: hidapi::DeviceInfo,
@@ -104,6 +111,24 @@ impl JoyCon {
             }
         }
         Ok(report)
+    }
+
+    pub fn tick(&mut self) -> Result<Report> {
+        let report = self.recv()?;
+        let std_report = report.standard().expect("should be standard");
+
+        let left_stick = self
+            .left_stick_calib
+            .value_from_raw(std_report.left_stick.x(), std_report.left_stick.y());
+        let right_stick = self
+            .right_stick_calib
+            .value_from_raw(std_report.right_stick.x(), std_report.right_stick.y());
+
+        Ok(Report {
+            left_stick,
+            right_stick,
+            info: std_report.info,
+        })
     }
 
     pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
@@ -375,17 +400,6 @@ impl JoyCon {
             result.range()
         );
         Ok(*result)
-    }
-
-    pub fn get_sticks(&mut self) -> Result<((f64, f64), (f64, f64))> {
-        let report = self.recv()?;
-        let inputs = report.standard().expect("should be standard");
-        Ok((
-            self.left_stick_calib
-                .value_from_raw(inputs.left_stick.x(), inputs.left_stick.y()),
-            self.right_stick_calib
-                .value_from_raw(inputs.right_stick.x(), inputs.right_stick.y()),
-        ))
     }
 }
 

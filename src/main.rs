@@ -3,7 +3,6 @@ use iced_winit::winit;
 use iced_winit::winit::event_loop::*;
 use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
-use joycon_sys::output::*;
 use render::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -60,17 +59,14 @@ fn real_main(
     }
 }
 
-#[allow(dead_code, unused_mut, unused_variables)]
 fn hid_main(
     device: hidapi::HidDevice,
     device_info: &hidapi::DeviceInfo,
     proxy: EventLoopProxy<JoyconData>,
     recv: &mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<bool> {
-    let val = OutputReport::default();
-
-    let mut enigo = enigo::Enigo::new();
-    let mut mouse = mouse::Mouse::default();
+    let mut _enigo = enigo::Enigo::new();
+    let mut _mouse = mouse::Mouse::default();
 
     let resolution = Resolution::R160x120;
 
@@ -121,33 +117,17 @@ fn hid_main(
     dbg!(device.set_mcu_mode_ir()?);
     device.change_ir_resolution(resolution)?;
 
-    //device.set_imu_sens()?;
-    //device.enable_imu()?;
+    dbg!(device.tick()?.info.battery_level());
 
     let mut i = 0;
     device.enable_ir_loop = true;
     while gui_still_running {
-        /*
-
-        device.max_raw_gyro = 0;
-        let mouse_factor = 1920. * 8.;
-        let mut sleep = false;
-        for delta in &device.get_gyro_rot_delta(true)? {
-            if sleep {
-                std::thread::sleep(std::time::Duration::from_millis(5));
-            }
-            sleep = true;
-            rotation += *delta;
-            mouse.move_relative(&mut enigo, -delta.2 * mouse_factor, delta.1 * mouse_factor);
-        }*/
-        let stick = device.get_sticks()?;
+        let _report = device.tick()?;
 
         if i % 60 == 0 {
             println!("joycon thread still running");
         }
         i += 1;
-
-        //println!("{:?}", stick);
 
         while let Ok(cmd) = recv.try_recv() {
             match cmd {
@@ -160,23 +140,26 @@ fn hid_main(
                 }
                 JoyconCmd::SetRegister(register) => {
                     assert!(!register.same_address(Register::resolution(Resolution::R320x240)));
-                    dbg!(device.set_ir_registers(&[register, Register::finish(),])?);
+                    dbg!(device.set_ir_registers(&[register, Register::finish()])?);
                 }
                 JoyconCmd::SetRegisters([r1, r2]) => {
                     assert!(!r1.same_address(Register::resolution(Resolution::R320x240)));
                     assert!(!r2.same_address(Register::resolution(Resolution::R320x240)));
-                    dbg!(device.set_ir_registers(&[r1, r2, Register::finish(),])?);
+                    dbg!(device.set_ir_registers(&[r1, r2, Register::finish()])?);
                 }
             }
         }
     }
 
+    dbg!(device.tick()?.info.battery_level());
+
     dbg!(device.set_report_mode_standard()?);
     dbg!(device.disable_mcu()?);
 
-    device.set_player_light(light::PlayerLights::new(
+    dbg!(device.set_player_light(light::PlayerLights::new(
         true, false, false, true, false, false, false, false,
-    ))?;
+    ))?);
+    dbg!(device.set_home_light(light::HomeLight::new(0x8, 0x4, 0x0, &[]))?);
 
     Ok(false)
 }
