@@ -16,7 +16,7 @@ layout(set = 0, binding = 0)
 void main() {
     vec4 moved = u.ir_rotation * in_position;
     gl_Position = u.view_proj * moved;
-    o.normal = in_normal.xyz;
     o.position = moved.xyz / moved.w;
+    o.normal = mat3(transpose(inverse(u.ir_rotation))) * in_normal.xyz;
     o.depth = in_depth;
 }
