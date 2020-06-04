@@ -24,6 +24,7 @@ pub struct Controls {
     buffer_update_time: f32,
     buffer_update_time_state: slider::State,
     depth: (u32, u32, u8),
+    ir_rotate: bool,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -36,6 +37,7 @@ pub enum Message {
     Exposure(f32),
     UpdateTime(f32),
     Depth(u32, u32, u8),
+    IRRotate(bool),
 }
 
 impl Controls {
@@ -58,7 +60,12 @@ impl Controls {
             buffer_update_time: 0x23 as f32,
             buffer_update_time_state: slider::State::new(),
             depth: (0, 0, 0),
+            ir_rotate: true,
         }
+    }
+
+    pub fn ir_rotate(&self) -> bool {
+        self.ir_rotate
     }
 }
 
@@ -127,6 +134,9 @@ impl Program for Controls {
                     .unwrap();
             }
             Message::Depth(x, y, depth) => self.depth = (x, y, depth),
+            Message::IRRotate(rotate) => {
+                self.ir_rotate = rotate;
+            }
         }
         Command::none()
     }
@@ -139,6 +149,13 @@ impl Program for Controls {
                 .size(25)
                 .into()
         };
+
+        let general_ctrl = Column::with_children(vec![
+            title("General settings"),
+            Checkbox::new(self.ir_rotate, "Use gyro rotation", Message::IRRotate).into(),
+        ])
+        .spacing(10)
+        .into();
 
         let leds = self.leds;
         let (far_int, near_int) = (self.far_int, self.near_int);
@@ -277,6 +294,7 @@ impl Program for Controls {
 
         Container::new(
             Column::with_children(vec![
+                general_ctrl,
                 leds_ctrl,
                 res_ctrl,
                 edge_ctrl,

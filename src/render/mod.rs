@@ -471,7 +471,12 @@ pub fn run(
             }
             Event::UserEvent(JoyconData::IRImage(image, position)) => {
                 gui.push_ir_data(image);
-                gui.uniforms.set_ir_rotation(position.rotation);
+                if gui.state.program().ir_rotate() {
+                    gui.uniforms.set_ir_rotation(position.rotation);
+                } else {
+                    use cgmath::prelude::One;
+                    gui.uniforms.set_ir_rotation(cgmath::Quaternion::one());
+                }
                 window.request_redraw();
             }
             Event::DeviceEvent {
