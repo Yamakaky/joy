@@ -430,6 +430,9 @@ pub fn run(
     let mut last_tick = Instant::now();
     let mut modifiers = ModifiersState::default();
 
+    let mut frame_count = 0;
+    let mut frame_counter = Instant::now();
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
         match event {
@@ -441,6 +444,13 @@ pub fn run(
             }
             Event::Resumed => {
                 dbg!("resumed");
+            }
+            Event::RedrawEventsCleared => {
+                frame_count += 1;
+                if frame_counter.elapsed() > Duration::from_secs(1) {
+                    println!("{} fps", frame_count);
+                    frame_counter = Instant::now();
+                }
             }
             Event::MainEventsCleared => {
                 if !hidden {
