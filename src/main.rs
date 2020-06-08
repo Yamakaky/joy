@@ -5,6 +5,7 @@ use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use render::*;
 use std::cell::RefCell;
+use std::f32::consts::PI;
 use std::rc::Rc;
 use std::sync::mpsc;
 
@@ -39,6 +40,16 @@ fn real_main(
     proxy: EventLoopProxy<JoyconData>,
     recv: mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<()> {
+    let mut image = ::image::GrayImage::new(240, 320);
+    for (x, y, pixel) in image.enumerate_pixels_mut() {
+        *pixel = [
+            (((x as f32 / 240. * PI).sin() * (y as f32 / 320. * PI).sin()).powf(10.) * 255.) as u8,
+        ]
+        .into();
+    }
+    assert!(proxy
+        .send_event(JoyconData::IRImage(image, Default::default()))
+        .is_ok());
     let mut api = HidApi::new()?;
     loop {
         api.refresh_devices()?;
