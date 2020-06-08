@@ -36,7 +36,7 @@ impl D3 {
                 attributes: &[
                     wgpu::VertexAttributeDescriptor {
                         offset: 0,
-                        format: wgpu::VertexFormat::Float4,
+                        format: wgpu::VertexFormat::Float3,
                         shader_location: 0,
                     },
                     wgpu::VertexAttributeDescriptor {

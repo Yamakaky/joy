@@ -1,7 +1,7 @@
 #version 450
 
 struct Vertex {
-    vec4 position;
+    vec3 position;
     vec3 normal;
     float depth;
 };
@@ -55,7 +55,7 @@ void main() {
     
     uint id = y * tex_size.x + x;
     vec3 normal = normalize(sum_norm);
-    vertices[id] = Vertex(vec4(z, 1.0), normal, depth(x, y));
+    vertices[id] = Vertex(z, normal, depth(x, y));
 
     if (x < tex_size.x - 1 && y < tex_size.y - 1) {
         // since we skip the last row and column, we remove uy to not leave a gap.
