@@ -450,6 +450,7 @@ pub fn run(
                 if frame_counter.elapsed() > Duration::from_secs(1) {
                     println!("{} fps", frame_count);
                     frame_counter = Instant::now();
+                    frame_count = 0;
                 }
             }
             Event::MainEventsCleared => {
