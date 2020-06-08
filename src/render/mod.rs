@@ -7,7 +7,7 @@ use iced_winit::winit::{
     event_loop::{ControlFlow, EventLoop},
     window::Window,
 };
-use iced_winit::{program, Debug, Size};
+use iced_winit::{futures, program, Debug, Size};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 

@@ -969,7 +969,6 @@ dependencies = [
  "cgmath",
  "enigo",
  "env_logger",
- "futures",
  "hidapi",
  "iced_core",
  "iced_wgpu",
