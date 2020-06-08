@@ -31,7 +31,7 @@ impl D3 {
             ],
             Some(Texture::DEPTH_FORMAT),
             &[wgpu::VertexBufferDescriptor {
-                stride: 16 * 3,
+                stride: 16 * 2,
                 step_mode: wgpu::InputStepMode::Vertex,
                 attributes: &[
                     wgpu::VertexAttributeDescriptor {
@@ -41,11 +41,11 @@ impl D3 {
                     },
                     wgpu::VertexAttributeDescriptor {
                         offset: 16,
-                        format: wgpu::VertexFormat::Float4,
+                        format: wgpu::VertexFormat::Float3,
                         shader_location: 1,
                     },
                     wgpu::VertexAttributeDescriptor {
-                        offset: 16 * 2,
+                        offset: 16 + 12,
                         format: wgpu::VertexFormat::Float,
                         shader_location: 2,
                     },
