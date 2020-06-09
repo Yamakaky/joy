@@ -5,6 +5,8 @@ pub struct IRCompute {
     index_buffer: wgpu::Buffer,
     pub texture_binding_layout: wgpu::BindGroupLayout,
     texture: Option<super::texture::Texture>,
+    pub normal_texture: super::texture::Texture,
+    normal_texture_binding_layout: wgpu::BindGroupLayout,
     pub texture_binding: Option<wgpu::BindGroup>,
     mesh_binding: wgpu::BindGroup,
     pipeline: wgpu::ComputePipeline,
@@ -102,11 +104,26 @@ impl IRCompute {
                 ],
                 label: Some("dynamic compute binding layout"),
             });
+        let normal_texture_binding_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                bindings: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStage::COMPUTE | wgpu::ShaderStage::FRAGMENT,
+                    ty: wgpu::BindingType::StorageTexture {
+                        dimension: wgpu::TextureViewDimension::D2,
+                        component_type: wgpu::TextureComponentType::Float,
+                        readonly: false,
+                        format: wgpu::TextureFormat::Rgba32Float,
+                    },
+                }],
+                label: Some("Depth texture binding layout"),
+            });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             bind_group_layouts: &[
                 &mesh_binding_layout,
                 &texture_binding_layout,
+                &normal_texture_binding_layout,
                 uniform_bind_group_layout,
             ],
         });
@@ -127,6 +144,8 @@ impl IRCompute {
             texture_binding_layout,
             texture: None,
             texture_binding: None,
+            normal_texture: super::texture::Texture::create_normal_texture(device, (1, 1)),
+            normal_texture_binding_layout: normal_texture_binding_layout,
         }
     }
 
@@ -143,6 +162,11 @@ impl IRCompute {
         });
         texture.update(device, encoder, image);
 
+        if self.normal_texture.size.width != width || self.normal_texture.size.height != height {
+            self.normal_texture =
+                super::texture::Texture::create_normal_texture(device, (width, height));
+        }
+
         let texture_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &self.texture_binding_layout,
             bindings: &[
@@ -157,13 +181,22 @@ impl IRCompute {
             ],
             label: Some("dynamic compute group"),
         });
+        let normal_texture_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &self.normal_texture_binding_layout,
+            bindings: &[wgpu::Binding {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&self.normal_texture.view),
+            }],
+            label: Some("Normal texture bind group"),
+        });
 
         {
             let mut cpass = encoder.begin_compute_pass();
             cpass.set_pipeline(&self.pipeline);
             cpass.set_bind_group(0, &self.mesh_binding, &[]);
             cpass.set_bind_group(1, &texture_binding, &[]);
-            cpass.set_bind_group(2, uniform_bind_group, &[]);
+            cpass.set_bind_group(2, &normal_texture_binding, &[]);
+            cpass.set_bind_group(3, uniform_bind_group, &[]);
             cpass.dispatch(width, height, 1);
         }
 

@@ -185,7 +185,7 @@ impl GUI {
 
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
-        let render_d3 = d3::D3::new(&device, &uniforms, &sc_desc, sample_count);
+        let render_d3 = d3::D3::new(&device, &uniforms, &compute, &sc_desc, sample_count);
         let controls = controls::Controls::new(thread_contact);
 
         // Initialize iced
@@ -269,6 +269,7 @@ impl GUI {
             &mut self.renderer,
             &mut self.debug,
         );
+        self.render_d3.update_bindgroup(&self.device, &self.compute);
     }
 
     async fn get_depth(&mut self, encoder: &mut wgpu::CommandEncoder) {

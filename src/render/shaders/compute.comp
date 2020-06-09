@@ -2,7 +2,7 @@
 
 struct Vertex {
     vec3 position;
-    vec3 normal;
+    vec2 uv;
     float depth;
 };
 
@@ -16,7 +16,9 @@ layout(std430, set = 0, binding = 1) buffer IndexOut {
 layout(set = 1, binding = 0) uniform texture2D ir_pixels;
 layout(set = 1, binding = 1) uniform sampler ir_sampler;
 
-layout(set = 2, binding = 0)
+layout(set = 2, binding = 0, RGBA32F) uniform restrict writeonly image2D normal_texture;
+
+layout(set = 3, binding = 0)
 #include "uniform.glsl"
 
 #define ir sampler2D(ir_pixels, ir_sampler)
@@ -55,7 +57,9 @@ void main() {
     
     uint id = y * tex_size.x + x;
     vec3 normal = normalize(sum_norm);
-    vertices[id] = Vertex(z, normal, depth(x, y));
+    vec2 uv = vec2(float(x) / (tex_size.x - 1), float(y) / (tex_size.y - 1));
+    vertices[id] = Vertex(z, uv, depth(x, y));
+    imageStore(normal_texture, ivec2(x, y), vec4(normal, 1.0));
 
     if (x < tex_size.x - 1 && y < tex_size.y - 1) {
         // since we skip the last row and column, we remove uy to not leave a gap.

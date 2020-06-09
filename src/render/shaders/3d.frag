@@ -2,12 +2,18 @@
 
 layout(location = 0) in VertexData {
     vec3 position;
-    vec3 normal;
+    vec2 uv;
     float depth;
 } i;
 
 layout(location = 0) out vec4 out_color;
 layout(location = 1) out float out_depth;
+
+layout(set = 0, binding = 0)
+#include "uniform.glsl"
+
+layout(set = 1, binding = 0) uniform texture2D normals;
+layout(set = 1, binding = 1) uniform sampler normals_sampler;
 
 const vec4 LIGHT_POSITION = vec4(0., 0., 0., 1.0);
 const vec3 LIGHT_COLOR = vec3(1., 0., 0.);
@@ -22,7 +28,9 @@ void main() {
 
         vec3 ambient_color = LIGHT_COLOR_AMBIENT * LIGHT_AMBIENT_INTENSITY;
 
-        vec3 normal = normalize(i.normal);
+        vec3 normal_sample = texture(sampler2D(normals, normals_sampler), i.uv).xyz;
+        vec3 normal = normalize(mat3(transpose(inverse(u.ir_rotation))) * normal_sample);
+
         vec3 light_dir;
         if (LIGHT_POSITION.w == 0.) {
             // Directional light

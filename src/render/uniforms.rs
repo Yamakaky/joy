@@ -21,7 +21,9 @@ impl UniformHandler {
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             bindings: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::COMPUTE,
+                visibility: wgpu::ShaderStage::VERTEX
+                    | wgpu::ShaderStage::FRAGMENT
+                    | wgpu::ShaderStage::COMPUTE,
                 ty: wgpu::BindingType::UniformBuffer { dynamic: false },
             }],
             label: Some("Uniform bind group layout"),
