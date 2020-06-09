@@ -39,7 +39,7 @@ vec3 pos(int x, int y) {
 }
 
 vec3 norm(vec3 z, vec3 a, vec3 b) {
-    return cross(a - z, b - z);
+    return normalize(cross(a - z, b - z));
 }
 
 void main() {
