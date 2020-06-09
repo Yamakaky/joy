@@ -17,7 +17,7 @@ mod mouse;
 mod render;
 
 fn main() {
-    env_logger::init();
+    env_logger::from_env(env_logger::Env::default().default_filter_or("warn")).init();
     std::panic::set_hook(Box::new(|x| {
         println!("{}", x);
         std::thread::sleep(std::time::Duration::from_secs(5));
