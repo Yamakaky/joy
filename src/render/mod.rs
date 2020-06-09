@@ -122,6 +122,7 @@ struct GUI {
     renderer: Renderer,
     state: program::State<controls::Controls>,
     debug: Debug,
+    staging_depth_buffer: wgpu::Buffer,
 }
 
 impl GUI {
@@ -195,6 +196,12 @@ impl GUI {
         let state =
             program::State::new(controls, viewport.logical_size(), &mut renderer, &mut debug);
 
+        let staging_depth_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("depth reader"),
+            size: 1,
+            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
+        });
+
         Self {
             surface,
             device,
@@ -215,6 +222,7 @@ impl GUI {
             renderer,
             state,
             debug,
+            staging_depth_buffer,
         }
     }
 
@@ -272,12 +280,7 @@ impl GUI {
         self.render_d3.update_bindgroup(&self.device, &self.compute);
     }
 
-    async fn get_depth(&mut self, encoder: &mut wgpu::CommandEncoder) {
-        let staging_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("depth reader"),
-            size: 1,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
-        });
+    fn copy_depth(&mut self, encoder: &mut wgpu::CommandEncoder) {
         encoder.copy_texture_to_buffer(
             wgpu::TextureCopyView {
                 texture: &self.pointer_target,
@@ -290,7 +293,7 @@ impl GUI {
                 },
             },
             wgpu::BufferCopyView {
-                buffer: &staging_buffer,
+                buffer: &self.staging_depth_buffer,
                 offset: 0,
                 bytes_per_row: 1,
                 rows_per_image: 1,
@@ -301,7 +304,10 @@ impl GUI {
                 depth: 1,
             },
         );
-        let mapping_future = staging_buffer.map_read(0, 1);
+    }
+
+    async fn get_depth(&mut self) {
+        let mapping_future = self.staging_depth_buffer.map_read(0, 1);
         self.device.poll(wgpu::Maintain::Wait);
         let mapping = mapping_future.await.unwrap();
         self.state.queue_message(controls::Message::Depth(
@@ -361,7 +367,7 @@ impl GUI {
             }
         }
 
-        futures::executor::block_on(self.get_depth(&mut encoder));
+        self.copy_depth(&mut encoder);
 
         if let Some(ref texture) = self.compute.texture_binding {
             let mut rpass2d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -380,6 +386,8 @@ impl GUI {
             &self.debug.overlay(),
         );
 
+        // [2020-06-09T18:01:01Z ERROR gfx_backend_vulkan] [Validation] Validation Error: [ VUID-vkQueuePresentKHR-pWaitSemaphores-03268 ] Object 0: handle = 0x1bd68ec4ec8, type = VK_OBJECT_TYPE_QUEUE; Object 1: handle = 0xd76249000000000c, type = VK_OBJECT_TYPE_SEMAPHORE; | MessageID = 0x251f8f7a | VkQueue 0x1bd68ec4ec8[] is waiting on VkSemaphore 0xd76249000000000c[] that has no way to be signaled. The Vulkan spec states: All elements of the pWaitSemaphores member of pPresentInfo must reference a semaphore signal operation that has been submitted for execution and any semaphore signal operations on which it depends (if any) must have also been submitted for execution. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkQueuePresentKHR-pWaitSemaphores-03268)
+        futures::executor::block_on(self.get_depth());
         self.queue.submit(&[encoder.finish()]);
 
         // And update the mouse cursor
