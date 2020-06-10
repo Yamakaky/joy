@@ -40,7 +40,7 @@ pub enum SubcommandId {
     SetIMUSens = 0x41,
 }
 
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct U16LE([u8; 2]);
 
 impl From<u16> for U16LE {
@@ -57,7 +57,13 @@ impl From<U16LE> for u16 {
     }
 }
 
-#[derive(Copy, Clone, Debug, Default)]
+impl fmt::Debug for U16LE {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        u16::from(*self).fmt(f)
+    }
+}
+
+#[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct I16LE([u8; 2]);
 
 impl From<i16> for I16LE {
@@ -71,6 +77,12 @@ impl From<i16> for I16LE {
 impl From<I16LE> for i16 {
     fn from(u: I16LE) -> i16 {
         LittleEndian::read_i16(&u.0)
+    }
+}
+
+impl fmt::Debug for I16LE {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        i16::from(*self).fmt(f)
     }
 }
 
