@@ -1,7 +1,6 @@
 use cgmath::*;
+use joycon_sys::imu::IMU_SAMPLES_PER_SECOND;
 use std::collections::VecDeque;
-
-pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 
 type Entry = Vector3<f64>;
 

@@ -9,8 +9,6 @@ use joycon_sys::output::*;
 use joycon_sys::spi::*;
 use joycon_sys::*;
 
-/// 200 samples per second with 3 sample per InputReport.
-pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 const WAIT_TIMEOUT: u32 = 60;
 
 #[derive(Debug, Copy, Clone)]
@@ -66,15 +64,7 @@ impl JoyCon {
         Ok(joycon)
     }
 
-    pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(image::GrayImage)>) {
-        self.image.set_cb(cb);
-    }
-
-    pub fn set_imu_callback(&mut self, cb: Box<dyn FnMut(&imu_handler::Position)>) {
-        self.imu_handler.set_cb(cb);
-    }
-
-    pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
+    fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
@@ -83,7 +73,7 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn recv(&mut self) -> Result<InputReport> {
+    fn recv(&mut self) -> Result<InputReport> {
         // Larger buffer to detect unhandled received data
         let mut reports = [InputReport::new(); 2];
         let buffer = unsafe {
@@ -129,17 +119,6 @@ impl JoyCon {
         })
     }
 
-    pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
-        self.set_ir_wait_conf()
-            .context("change_ir_resolution reset")?;
-        self.set_ir_registers(&[Register::resolution(resolution), Register::finish()])
-            .context("change_ir_resolution")?;
-        self.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
-            .context("change_ir_resolution enable")?;
-        self.image.change_resolution(resolution);
-        Ok(())
-    }
-
     pub fn load_calibration(&mut self) -> Result<()> {
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
         let factory_settings = factory_result.imu_factory_calib().unwrap();
@@ -164,21 +143,6 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_imu_sens(&mut self) -> Result<()> {
-        let gyro_sens = imu::GyroSens::DPS2000;
-        let accel_sens = imu::AccSens::G8;
-        self.send_subcmd_wait(imu::Sensitivity {
-            gyro_sens,
-            acc_sens: accel_sens,
-            ..imu::Sensitivity::default()
-        })?;
-        // TODO
-        /*
-        self.gyro_sens = gyro_sens;
-        self.accel_sens = accel_sens;*/
-        Ok(())
-    }
-
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
         let reply = self.send_subcmd_wait(SubcommandRequest::request_device_info())?;
         Ok(*reply.device_info().unwrap())
@@ -189,63 +153,71 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn enable_imu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_imu_enabled(true))?;
+    pub fn set_player_light(&mut self, player_lights: light::PlayerLights) -> Result<()> {
+        self.send_subcmd_wait(player_lights)?;
         Ok(())
     }
 
-    pub fn set_report_mode_standard(&mut self) -> Result<()> {
+    fn set_report_mode_standard(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
             InputReportId::StandardFull,
         ))?;
         Ok(())
     }
 
-    pub fn set_report_mode_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
-            InputReportId::StandardFullMCU,
-        ))?;
-        Ok(())
+    fn send_subcmd_wait<S: Into<SubcommandRequest>>(
+        &mut self,
+        subcmd: S,
+    ) -> Result<SubcommandReply> {
+        let subcmd = subcmd.into();
+        let mut out_report = subcmd.into();
+
+        self.send(&mut out_report)?;
+        for _ in 0..WAIT_TIMEOUT {
+            let in_report = self.recv()?;
+            if let Some(reply) = in_report.subcmd_reply() {
+                if reply.id() == Some(subcmd.id()) {
+                    ensure!(reply.ack.is_ok(), "subcmd reply is nack");
+                    return Ok(*reply);
+                }
+            }
+        }
+
+        bail!("Timeout while waiting for subcommand");
     }
 
+    fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
+        let reply = self.send_subcmd_wait(SPIReadRequest::new(range))?;
+        let result = reply.spi_result().unwrap();
+        ensure!(
+            range == result.range(),
+            "invalid range {:?}",
+            result.range()
+        );
+        Ok(*result)
+    }
+}
+
+/// MCU handling (infrared camera and NFC reader)
+impl JoyCon {
     pub fn enable_mcu(&mut self) -> Result<()> {
+        self.set_report_mode_mcu()?;
         self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
         self.wait_mcu_status(MCUMode::Standby)
             .context("enable_mcu")?;
         Ok(())
     }
 
-    fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
-        self.wait_mcu_cond(MCURequest::get_mcu_status(), |report| {
-            report
-                .as_status()
-                .map(|status| status.state == mode)
-                .unwrap_or(false)
-        })
-    }
-    fn wait_mcu_cond<R: Into<MCURequest>>(
-        &mut self,
-        mcu_subcmd: R,
-        mut f: impl FnMut(&MCUReport) -> bool,
-    ) -> Result<MCUReport> {
-        let mcu_subcmd = mcu_subcmd.into();
-        // The MCU takes some time to warm up so we retry until we get an answer
-        for _ in 0..WAIT_TIMEOUT {
-            self.send_mcu_subcmd(mcu_subcmd)?;
-            for _ in 0..WAIT_TIMEOUT {
-                let in_report = self.recv()?;
-                if let Some(mcu_report) = in_report.mcu_report() {
-                    if f(mcu_report) {
-                        return Ok(*mcu_report);
-                    }
-                }
-            }
-        }
-        bail!("error getting the MCU status: timeout");
+    pub fn disable_mcu(&mut self) -> Result<()> {
+        self.set_report_mode_standard()?;
+        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
+        Ok(())
     }
 
-    pub fn disable_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
+    fn set_report_mode_mcu(&mut self) -> Result<()> {
+        self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
+            InputReportId::StandardFullMCU,
+        ))?;
         Ok(())
     }
 
@@ -256,33 +228,11 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_ir_wait_conf(&mut self) -> Result<()> {
-        let mut mcu_fw_version = Default::default();
-        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
-            if let Some(status) = r.as_status() {
-                mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
-                true
-            } else {
-                false
-            }
-        })?;
-        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
-            ir_mode: MCUIRMode::IRSensorReset,
-            no_of_frags: 0,
-            mcu_fw_version,
-        });
-        self.send_subcmd_wait(mcu_cmd)?;
-
-        self.wait_mcu_cond(IRRequest::get_state(), |r| {
-            r.as_ir_status()
-                .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
-                .unwrap_or(false)
-        })
-        .context("check sensor state")?;
-        Ok(())
+    pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(image::GrayImage)>) {
+        self.image.set_cb(cb);
     }
 
-    pub fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
+    fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
             if let Some(status) = r.as_status() {
@@ -308,21 +258,6 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_ir_registers(&mut self, regs: &[ir::Register]) -> Result<()> {
-        let mut regs_mut = regs;
-        while !regs_mut.is_empty() {
-            let (mut report, remaining_regs) = OutputReport::set_registers(regs_mut);
-            self.send(&mut report)?;
-            regs_mut = remaining_regs;
-            if !remaining_regs.is_empty() {
-                // For packet drop purpose
-                // TODO: not clean at all
-                std::thread::sleep(std::time::Duration::from_millis(15));
-            }
-        }
-        // TODO reg value doesn't change until next frame
-        Ok(())
-    }
     pub fn get_ir_registers(&mut self) -> Result<Vec<Register>> {
         let mut registers = vec![];
         for page in 0..=4 {
@@ -357,30 +292,20 @@ impl JoyCon {
         Ok(registers)
     }
 
-    pub fn set_player_light(&mut self, player_lights: light::PlayerLights) -> Result<()> {
-        self.send_subcmd_wait(player_lights)?;
-        Ok(())
-    }
-
-    fn send_subcmd_wait<S: Into<SubcommandRequest>>(
-        &mut self,
-        subcmd: S,
-    ) -> Result<SubcommandReply> {
-        let subcmd = subcmd.into();
-        let mut out_report = subcmd.into();
-
-        self.send(&mut out_report)?;
-        for _ in 0..WAIT_TIMEOUT {
-            let in_report = self.recv()?;
-            if let Some(reply) = in_report.subcmd_reply() {
-                if reply.id() == Some(subcmd.id()) {
-                    ensure!(reply.ack.is_ok(), "subcmd reply is nack");
-                    return Ok(*reply);
-                }
+    pub fn set_ir_registers(&mut self, regs: &[ir::Register]) -> Result<()> {
+        let mut regs_mut = regs;
+        while !regs_mut.is_empty() {
+            let (mut report, remaining_regs) = OutputReport::set_registers(regs_mut);
+            self.send(&mut report)?;
+            regs_mut = remaining_regs;
+            if !remaining_regs.is_empty() {
+                // For packet drop purpose
+                // TODO: not clean at all
+                std::thread::sleep(std::time::Duration::from_millis(15));
             }
         }
-
-        bail!("Timeout while waiting for subcommand");
+        // TODO reg value doesn't change until next frame
+        Ok(())
     }
 
     fn send_mcu_subcmd(&mut self, mcu_subcmd: MCURequest) -> Result<()> {
@@ -389,15 +314,99 @@ impl JoyCon {
         Ok(())
     }
 
-    fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
-        let reply = self.send_subcmd_wait(SPIReadRequest::new(range))?;
-        let result = reply.spi_result().unwrap();
-        ensure!(
-            range == result.range(),
-            "invalid range {:?}",
-            result.range()
-        );
-        Ok(*result)
+    fn wait_mcu_cond<R: Into<MCURequest>>(
+        &mut self,
+        mcu_subcmd: R,
+        mut f: impl FnMut(&MCUReport) -> bool,
+    ) -> Result<MCUReport> {
+        let mcu_subcmd = mcu_subcmd.into();
+        // The MCU takes some time to warm up so we retry until we get an answer
+        for _ in 0..WAIT_TIMEOUT {
+            self.send_mcu_subcmd(mcu_subcmd)?;
+            for _ in 0..WAIT_TIMEOUT {
+                let in_report = self.recv()?;
+                if let Some(mcu_report) = in_report.mcu_report() {
+                    if f(mcu_report) {
+                        return Ok(*mcu_report);
+                    }
+                }
+            }
+        }
+        bail!("error getting the MCU status: timeout");
+    }
+
+    fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
+        self.wait_mcu_cond(MCURequest::get_mcu_status(), |report| {
+            report
+                .as_status()
+                .map(|status| status.state == mode)
+                .unwrap_or(false)
+        })
+    }
+}
+
+/// IMU handling (gyroscope and accelerometer)
+impl JoyCon {
+    pub fn enable_imu(&mut self) -> Result<()> {
+        self.send_subcmd_wait(SubcommandRequest::set_imu_enabled(true))?;
+        Ok(())
+    }
+
+    pub fn set_imu_callback(&mut self, cb: Box<dyn FnMut(&imu_handler::Position)>) {
+        self.imu_handler.set_cb(cb);
+    }
+
+    // TODO: needed?
+    pub fn set_imu_sens(&mut self) -> Result<()> {
+        let gyro_sens = imu::GyroSens::DPS2000;
+        let accel_sens = imu::AccSens::G8;
+        self.send_subcmd_wait(imu::Sensitivity {
+            gyro_sens,
+            acc_sens: accel_sens,
+            ..imu::Sensitivity::default()
+        })?;
+        // TODO
+        /*
+        self.gyro_sens = gyro_sens;
+        self.accel_sens = accel_sens;*/
+        Ok(())
+    }
+
+    pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
+        self.set_ir_wait_conf()
+            .context("change_ir_resolution reset")?;
+        self.set_ir_registers(&[Register::resolution(resolution), Register::finish()])
+            .context("change_ir_resolution")?;
+        self.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
+            .context("change_ir_resolution enable")?;
+        self.image.change_resolution(resolution);
+        Ok(())
+    }
+
+    fn set_ir_wait_conf(&mut self) -> Result<()> {
+        let mut mcu_fw_version = Default::default();
+        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
+            if let Some(status) = r.as_status() {
+                mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
+                true
+            } else {
+                false
+            }
+        })?;
+        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
+            ir_mode: MCUIRMode::IRSensorReset,
+            no_of_frags: 0,
+            mcu_fw_version,
+        });
+        self.send_subcmd_wait(mcu_cmd)?;
+
+        self.wait_mcu_cond(IRRequest::get_state(), |r| {
+            r.as_ir_status()
+                .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
+                .unwrap_or(false)
+        })
+        .context("check sensor state")?;
+        Ok(())
     }
 }
 

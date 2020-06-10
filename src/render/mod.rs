@@ -584,7 +584,7 @@ pub fn run(
 }
 
 pub enum JoyconData {
-    IRImage(image::GrayImage, crate::imu_handler::Position),
+    IRImage(image::GrayImage, joycon::Position),
 }
 
 pub enum JoyconCmd {

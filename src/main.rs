@@ -76,12 +76,11 @@ fn hid_main(
     proxy: EventLoopProxy<JoyconData>,
     recv: &mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<bool> {
-    let mut _enigo = enigo::Enigo::new();
-    let mut _mouse = mouse::Mouse::default();
+    let mut _mouse = mouse::Mouse::new();
 
     let resolution = Resolution::R160x120;
 
-    let mut device = hid::JoyCon::new(device, device_info.clone(), resolution)?;
+    let mut device = JoyCon::new(device, device_info.clone(), resolution)?;
     println!("new dev: {:?}", device.get_dev_info()?);
     let mut gui_still_running = true;
 
@@ -123,48 +122,41 @@ fn hid_main(
         true, false, false, true, false, true, true, false,
     ))?;
 
-    dbg!(device.set_report_mode_mcu()?);
     dbg!(device.enable_mcu()?);
     dbg!(device.set_mcu_mode_ir()?);
     device.change_ir_resolution(resolution)?;
 
     dbg!(device.tick()?.info.battery_level());
 
-    let mut i = 0;
     device.enable_ir_loop = true;
     while gui_still_running {
         let _report = device.tick()?;
 
-        if i % 60 == 0 {
-            println!("joycon thread still running");
-        }
-        i += 1;
-
-        while let Ok(cmd) = recv.try_recv() {
-            match cmd {
-                JoyconCmd::Stop => {
+        loop {
+            match recv.try_recv() {
+                Ok(JoyconCmd::Stop) | Err(mpsc::TryRecvError::Disconnected) => {
                     eprintln!("shutting down thread");
                     gui_still_running = false;
                 }
-                JoyconCmd::SetResolution(resolution) => {
+                Ok(JoyconCmd::SetResolution(resolution)) => {
                     dbg!(device.change_ir_resolution(resolution)?);
                 }
-                JoyconCmd::SetRegister(register) => {
+                Ok(JoyconCmd::SetRegister(register)) => {
                     assert!(!register.same_address(Register::resolution(Resolution::R320x240)));
                     dbg!(device.set_ir_registers(&[register, Register::finish()])?);
                 }
-                JoyconCmd::SetRegisters([r1, r2]) => {
+                Ok(JoyconCmd::SetRegisters([r1, r2])) => {
                     assert!(!r1.same_address(Register::resolution(Resolution::R320x240)));
                     assert!(!r2.same_address(Register::resolution(Resolution::R320x240)));
                     dbg!(device.set_ir_registers(&[r1, r2, Register::finish()])?);
                 }
+                Err(mpsc::TryRecvError::Empty) => break,
             }
         }
     }
 
     dbg!(device.tick()?.info.battery_level());
 
-    dbg!(device.set_report_mode_standard()?);
     dbg!(device.disable_mcu()?);
 
     dbg!(device.set_player_light(light::PlayerLights::new(
