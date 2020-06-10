@@ -250,6 +250,12 @@ impl Resolution {
     }
 }
 
+impl Default for Resolution {
+    fn default() -> Self {
+        Resolution::R160x120
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum ExposureMode {

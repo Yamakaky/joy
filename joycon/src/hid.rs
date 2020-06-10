@@ -34,11 +34,7 @@ pub struct JoyCon {
 }
 
 impl JoyCon {
-    pub fn new(
-        device: hidapi::HidDevice,
-        info: hidapi::DeviceInfo,
-        resolution: Resolution,
-    ) -> Result<JoyCon> {
+    pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> Result<JoyCon> {
         assert!([
             JOYCON_L_BT,
             JOYCON_R_BT,
@@ -54,7 +50,7 @@ impl JoyCon {
             max_raw_accel: 0,
             left_stick_calib: StickCalibration::default(),
             right_stick_calib: StickCalibration::default(),
-            image: Image::new(resolution),
+            image: Image::new(),
             enable_ir_loop: false,
             imu_handler: crate::imu_handler::Handler::new(
                 imu::GyroSens::default(),
@@ -317,6 +313,43 @@ impl JoyCon {
         Ok(())
     }
 
+    pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
+        self.set_ir_wait_conf()
+            .context("change_ir_resolution reset")?;
+        self.set_ir_registers(&[Register::resolution(resolution), Register::finish()])
+            .context("change_ir_resolution")?;
+        self.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
+            .context("change_ir_resolution enable")?;
+        self.image.change_resolution(resolution);
+        Ok(())
+    }
+
+    fn set_ir_wait_conf(&mut self) -> Result<()> {
+        let mut mcu_fw_version = Default::default();
+        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
+            if let Some(status) = r.as_status() {
+                mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
+                true
+            } else {
+                false
+            }
+        })?;
+        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
+            ir_mode: MCUIRMode::IRSensorReset,
+            no_of_frags: 0,
+            mcu_fw_version,
+        });
+        self.send_subcmd_wait(mcu_cmd)?;
+
+        self.wait_mcu_cond(IRRequest::get_state(), |r| {
+            r.as_ir_status()
+                .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
+                .unwrap_or(false)
+        })
+        .context("check sensor state")?;
+        Ok(())
+    }
+
     fn send_mcu_subcmd(&mut self, mcu_subcmd: MCURequest) -> Result<()> {
         let mut out_report = mcu_subcmd.into();
         self.send(&mut out_report)?;
@@ -378,43 +411,6 @@ impl JoyCon {
         /*
         self.gyro_sens = gyro_sens;
         self.accel_sens = accel_sens;*/
-        Ok(())
-    }
-
-    pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
-        self.set_ir_wait_conf()
-            .context("change_ir_resolution reset")?;
-        self.set_ir_registers(&[Register::resolution(resolution), Register::finish()])
-            .context("change_ir_resolution")?;
-        self.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
-            .context("change_ir_resolution enable")?;
-        self.image.change_resolution(resolution);
-        Ok(())
-    }
-
-    fn set_ir_wait_conf(&mut self) -> Result<()> {
-        let mut mcu_fw_version = Default::default();
-        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
-            if let Some(status) = r.as_status() {
-                mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
-                true
-            } else {
-                false
-            }
-        })?;
-        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
-            ir_mode: MCUIRMode::IRSensorReset,
-            no_of_frags: 0,
-            mcu_fw_version,
-        });
-        self.send_subcmd_wait(mcu_cmd)?;
-
-        self.wait_mcu_cond(IRRequest::get_state(), |r| {
-            r.as_ir_status()
-                .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
-                .unwrap_or(false)
-        })
-        .context("check sensor state")?;
         Ok(())
     }
 }

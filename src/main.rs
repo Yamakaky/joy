@@ -76,9 +76,7 @@ fn hid_main(
 ) -> anyhow::Result<bool> {
     let mut _mouse = mouse::Mouse::new();
 
-    let resolution = Resolution::R160x120;
-
-    let mut device = JoyCon::new(device, device_info.clone(), resolution)?;
+    let mut device = JoyCon::new(device, device_info.clone())?;
     println!("new dev: {:?}", device.get_dev_info()?);
 
     println!("Calibrating...");
@@ -97,7 +95,7 @@ fn hid_main(
         true, false, false, true, false, true, true, false,
     ))?;
 
-    device.enable_ir(resolution)?;
+    device.enable_ir(Resolution::R160x120)?;
 
     let mut last_position = Position::default();
     let mut last_battery_level = dbg!(device.tick()?.info.battery_level());

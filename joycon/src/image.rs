@@ -1,4 +1,4 @@
-use joycon_sys::mcu::*;
+use joycon_sys::mcu::{ir::Resolution, *};
 use joycon_sys::*;
 
 pub struct Image {
@@ -10,10 +10,10 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new(resolution: ir::Resolution) -> Image {
+    pub fn new() -> Image {
         Image {
             buffer: Box::new([[0; 300]; 0x100]),
-            resolution: resolution,
+            resolution: Resolution::default(),
             prev_fragment_id: 0,
             changing_resolution: false,
             last_image: None,
