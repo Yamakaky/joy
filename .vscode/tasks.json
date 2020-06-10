@@ -34,12 +34,13 @@
 			"command": "doc",
 			"args": [
 				"--open",
-				"--workspace"
+				"--workspace",
+				" --no-deps"
 			],
 			"problemMatcher": [
 				"$rustc"
 			],
-			"label": "rust: cargo doc --open --workspace"
+			"label": "rust: cargo doc --open --workspace --no-deps"
 		},
 		{
 			"type": "cargo",
