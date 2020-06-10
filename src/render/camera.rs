@@ -1,8 +1,10 @@
 use cgmath::{prelude::*, Deg, Euler, Matrix4, Quaternion, Vector3};
 use iced_wgpu::wgpu;
 
-use iced_winit::winit;
-use iced_winit::winit::event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent};
+use iced_winit::winit::{
+    self,
+    event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
+};
 
 pub struct Camera {
     eye: Vector3<f32>,

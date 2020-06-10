@@ -1,6 +1,8 @@
 use hidapi::HidApi;
-use iced_winit::winit;
-use iced_winit::winit::event_loop::*;
+use iced_winit::winit::{
+    self,
+    event_loop::{EventLoop, EventLoopProxy},
+};
 use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use render::*;

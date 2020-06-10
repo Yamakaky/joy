@@ -1,13 +1,17 @@
 use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
-use iced_winit::winit::{
-    event::{
-        DeviceEvent, ElementState, Event, KeyboardInput, ModifiersState, StartCause,
-        VirtualKeyCode, WindowEvent,
+use iced_winit::{
+    futures, program,
+    winit::{
+        dpi::{PhysicalPosition, PhysicalSize},
+        event::{
+            DeviceEvent, ElementState, Event, KeyboardInput, ModifiersState, StartCause,
+            VirtualKeyCode, WindowEvent,
+        },
+        event_loop::{ControlFlow, EventLoop},
+        window::Window,
     },
-    event_loop::{ControlFlow, EventLoop},
-    window::Window,
+    Debug, Size,
 };
-use iced_winit::{futures, program, Debug, Size};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
@@ -113,7 +117,7 @@ struct GUI {
     multisampled_framebuffer: wgpu::TextureView,
     pointer_target: wgpu::Texture,
     pointer_target_view: wgpu::TextureView,
-    mouse_position: iced_winit::winit::dpi::PhysicalPosition<f64>,
+    mouse_position: PhysicalPosition<f64>,
     uniforms: uniforms::UniformHandler,
     camera: camera::Camera,
     compute: ir_compute::IRCompute,
@@ -213,7 +217,7 @@ impl GUI {
             multisampled_framebuffer,
             pointer_target,
             pointer_target_view,
-            mouse_position: iced_winit::winit::dpi::PhysicalPosition::new(0., 0.),
+            mouse_position: PhysicalPosition::new(0., 0.),
             uniforms,
             camera,
             compute,
@@ -226,7 +230,7 @@ impl GUI {
         }
     }
 
-    fn resize(&mut self, window: &Window, new_size: iced_winit::winit::dpi::PhysicalSize<u32>) {
+    fn resize(&mut self, window: &Window, new_size: PhysicalSize<u32>) {
         self.sc_desc.width = new_size.width;
         self.sc_desc.height = new_size.height;
         self.swap_chain = self.device.create_swap_chain(&self.surface, &self.sc_desc);
@@ -260,7 +264,7 @@ impl GUI {
 
         self.pointer_target = self.device.create_texture(multisampled_frame_descriptor);
         self.pointer_target_view = self.pointer_target.create_default_view();
-        self.mouse_position = iced_winit::winit::dpi::PhysicalPosition::new(0., 0.);
+        self.mouse_position = PhysicalPosition::new(0., 0.);
     }
 
     // input() won't deal with GPU code, so it can be synchronous
