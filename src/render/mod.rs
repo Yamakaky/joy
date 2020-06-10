@@ -123,9 +123,9 @@ struct GUI {
     compute: ir_compute::IRCompute,
     render_d2: d2::D2,
     render_d3: d3::D3,
-    renderer: Renderer,
-    state: program::State<controls::Controls>,
-    debug: Debug,
+    iced_renderer: Renderer,
+    interface: program::State<controls::Controls>,
+    iced_debug: Debug,
     staging_depth_buffer: wgpu::Buffer,
 }
 
@@ -188,17 +188,19 @@ impl GUI {
         let pointer_target = device.create_texture(multisampled_frame_descriptor);
         let pointer_target_view = pointer_target.create_default_view();
 
+        // Initialize iced
+        let mut iced_debug = Debug::new();
+        let mut iced_renderer = Renderer::new(Backend::new(&device, Settings::default()));
+
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
         let render_d3 = d3::D3::new(&device, &uniforms, &compute, &sc_desc, sample_count);
-        let controls = controls::Controls::new(thread_contact);
-
-        // Initialize iced
-        let mut debug = Debug::new();
-        let mut renderer = Renderer::new(Backend::new(&device, Settings::default()));
-
-        let state =
-            program::State::new(controls, viewport.logical_size(), &mut renderer, &mut debug);
+        let interface = program::State::new(
+            controls::Controls::new(thread_contact),
+            viewport.logical_size(),
+            &mut iced_renderer,
+            &mut iced_debug,
+        );
 
         let staging_depth_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("depth reader"),
@@ -223,9 +225,9 @@ impl GUI {
             compute,
             render_d2,
             render_d3,
-            renderer,
-            state,
-            debug,
+            iced_renderer,
+            interface,
+            iced_debug,
             staging_depth_buffer,
         }
     }
@@ -275,11 +277,11 @@ impl GUI {
     fn update(&mut self, dt: Duration) {
         self.camera.update(dt);
         self.uniforms.update_view_proj(&self.camera);
-        let _ = self.state.update(
+        let _ = self.interface.update(
             None,
             self.viewport.logical_size(),
-            &mut self.renderer,
-            &mut self.debug,
+            &mut self.iced_renderer,
+            &mut self.iced_debug,
         );
         self.render_d3.update_bindgroup(&self.device, &self.compute);
     }
@@ -314,7 +316,7 @@ impl GUI {
         let mapping_future = self.staging_depth_buffer.map_read(0, 1);
         self.device.poll(wgpu::Maintain::Wait);
         let mapping = mapping_future.await.unwrap();
-        self.state.queue_message(controls::Message::Depth(
+        self.interface.queue_message(controls::Message::Depth(
             self.mouse_position.x as u32,
             self.mouse_position.y as u32,
             mapping.as_slice()[0],
@@ -381,13 +383,13 @@ impl GUI {
             self.render_d2.render(&mut rpass2d, texture);
         }
 
-        let mouse_interaction = self.renderer.backend_mut().draw(
+        let mouse_interaction = self.iced_renderer.backend_mut().draw(
             &self.device,
             &mut encoder,
             &frame.view,
             &self.viewport,
-            self.state.primitive(),
-            &self.debug.overlay(),
+            self.interface.primitive(),
+            &self.iced_debug.overlay(),
         );
 
         // [2020-06-09T18:01:01Z ERROR gfx_backend_vulkan] [Validation] Validation Error: [ VUID-vkQueuePresentKHR-pWaitSemaphores-03268 ] Object 0: handle = 0x1bd68ec4ec8, type = VK_OBJECT_TYPE_QUEUE; Object 1: handle = 0xd76249000000000c, type = VK_OBJECT_TYPE_SEMAPHORE; | MessageID = 0x251f8f7a | VkQueue 0x1bd68ec4ec8[] is waiting on VkSemaphore 0xd76249000000000c[] that has no way to be signaled. The Vulkan spec states: All elements of the pWaitSemaphores member of pPresentInfo must reference a semaphore signal operation that has been submitted for execution and any semaphore signal operations on which it depends (if any) must have also been submitted for execution. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkQueuePresentKHR-pWaitSemaphores-03268)
@@ -495,7 +497,7 @@ pub fn run(
             }
             Event::UserEvent(JoyconData::IRImage(image, position)) => {
                 gui.push_ir_data(image);
-                if gui.state.program().ir_rotate() {
+                if gui.interface.program().ir_rotate() {
                     gui.uniforms.set_ir_rotation(position.rotation);
                 } else {
                     use cgmath::prelude::One;
@@ -572,7 +574,7 @@ pub fn run(
                 if let Some(event) =
                     iced_winit::conversion::window_event(&event, window.scale_factor(), modifiers)
                 {
-                    gui.state.queue_event(event);
+                    gui.interface.queue_event(event);
                 }
             }
             _ => {}
