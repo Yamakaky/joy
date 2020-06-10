@@ -58,8 +58,9 @@ impl Image {
                     {
                         buffer.extend(fragment.iter());
                     }
-                    self.last_image =
-                        Some(image::GrayImage::from_raw(width, height, buffer).unwrap());
+                    self.last_image = Some(image::imageops::rotate90(
+                        &image::GrayImage::from_raw(width, height, buffer).unwrap(),
+                    ));
                     self.buffer = Box::new([[0; 300]; 0x100]);
                 }
                 self.prev_fragment_id = 0;
