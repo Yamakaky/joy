@@ -1,5 +1,5 @@
 use crate::image::Image;
-use crate::imu_handler;
+use crate::{imu_handler, Position};
 use anyhow::{bail, ensure, Context, Result};
 use joycon_sys::input::*;
 use joycon_sys::light;
@@ -11,11 +11,13 @@ use joycon_sys::*;
 
 const WAIT_TIMEOUT: u32 = 60;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct Report {
     pub left_stick: (f64, f64),
     pub right_stick: (f64, f64),
     pub info: DeviceStatus,
+    pub image: Option<image::GrayImage>,
+    pub position: Position,
 }
 
 pub struct JoyCon {
@@ -116,6 +118,8 @@ impl JoyCon {
             left_stick,
             right_stick,
             info: std_report.info,
+            image: self.image.last_image.take(),
+            position: *self.imu_handler.position(),
         })
     }
 
@@ -226,10 +230,6 @@ impl JoyCon {
         self.wait_mcu_status(MCUMode::IR)
             .context("set_mcu_mode_ir")?;
         Ok(())
-    }
-
-    pub fn set_ir_callback(&mut self, cb: Box<dyn FnMut(image::GrayImage)>) {
-        self.image.set_cb(cb);
     }
 
     fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {

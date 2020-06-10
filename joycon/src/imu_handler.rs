@@ -69,6 +69,10 @@ impl Handler {
         self.imu_cb = Some(cb);
     }
 
+    pub fn position(&self) -> &Position {
+        &self.position
+    }
+
     fn acc_calib(&self) -> Vector3<f64> {
         self.user_calibration
             .acc_offset()

@@ -6,7 +6,7 @@ pub struct Image {
     resolution: ir::Resolution,
     prev_fragment_id: u8,
     changing_resolution: bool,
-    cb: Option<Box<dyn FnMut(image::GrayImage)>>,
+    pub last_image: Option<image::GrayImage>,
 }
 
 impl Image {
@@ -16,12 +16,8 @@ impl Image {
             resolution: resolution,
             prev_fragment_id: 0,
             changing_resolution: false,
-            cb: None,
+            last_image: None,
         }
-    }
-
-    pub fn set_cb(&mut self, cb: Box<dyn FnMut(image::GrayImage)>) {
-        self.cb = Some(cb);
     }
 
     pub fn change_resolution(&mut self, resolution: ir::Resolution) {
@@ -53,19 +49,17 @@ impl Image {
             if packet.frag_number == self.resolution.max_fragment_id() {
                 if self.prev_fragment_id != 0 {
                     //println!("got complete packet");
-                    if let Some(ref mut cb) = self.cb {
-                        let (width, height) = self.resolution.size();
-                        let mut buffer = Vec::with_capacity((width * height) as usize);
-                        for fragment in self
-                            .buffer
-                            .iter()
-                            .take(self.resolution.max_fragment_id() as usize + 1)
-                        {
-                            buffer.extend(fragment.iter());
-                        }
-                        let img = image::GrayImage::from_raw(width, height, buffer).unwrap();
-                        cb(image::imageops::rotate90(&img));
+                    let (width, height) = self.resolution.size();
+                    let mut buffer = Vec::with_capacity((width * height) as usize);
+                    for fragment in self
+                        .buffer
+                        .iter()
+                        .take(self.resolution.max_fragment_id() as usize + 1)
+                    {
+                        buffer.extend(fragment.iter());
                     }
+                    self.last_image =
+                        Some(image::GrayImage::from_raw(width, height, buffer).unwrap());
                     self.buffer = Box::new([[0; 300]; 0x100]);
                 }
                 self.prev_fragment_id = 0;

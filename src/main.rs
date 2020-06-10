@@ -8,9 +8,7 @@ use joycon::{
     *,
 };
 use render::*;
-use std::cell::RefCell;
 use std::f32::consts::PI;
-use std::rc::Rc;
 use std::sync::mpsc;
 
 mod mouse;
@@ -48,7 +46,7 @@ fn real_main(
         .into();
     }
     assert!(proxy
-        .send_event(JoyconData::IRImage(image, Default::default()))
+        .send_event(JoyconData::IRImage(image, Position::default()))
         .is_ok());
     let mut api = HidApi::new()?;
     loop {
@@ -82,34 +80,11 @@ fn hid_main(
 
     let mut device = JoyCon::new(device, device_info.clone(), resolution)?;
     println!("new dev: {:?}", device.get_dev_info()?);
-    let mut gui_still_running = true;
-
-    // We get the orientation of the camera just after the last frame since it
-    // should be close from the capture time of the IR picture.
-    let last_position = Rc::new(RefCell::new(None));
-    let last_position2 = Rc::clone(&last_position);
-    device.set_ir_callback(Box::new(move |image| {
-        let mut last_position = last_position.borrow_mut();
-        if let Err(_) = proxy.send_event(JoyconData::IRImage(
-            image,
-            last_position.take().unwrap_or_default(),
-        )) {
-            dbg!("shutdown ");
-            gui_still_running = false;
-        }
-    }));
 
     println!("Calibrating...");
     device.enable_imu()?;
     device.load_calibration()?;
     println!("Running...");
-
-    device.set_imu_callback(Box::new(move |position| {
-        let mut last_position = last_position2.borrow_mut();
-        if last_position.is_none() {
-            *last_position = Some(*position);
-        }
-    }));
 
     dbg!(device.set_home_light(light::HomeLight::new(
         0x8,
@@ -126,17 +101,32 @@ fn hid_main(
     dbg!(device.set_mcu_mode_ir()?);
     device.change_ir_resolution(resolution)?;
 
-    dbg!(device.tick()?.info.battery_level());
+    let mut last_position = Position::default();
+    let mut last_battery_level = dbg!(device.tick()?.info.battery_level());
 
     device.enable_ir_loop = true;
-    while gui_still_running {
-        let _report = device.tick()?;
+    'main_loop: loop {
+        let report = device.tick()?;
 
-        loop {
+        if let Some(image) = report.image {
+            if let Err(_) = proxy.send_event(JoyconData::IRImage(image, last_position)) {
+                dbg!("shutdown ");
+                break 'main_loop;
+            }
+            last_position = report.position;
+        }
+
+        let battery_level = report.info.battery_level();
+        if battery_level != last_battery_level {
+            println!("Battery level down to {:?}", battery_level);
+            last_battery_level = battery_level;
+        }
+
+        'recv_loop: loop {
             match recv.try_recv() {
                 Ok(JoyconCmd::Stop) | Err(mpsc::TryRecvError::Disconnected) => {
                     eprintln!("shutting down thread");
-                    gui_still_running = false;
+                    break 'main_loop;
                 }
                 Ok(JoyconCmd::SetResolution(resolution)) => {
                     dbg!(device.change_ir_resolution(resolution)?);
@@ -150,7 +140,7 @@ fn hid_main(
                     assert!(!r2.same_address(Register::resolution(Resolution::R320x240)));
                     dbg!(device.set_ir_registers(&[r1, r2, Register::finish()])?);
                 }
-                Err(mpsc::TryRecvError::Empty) => break,
+                Err(mpsc::TryRecvError::Empty) => break 'recv_loop,
             }
         }
     }
