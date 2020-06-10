@@ -131,7 +131,7 @@ struct GUI {
 
 impl GUI {
     fn new(window: &Window, thread_contact: mpsc::Sender<JoyconCmd>) -> Self {
-        let sample_count = 1;
+        let sample_count = 2;
         let size = window.inner_size();
         let viewport =
             Viewport::with_physical_size(Size::new(size.width, size.height), window.scale_factor());

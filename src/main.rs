@@ -3,6 +3,7 @@ use iced_winit::winit::{
     self,
     event_loop::{EventLoop, EventLoopProxy},
 };
+use joycon::*;
 use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use render::*;
@@ -11,11 +12,6 @@ use std::f32::consts::PI;
 use std::rc::Rc;
 use std::sync::mpsc;
 
-mod calibration;
-mod hid;
-mod image;
-mod imu_handler;
-mod mouse;
 mod render;
 
 fn main() {

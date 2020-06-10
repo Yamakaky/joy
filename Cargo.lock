@@ -974,8 +974,21 @@ dependencies = [
  "iced_wgpu",
  "iced_winit",
  "image",
+ "joycon",
  "joycon-sys",
  "vk-shader-macros",
+]
+
+[[package]]
+name = "joycon"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cgmath",
+ "enigo",
+ "hidapi",
+ "image",
+ "joycon-sys",
 ]
 
 [[package]]
