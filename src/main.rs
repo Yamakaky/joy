@@ -97,14 +97,11 @@ fn hid_main(
         true, false, false, true, false, true, true, false,
     ))?;
 
-    dbg!(device.enable_mcu()?);
-    dbg!(device.set_mcu_mode_ir()?);
-    device.change_ir_resolution(resolution)?;
+    device.enable_ir(resolution)?;
 
     let mut last_position = Position::default();
     let mut last_battery_level = dbg!(device.tick()?.info.battery_level());
 
-    device.enable_ir_loop = true;
     'main_loop: loop {
         let report = device.tick()?;
 

@@ -29,7 +29,7 @@ pub struct JoyCon {
     left_stick_calib: StickCalibration,
     right_stick_calib: StickCalibration,
     image: Image,
-    pub enable_ir_loop: bool,
+    enable_ir_loop: bool,
     imu_handler: crate::imu_handler::Handler,
 }
 
@@ -204,17 +204,25 @@ impl JoyCon {
 
 /// MCU handling (infrared camera and NFC reader)
 impl JoyCon {
-    pub fn enable_mcu(&mut self) -> Result<()> {
-        self.set_report_mode_mcu()?;
-        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
-        self.wait_mcu_status(MCUMode::Standby)
-            .context("enable_mcu")?;
+    pub fn enable_ir(&mut self, resolution: Resolution) -> Result<()> {
+        self.enable_mcu()?;
+        self.set_mcu_mode_ir()?;
+        self.change_ir_resolution(resolution)?;
         Ok(())
     }
 
     pub fn disable_mcu(&mut self) -> Result<()> {
+        self.enable_ir_loop = false;
         self.set_report_mode_standard()?;
         self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
+        Ok(())
+    }
+
+    fn enable_mcu(&mut self) -> Result<()> {
+        self.set_report_mode_mcu()?;
+        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        self.wait_mcu_status(MCUMode::Standby)
+            .context("enable_mcu")?;
         Ok(())
     }
 
@@ -225,10 +233,11 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn set_mcu_mode_ir(&mut self) -> Result<()> {
+    fn set_mcu_mode_ir(&mut self) -> Result<()> {
         self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::IR))?;
         self.wait_mcu_status(MCUMode::IR)
             .context("set_mcu_mode_ir")?;
+        self.enable_ir_loop = true;
         Ok(())
     }
 
