@@ -12,12 +12,9 @@ use std::fmt;
 
 /// Describes a HID report from the JoyCon.
 ///
-/// It is binary compatible and can be directly casted from the raw HID bytes.
-///
 /// ```ignore
-/// let mut buffer = [0u8; size_of::<InputReport>()];
-/// read_hid_report(&mut buffer);
-/// let report = unsafe { &*(&buffer as *const _ as *const InputReport)}
+/// let mut report = InputReport::new();
+/// read_hid_report(buffer.as_bytes_mut());
 /// ```
 #[repr(packed)]
 #[derive(Copy, Clone)]

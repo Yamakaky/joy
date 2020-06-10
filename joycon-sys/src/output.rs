@@ -20,7 +20,10 @@ pub enum OutputReportId {
 
 /// Describes a HID report sent to the JoyCon.
 ///
-/// It is binary compatible and can be directly casted from the raw HID bytes.
+/// ```ignore
+/// let report = OutputReport::from(SubcommandRequest::request_device_info());
+/// write_hid_report(report.as_bytes());
+/// ```
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct OutputReport {
@@ -31,7 +34,8 @@ pub struct OutputReport {
 }
 
 impl OutputReport {
-    pub fn new() -> OutputReport {
+    #[cfg(test)]
+    pub(crate) fn new() -> OutputReport {
         OutputReport::default()
     }
 
