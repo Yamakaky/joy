@@ -975,7 +975,6 @@ dependencies = [
  "iced_winit",
  "image",
  "joycon",
- "joycon-sys",
  "vk-shader-macros",
 ]
 
@@ -985,7 +984,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cgmath",
- "enigo",
  "hidapi",
  "image",
  "joycon-sys",

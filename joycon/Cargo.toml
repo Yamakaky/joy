@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 cgmath = { version = "0.17", optional = false, default-features = false }
-enigo = { version = "0.0.14", optional = false, default-features = false }
 hidapi = "1.2"
 image = { version = "0.23", optional = false, default-features = false }
 joycon-sys = { path = "../joycon-sys" }

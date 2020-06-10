@@ -23,4 +23,3 @@ vk-shader-macros = { version = "0.2", optional = false, default-features = false
 cgmath = { version = "0.17", optional = false, default-features = false }
 bytemuck = { version = "1.2", optional = false, default-features = false }
 joycon = { path = "joycon" }
-joycon-sys = { path = "joycon-sys" }

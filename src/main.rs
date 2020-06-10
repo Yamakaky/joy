@@ -3,15 +3,17 @@ use iced_winit::winit::{
     self,
     event_loop::{EventLoop, EventLoopProxy},
 };
-use joycon::*;
-use joycon_sys::light;
-use joycon_sys::mcu::ir::*;
+use joycon::{
+    joycon_sys::{light, mcu::ir::*, NINTENDO_VENDOR_ID},
+    *,
+};
 use render::*;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 use std::rc::Rc;
 use std::sync::mpsc;
 
+mod mouse;
 mod render;
 
 fn main() {
@@ -53,7 +55,7 @@ fn real_main(
         api.refresh_devices()?;
         if let Some(device_info) = api
             .device_list()
-            .filter(|x| x.vendor_id() == joycon_sys::NINTENDO_VENDOR_ID)
+            .filter(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
             .next()
         {
             let device = device_info.open_device(&api)?;

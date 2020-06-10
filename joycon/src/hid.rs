@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::image::Image;
 use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};

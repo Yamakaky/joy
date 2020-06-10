@@ -5,7 +5,7 @@ use iced_winit::{
     slider, Checkbox, Color, Column, Command, Container, Element, HorizontalAlignment, Length,
     Program, Radio, Row, Slider, Text, VerticalAlignment,
 };
-use joycon_sys::mcu::ir::*;
+use joycon::joycon_sys::mcu::ir::*;
 use std::sync::mpsc;
 
 pub struct Controls {
