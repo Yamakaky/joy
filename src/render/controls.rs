@@ -17,6 +17,9 @@ pub struct Controls {
     near_int: Sliderf32,
     resolution: Resolution,
     edge_smoothing: Sliderf32,
+    white_threshold: Sliderf32,
+    color_interpolation_threshold: Sliderf32,
+    denoise: bool,
     buffer_update_time: Sliderf32,
     depth: (u32, u32, u8),
     ir_rotate: bool,
@@ -33,6 +36,9 @@ pub enum Message {
     UpdateTime(f32),
     Depth(u32, u32, u8),
     IRRotate(bool),
+    Denoise(bool),
+    WhiteThreshold(f32),
+    ColorInterpolationThreshold(f32),
 }
 
 impl Controls {
@@ -48,6 +54,9 @@ impl Controls {
             near_int: Sliderf32::new(0xf as f32, 0xf as f32),
             resolution: Resolution::R160x120,
             edge_smoothing: Sliderf32::new(0x23 as f32, 0xff as f32),
+            white_threshold: Sliderf32::new(0xc8 as f32, 0xff as f32),
+            color_interpolation_threshold: Sliderf32::new(0x44 as f32, 0xff as f32),
+            denoise: true,
             buffer_update_time: Sliderf32::new(0x32 as f32, 0xff as f32),
             depth: (0, 0, 0),
             ir_rotate: true,
@@ -126,6 +135,28 @@ impl Program for Controls {
             Message::Depth(x, y, depth) => self.depth = (x, y, depth),
             Message::IRRotate(rotate) => {
                 self.ir_rotate = rotate;
+            }
+            Message::WhiteThreshold(threshold) => {
+                self.white_threshold.value = threshold;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegister(Register::white_pixel_threshold(
+                        threshold as u8,
+                    )))
+                    .unwrap();
+            }
+            Message::ColorInterpolationThreshold(threshold) => {
+                self.color_interpolation_threshold.value = threshold;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegister(
+                        Register::color_interpolation_threshold(threshold as u8),
+                    ))
+                    .unwrap();
+            }
+            Message::Denoise(val) => {
+                self.denoise = val;
+                self.thread_contact
+                    .send(JoyconCmd::SetRegister(Register::denoise(val)))
+                    .unwrap();
             }
         }
         Command::none()
@@ -211,12 +242,38 @@ impl Program for Controls {
         .spacing(10)
         .into();
 
+        let denoise_ctrl = Checkbox::new(self.denoise, "Denoise", Message::Denoise).into();
+
         let edge_ctrl = Column::with_children(vec![
             title("Edge smoothing"),
             self.edge_smoothing
                 .render(
                     Message::EdgeSmoothing,
                     format!("0x{:x}", self.edge_smoothing.value as u8),
+                )
+                .into(),
+        ])
+        .spacing(10)
+        .into();
+
+        let color_ctrl = Column::with_children(vec![
+            title("Color interpolation threshold"),
+            self.color_interpolation_threshold
+                .render(
+                    Message::ColorInterpolationThreshold,
+                    format!("0x{:x}", self.color_interpolation_threshold.value as u8),
+                )
+                .into(),
+        ])
+        .spacing(10)
+        .into();
+
+        let white_ctrl = Column::with_children(vec![
+            title("White pixel threshold"),
+            self.white_threshold
+                .render(
+                    Message::WhiteThreshold,
+                    format!("0x{:x}", self.white_threshold.value as u8),
                 )
                 .into(),
         ])
@@ -259,7 +316,10 @@ impl Program for Controls {
                 general_ctrl,
                 leds_ctrl,
                 res_ctrl,
+                denoise_ctrl,
                 edge_ctrl,
+                white_ctrl,
+                color_ctrl,
                 exposure_ctrl,
                 update_ctrl,
                 depth_ctrl,
