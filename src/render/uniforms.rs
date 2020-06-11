@@ -1,13 +1,14 @@
 use crate::render::camera::Camera;
 use bytemuck::{Pod, Zeroable};
-use cgmath::{prelude::*, vec3, vec4, Deg, Matrix3, Matrix4, Quaternion, Vector3, Vector4};
+use cgmath::{prelude::*, vec3, vec4, Deg, Matrix4, Quaternion, Vector3, Vector4};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct Uniforms {
-    ir_proj: cgmath::Matrix4<f32>,
-    ir_rotation: cgmath::Matrix4<f32>,
-    view_proj: cgmath::Matrix4<f32>,
+    ir_proj: Matrix4<f32>,
+    ir_rotation: Matrix4<f32>,
+    view_proj: Matrix4<f32>,
+    normal_transform: Matrix4<f32>,
 }
 
 unsafe impl Zeroable for Uniforms {}
@@ -15,14 +16,14 @@ unsafe impl Pod for Uniforms {}
 
 impl Uniforms {
     pub fn new() -> Uniforms {
-        use cgmath::SquareMatrix;
-        let ir_proj = cgmath::perspective(cgmath::Deg(110.), 3. / 4., 0.1, 1.)
+        let ir_proj = cgmath::perspective(Deg(110.), 3. / 4., 0.1, 1.)
             .invert()
             .unwrap();
         Uniforms {
             ir_proj,
-            ir_rotation: cgmath::Matrix4::identity(),
-            view_proj: cgmath::Matrix4::identity(),
+            ir_rotation: Matrix4::identity(),
+            view_proj: Matrix4::identity(),
+            normal_transform: Matrix4::identity(),
         }
     }
 
@@ -30,8 +31,9 @@ impl Uniforms {
         self.view_proj = camera.build_view_projection_matrix();
     }
 
-    pub fn set_ir_rotation(&mut self, rotation: cgmath::Quaternion<f64>) {
-        self.ir_rotation = cgmath::Matrix4::from(rotation).cast().unwrap();
+    pub fn set_ir_rotation(&mut self, rotation: Quaternion<f64>) {
+        self.ir_rotation = Matrix4::from(rotation).cast().unwrap();
+        self.normal_transform = self.ir_rotation.invert().unwrap().transpose();
     }
 }
 

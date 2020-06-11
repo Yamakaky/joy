@@ -34,7 +34,7 @@ layout(set = 2, binding = 0, std140) uniform Lights {
 
 void main() {
     vec3 normal_sample = texture(sampler2D(normals, normals_sampler), i.uv).xyz;
-    vec3 normal = normalize(mat3(transpose(inverse(u.ir_rotation))) * normal_sample);
+    vec3 normal = normalize(mat3(u.normal_transform) * normal_sample);
 
     vec3 lighting = vec3(0.);
     for (int idx = 0; idx < lights.count; idx++) {
