@@ -3,27 +3,36 @@
 pub struct PlayerLights(u8);
 
 impl PlayerLights {
-    #[allow(clippy::identity_op, clippy::too_many_arguments)]
-    pub fn new(
-        p0: bool,
-        p1: bool,
-        p2: bool,
-        p3: bool,
-        f0: bool,
-        f1: bool,
-        f2: bool,
-        f3: bool,
-    ) -> PlayerLights {
+    #[allow(clippy::identity_op)]
+    pub fn new(p0: PlayerLight, p1: PlayerLight, p2: PlayerLight, p3: PlayerLight) -> PlayerLights {
+        use PlayerLight::*;
         PlayerLights(
-            (p0 as u8) << 0
-                | (p1 as u8) << 1
-                | (p2 as u8) << 2
-                | (p3 as u8) << 3
-                | (f0 as u8) << 4
-                | (f1 as u8) << 5
-                | (f2 as u8) << 6
-                | (f3 as u8) << 7,
+            ((p0 == On) as u8) << 0
+                | ((p1 == On) as u8) << 1
+                | ((p2 == On) as u8) << 2
+                | ((p3 == On) as u8) << 3
+                | ((p0 == Blinking) as u8) << 4
+                | ((p1 == Blinking) as u8) << 5
+                | ((p2 == Blinking) as u8) << 6
+                | ((p3 == Blinking) as u8) << 7,
         )
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum PlayerLight {
+    Off,
+    Blinking,
+    On,
+}
+
+impl From<bool> for PlayerLight {
+    fn from(b: bool) -> Self {
+        if b {
+            PlayerLight::On
+        } else {
+            PlayerLight::Off
+        }
     }
 }
 

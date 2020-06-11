@@ -4,7 +4,12 @@ use iced_winit::winit::{
     event_loop::{EventLoop, EventLoopProxy},
 };
 use joycon::{
-    joycon_sys::{light, mcu::ir::*, NINTENDO_VENDOR_ID},
+    joycon_sys::{
+        input::BatteryLevel,
+        light::{self, PlayerLight},
+        mcu::ir::*,
+        NINTENDO_VENDOR_ID,
+    },
     *,
 };
 use render::*;
@@ -53,8 +58,7 @@ fn real_main(
         api.refresh_devices()?;
         if let Some(device_info) = api
             .device_list()
-            .filter(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
-            .next()
+            .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
         {
             let device = device_info.open_device(&api)?;
             match hid_main(device, device_info, proxy.clone(), &recv) {
@@ -84,6 +88,7 @@ fn hid_main(
     device.load_calibration()?;
     println!("Running...");
 
+    device.enable_ir(Resolution::R160x120)?;
     dbg!(device.set_home_light(light::HomeLight::new(
         0x8,
         0x2,
@@ -91,30 +96,32 @@ fn hid_main(
         &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
     ))?);
 
-    device.set_player_light(light::PlayerLights::new(
-        true, false, false, true, false, true, true, false,
-    ))?;
-
-    device.enable_ir(Resolution::R160x120)?;
-
     let mut last_position = Position::default();
-    let mut last_battery_level = dbg!(device.tick()?.info.battery_level());
+    let battery_level = device.tick()?.info.battery_level();
+
+    device.set_player_light(light::PlayerLights::new(
+        (battery_level >= BatteryLevel::Full).into(),
+        (battery_level >= BatteryLevel::Medium).into(),
+        (battery_level >= BatteryLevel::Low).into(),
+        if battery_level >= BatteryLevel::Low {
+            PlayerLight::On
+        } else {
+            PlayerLight::Blinking
+        },
+    ))?;
 
     'main_loop: loop {
         let report = device.tick()?;
 
         if let Some(image) = report.image {
-            if let Err(_) = proxy.send_event(JoyconData::IRImage(image, last_position)) {
+            if proxy
+                .send_event(JoyconData::IRImage(image, last_position))
+                .is_err()
+            {
                 dbg!("shutdown ");
                 break 'main_loop;
             }
             last_position = report.position;
-        }
-
-        let battery_level = report.info.battery_level();
-        if battery_level != last_battery_level {
-            println!("Battery level down to {:?}", battery_level);
-            last_battery_level = battery_level;
         }
 
         'recv_loop: loop {
@@ -140,13 +147,8 @@ fn hid_main(
         }
     }
 
-    dbg!(device.tick()?.info.battery_level());
-
     dbg!(device.disable_mcu()?);
 
-    dbg!(device.set_player_light(light::PlayerLights::new(
-        true, false, false, true, false, false, false, false,
-    ))?);
     dbg!(device.set_home_light(light::HomeLight::new(0x8, 0x4, 0x0, &[]))?);
 
     Ok(false)

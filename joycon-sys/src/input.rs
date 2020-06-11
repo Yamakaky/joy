@@ -206,7 +206,7 @@ impl From<u8> for DeviceType {
     }
 }
 
-#[derive(Debug, Copy, Clone, FromPrimitive, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, FromPrimitive, Eq, PartialEq, Ord, PartialOrd)]
 pub enum BatteryLevel {
     Empty = 0,
     Critical = 1,
