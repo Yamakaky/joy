@@ -72,18 +72,11 @@ impl JoyCon {
     }
 
     fn recv(&mut self) -> Result<InputReport> {
-        // Larger buffer to detect unhandled received data
-        let mut reports = [InputReport::new(); 2];
-        let buffer = unsafe {
-            std::slice::from_raw_parts_mut(
-                &mut reports as *mut _ as *mut u8,
-                std::mem::size_of::<InputReport>(),
-            )
-        };
+        let mut report = InputReport::new();
+        let buffer = report.as_bytes_mut();
         let nb_read = self.device.read(buffer)?;
-        let report = reports[0];
+        assert_eq!(nb_read, buffer.len());
         report.validate();
-        assert_eq!(nb_read, std::mem::size_of_val(&report));
         if let Some(frames) = report.imu_frames() {
             self.imu_handler.handle_frames(frames);
         }
