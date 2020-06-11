@@ -14,7 +14,7 @@
 				"kind": "test",
 				"isDefault": true
 			},
-			"label": "rust: cargo test --workspace"
+			"label": "rust: cargo test"
 		},
 		{
 			"type": "cargo",
@@ -40,7 +40,8 @@
 			"problemMatcher": [
 				"$rustc"
 			],
-			"label": "rust: cargo doc --open --workspace --no-deps"
+			"group": "build",
+			"label": "rust: cargo doc --open --no-deps"
 		},
 		{
 			"type": "cargo",
@@ -51,8 +52,20 @@
 			"problemMatcher": [
 				"$rustc"
 			],
-			"group": "build",
-			"label": "rust: cargo check --workspace"
+			"group": "test",
+			"label": "rust: cargo check"
+		},
+		{
+			"type": "cargo",
+			"command": "clippy",
+			"args": [
+				"--workspace"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "test",
+			"label": "rust: cargo clippy"
 		},
 		{
 			"type": "cargo",
@@ -67,7 +80,7 @@
 				"kind": "build",
 				"isDefault": true
 			},
-			"label": "rust: cargo build --workspace"
+			"label": "rust: cargo build"
 		},
 		{
 			"type": "cargo",
@@ -80,7 +93,7 @@
 				"$rustc"
 			],
 			"group": "build",
-			"label": "rust: cargo build --workspace --release"
+			"label": "rust: cargo build --release"
 		}
 	]
 }
