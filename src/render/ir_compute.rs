@@ -145,7 +145,7 @@ impl IRCompute {
             texture: None,
             texture_binding: None,
             normal_texture: super::texture::Texture::create_normal_texture(device, (1, 1)),
-            normal_texture_binding_layout: normal_texture_binding_layout,
+            normal_texture_binding_layout,
         }
     }
 

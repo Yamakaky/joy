@@ -25,6 +25,7 @@ mod ir_compute;
 mod texture;
 mod uniforms;
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_render_pipeline(
     device: &wgpu::Device,
     layout: &wgpu::PipelineLayout,
@@ -546,7 +547,7 @@ pub fn run(
                             grabbed = set_grabbed(&window, !grabbed);
                         }
                         WindowEvent::Resized(physical_size) => {
-                            if physical_size.height != 0 && physical_size.height != 0 {
+                            if physical_size.height != 0 && physical_size.width != 0 {
                                 hidden = false;
                                 gui.resize(&window, *physical_size);
                             } else {
@@ -554,7 +555,7 @@ pub fn run(
                             }
                         }
                         WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
-                            if new_inner_size.height != 0 && new_inner_size.height != 0 {
+                            if new_inner_size.height != 0 && new_inner_size.width != 0 {
                                 hidden = false;
                                 gui.resize(&window, **new_inner_size);
                             } else {
