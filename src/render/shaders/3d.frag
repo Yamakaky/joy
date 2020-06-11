@@ -27,31 +27,18 @@ layout(set = 0, binding = 0)
 layout(set = 1, binding = 0) uniform texture2D normals;
 layout(set = 1, binding = 1) uniform sampler normals_sampler;
 
-const Light lights[2] = {Light(
-    vec4(0., 0., 0., 1.0),
-    vec3(0., 1., 0.) * 0.05,
-    vec3(0., 1., 0.) * 0.8,
-    vec3(0., 1., 0.),
-    1.0,
-    0.7,
-    1.8
-), Light(
-    vec4(0.2, 1., -0.2, 0.0),
-    vec3(0.05),
-    vec3(0.4),
-    vec3(0.5),
-    1.0,
-    0.7,
-    1.8
-)};
+layout(set = 2, binding = 0, std140) uniform Lights {
+    uint count;  
+    Light item[10];
+} lights;
 
 void main() {
     vec3 normal_sample = texture(sampler2D(normals, normals_sampler), i.uv).xyz;
     vec3 normal = normalize(mat3(transpose(inverse(u.ir_rotation))) * normal_sample);
 
     vec3 lighting = vec3(0.);
-    for (int idx = 0; idx < 2; idx++) {
-        Light light = lights[idx];
+    for (int idx = 0; idx < lights.count; idx++) {
+        Light light = lights.item[idx];
 
         vec3 light_dir;
         float attenuation;
@@ -62,7 +49,7 @@ void main() {
         } else {
             // Point light
             vec3 light_vec = light.position.xyz / light.position.w - i.position;
-            light_dir = normalize(light.position.xyz / light.position.w - i.position);
+            light_dir = normalize(light_vec);
             float distance = length(light_vec);
             attenuation = 1. / (
                 1. + light.linear * distance + light.quadratic * (distance * distance)

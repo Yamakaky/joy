@@ -1,4 +1,9 @@
-use super::{buffer::BoundBuffer, ir_compute::IRCompute, texture::Texture, uniforms::Uniforms};
+use super::{
+    buffer::BoundBuffer,
+    ir_compute::IRCompute,
+    texture::Texture,
+    uniforms::{Lights, Uniforms},
+};
 use iced_wgpu::wgpu;
 
 pub struct D3 {
@@ -12,6 +17,7 @@ impl D3 {
     pub fn new(
         device: &wgpu::Device,
         uniforms: &BoundBuffer<Uniforms>,
+        lights: &BoundBuffer<Lights>,
         compute: &IRCompute,
         sc_desc: &wgpu::SwapChainDescriptor,
         sample_count: u32,
@@ -55,7 +61,11 @@ impl D3 {
         });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            bind_group_layouts: &[uniforms.bind_group_layout(), &normal_texture_binding_layout],
+            bind_group_layouts: &[
+                uniforms.bind_group_layout(),
+                &normal_texture_binding_layout,
+                lights.bind_group_layout(),
+            ],
         });
 
         let pipeline = super::create_render_pipeline(
@@ -144,12 +154,14 @@ impl D3 {
         pass: &mut wgpu::RenderPass<'a>,
         compute: &'a IRCompute,
         uniforms: &'a BoundBuffer<Uniforms>,
+        lights: &'a BoundBuffer<Lights>,
     ) {
         pass.set_pipeline(&self.pipeline);
         pass.set_vertex_buffer(0, compute.vertices(), 0, 0);
         pass.set_index_buffer(compute.indices(), 0, 0);
         pass.set_bind_group(0, &uniforms.bind_group(), &[]);
         pass.set_bind_group(1, &self.normal_texture_binding, &[]);
+        pass.set_bind_group(2, &lights.bind_group(), &[]);
         pass.draw_indexed(0..compute.indices_count(), 0, 0..1);
     }
 }

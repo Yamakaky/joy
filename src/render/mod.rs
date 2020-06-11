@@ -16,7 +16,7 @@ use iced_winit::{
 use joycon::joycon_sys;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
-use uniforms::Uniforms;
+use uniforms::{Lights, Uniforms};
 
 mod buffer;
 mod camera;
@@ -123,6 +123,7 @@ struct GUI {
     pointer_target_view: wgpu::TextureView,
     mouse_position: PhysicalPosition<f64>,
     uniforms: BoundBuffer<Uniforms>,
+    lights: BoundBuffer<Lights>,
     camera: camera::Camera,
     compute: ir_compute::IRCompute,
     render_d2: d2::D2,
@@ -175,6 +176,13 @@ impl GUI {
         );
         uniforms.update_view_proj(&camera);
 
+        let mut lights = BoundBuffer::<Lights>::new(
+            &device,
+            wgpu::BufferUsage::UNIFORM,
+            wgpu::ShaderStage::FRAGMENT,
+        );
+        *lights = Lights::lights();
+
         let multisampled_framebuffer =
             create_multisampled_framebuffer(&device, &sc_desc, sample_count);
 
@@ -202,7 +210,14 @@ impl GUI {
 
         let compute = ir_compute::IRCompute::new(&device, uniforms.bind_group_layout());
         let render_d2 = d2::D2::new(&device, &compute.texture_binding_layout, sample_count);
-        let render_d3 = d3::D3::new(&device, &uniforms, &compute, &sc_desc, sample_count);
+        let render_d3 = d3::D3::new(
+            &device,
+            &uniforms,
+            &lights,
+            &compute,
+            &sc_desc,
+            sample_count,
+        );
         let interface = program::State::new(
             controls::Controls::new(thread_contact),
             viewport.logical_size(),
@@ -229,6 +244,7 @@ impl GUI {
             pointer_target_view,
             mouse_position: PhysicalPosition::new(0., 0.),
             uniforms,
+            lights,
             camera,
             compute,
             render_d2,
@@ -360,6 +376,7 @@ impl GUI {
             });
 
         self.uniforms.upload(&self.device, &mut encoder);
+        self.lights.upload(&self.device, &mut encoder);
 
         {
             let mut rpass3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -377,7 +394,7 @@ impl GUI {
             });
             if self.compute.texture_binding.is_some() {
                 self.render_d3
-                    .render(&mut rpass3d, &self.compute, &self.uniforms);
+                    .render(&mut rpass3d, &self.compute, &self.uniforms, &self.lights);
             }
         }
 
