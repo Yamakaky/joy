@@ -1,3 +1,4 @@
+use buffer::BoundBuffer;
 use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
 use iced_winit::{
     futures, program,
@@ -15,6 +16,7 @@ use iced_winit::{
 use joycon::joycon_sys;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
+use uniforms::Uniforms;
 
 mod buffer;
 mod camera;
@@ -120,7 +122,7 @@ struct GUI {
     pointer_target: wgpu::Texture,
     pointer_target_view: wgpu::TextureView,
     mouse_position: PhysicalPosition<f64>,
-    uniforms: uniforms::UniformHandler,
+    uniforms: BoundBuffer<Uniforms>,
     camera: camera::Camera,
     compute: ir_compute::IRCompute,
     render_d2: d2::D2,
@@ -166,7 +168,11 @@ impl GUI {
         let swap_chain = device.create_swap_chain(&surface, &sc_desc);
 
         let camera = camera::Camera::new(&sc_desc);
-        let mut uniforms = uniforms::UniformHandler::new(&device);
+        let mut uniforms = BoundBuffer::<Uniforms>::new(
+            &device,
+            wgpu::BufferUsage::UNIFORM,
+            wgpu::ShaderStage::VERTEX | wgpu::ShaderStage::FRAGMENT | wgpu::ShaderStage::COMPUTE,
+        );
         uniforms.update_view_proj(&camera);
 
         let multisampled_framebuffer =

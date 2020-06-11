@@ -1,6 +1,4 @@
-use super::ir_compute::IRCompute;
-use super::texture::Texture;
-use super::uniforms::UniformHandler;
+use super::{buffer::BoundBuffer, ir_compute::IRCompute, texture::Texture, uniforms::Uniforms};
 use iced_wgpu::wgpu;
 
 pub struct D3 {
@@ -13,7 +11,7 @@ pub struct D3 {
 impl D3 {
     pub fn new(
         device: &wgpu::Device,
-        uniforms: &UniformHandler,
+        uniforms: &BoundBuffer<Uniforms>,
         compute: &IRCompute,
         sc_desc: &wgpu::SwapChainDescriptor,
         sample_count: u32,
@@ -145,7 +143,7 @@ impl D3 {
         &'a self,
         pass: &mut wgpu::RenderPass<'a>,
         compute: &'a IRCompute,
-        uniforms: &'a UniformHandler,
+        uniforms: &'a BoundBuffer<Uniforms>,
     ) {
         pass.set_pipeline(&self.pipeline);
         pass.set_vertex_buffer(0, compute.vertices(), 0, 0);
