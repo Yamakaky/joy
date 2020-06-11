@@ -1,5 +1,17 @@
 #version 450
 
+struct Light {
+    vec4 position;  
+  
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+	
+    float constant;
+    float linear;
+    float quadratic;
+}; 
+
 layout(location = 0) in VertexData {
     vec3 position;
     vec2 uv;
@@ -15,35 +27,53 @@ layout(set = 0, binding = 0)
 layout(set = 1, binding = 0) uniform texture2D normals;
 layout(set = 1, binding = 1) uniform sampler normals_sampler;
 
-const vec4 LIGHT_POSITION = vec4(0., 0., 0., 1.0);
-const vec3 LIGHT_COLOR = vec3(1., 0., 0.);
-const vec3 LIGHT_COLOR_AMBIENT = vec3(0., 0., 1.);
-const float LIGHT_AMBIENT_INTENSITY = 0.1;
+const Light lights[2] = {Light(
+    vec4(0., 0., 0., 1.0),
+    vec3(0., 1., 0.) * 0.05,
+    vec3(0., 1., 0.) * 0.8,
+    vec3(0., 1., 0.),
+    1.0,
+    0.7,
+    1.8
+), Light(
+    vec4(0.2, 1., -0.2, 0.0),
+    vec3(0.05),
+    vec3(0.4),
+    vec3(0.5),
+    1.0,
+    0.7,
+    1.8
+)};
 
 void main() {
-    if (!gl_FrontFacing) {
-        out_color = vec4(0., 0.5, 0., 1.);
-    } else {
-        vec4 frag_color = vec4(1. - i.depth, 1. - i.depth, 1. - i.depth, 1.0);
+    vec3 normal_sample = texture(sampler2D(normals, normals_sampler), i.uv).xyz;
+    vec3 normal = normalize(mat3(transpose(inverse(u.ir_rotation))) * normal_sample);
 
-        vec3 ambient_color = LIGHT_COLOR_AMBIENT * LIGHT_AMBIENT_INTENSITY;
-
-        vec3 normal_sample = texture(sampler2D(normals, normals_sampler), i.uv).xyz;
-        vec3 normal = normalize(mat3(transpose(inverse(u.ir_rotation))) * normal_sample);
+    vec3 lighting = vec3(0.);
+    for (int idx = 0; idx < 2; idx++) {
+        Light light = lights[idx];
 
         vec3 light_dir;
-        if (LIGHT_POSITION.w == 0.) {
+        float attenuation;
+        if (light.position.w == 0.) {
             // Directional light
-            light_dir = normalize(LIGHT_POSITION.xyz);
+            light_dir = normalize(light.position.xyz);
+            attenuation = 0.3;
         } else {
             // Point light
-            light_dir = normalize(LIGHT_POSITION.xyz / LIGHT_POSITION.w - i.position);
+            vec3 light_vec = light.position.xyz / light.position.w - i.position;
+            light_dir = normalize(light.position.xyz / light.position.w - i.position);
+            float distance = length(light_vec);
+            attenuation = 1. / (
+                1. + light.linear * distance + light.quadratic * (distance * distance)
+            );  
         }
 
         float diffuse_strength  = max(dot(normal, light_dir), 0.);
-        vec3 diffuse_color = LIGHT_COLOR * diffuse_strength;
+        vec3 diffuse_color = light.diffuse * diffuse_strength;
 
-        out_color = frag_color * vec4(ambient_color + diffuse_color, 1.0);
+        lighting += (light.ambient + diffuse_color) * attenuation;
     }
+    out_color = vec4(1.) * vec4(lighting, 1.);
     out_depth = i.depth;
 }
