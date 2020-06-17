@@ -1,20 +1,21 @@
 use buffer::BoundBuffer;
 use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
 use iced_winit::{
-    futures, program,
+    program,
     winit::{
         dpi::{PhysicalPosition, PhysicalSize},
         event::{
             DeviceEvent, ElementState, Event, KeyboardInput, ModifiersState, StartCause,
             VirtualKeyCode, WindowEvent,
         },
-        event_loop::{ControlFlow, EventLoop},
+        event_loop::{ControlFlow, EventLoop, EventLoopProxy},
         window::Window,
     },
     Debug, Size,
 };
 use joycon::joycon_sys;
 use std::sync::mpsc;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use uniforms::{Lights, Uniforms};
 
@@ -112,7 +113,7 @@ fn create_multisampled_framebuffer(
 
 struct GUI {
     surface: wgpu::Surface,
-    device: wgpu::Device,
+    device: Arc<wgpu::Device>,
     queue: wgpu::Queue,
     sc_desc: wgpu::SwapChainDescriptor,
     viewport: Viewport,
@@ -131,33 +132,37 @@ struct GUI {
     iced_renderer: Renderer,
     interface: program::State<controls::Controls>,
     iced_debug: Debug,
-    staging_depth_buffer: wgpu::Buffer,
+    staging_depth_buffer_send: async_channel::Sender<wgpu::Buffer>,
+    staging_depth_buffer_recv: async_channel::Receiver<wgpu::Buffer>,
 }
 
 impl GUI {
-    fn new(window: &Window, thread_contact: mpsc::Sender<JoyconCmd>) -> Self {
+    async fn new(window: &Window, thread_contact: mpsc::Sender<JoyconCmd>) -> Self {
         let sample_count = 1;
         let size = window.inner_size();
         let viewport =
             Viewport::with_physical_size(Size::new(size.width, size.height), window.scale_factor());
         let surface = wgpu::Surface::create(window);
 
-        let adapter = futures::executor::block_on(wgpu::Adapter::request(
+        let adapter = wgpu::Adapter::request(
             &wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::Default,
                 compatible_surface: Some(&surface),
             },
             wgpu::BackendBit::VULKAN,
-        ))
+        )
+        .await
         .unwrap();
 
-        let (device, queue) =
-            futures::executor::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        let (device, queue) = adapter
+            .request_device(&wgpu::DeviceDescriptor {
                 extensions: wgpu::Extensions {
                     anisotropic_filtering: false,
                 },
                 limits: wgpu::Limits::default(),
-            }));
+            })
+            .await;
+        let device = Arc::new(device);
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -225,10 +230,26 @@ impl GUI {
             &mut iced_debug,
         );
 
-        let staging_depth_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("depth reader"),
-            size: 1,
-            usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
+        let (staging_depth_buffer_send, staging_depth_buffer_recv) = async_channel::unbounded();
+        for _ in 0..5 {
+            staging_depth_buffer_send
+                .send(device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("depth reader"),
+                    size: 1,
+                    usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
+                }))
+                .await
+                .unwrap();
+        }
+
+        std::thread::spawn({
+            let weak = Arc::downgrade(&device);
+            move || {
+                while let Some(device) = weak.upgrade() {
+                    device.poll(wgpu::Maintain::Wait);
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+            }
         });
 
         Self {
@@ -252,7 +273,8 @@ impl GUI {
             iced_renderer,
             interface,
             iced_debug,
-            staging_depth_buffer,
+            staging_depth_buffer_send,
+            staging_depth_buffer_recv,
         }
     }
 
@@ -310,7 +332,7 @@ impl GUI {
         self.render_d3.update_bindgroup(&self.device, &self.compute);
     }
 
-    fn copy_depth(&mut self, encoder: &mut wgpu::CommandEncoder) {
+    fn copy_depth(&mut self, encoder: &mut wgpu::CommandEncoder, buffer: &wgpu::Buffer) {
         encoder.copy_texture_to_buffer(
             wgpu::TextureCopyView {
                 texture: &self.pointer_target,
@@ -323,7 +345,7 @@ impl GUI {
                 },
             },
             wgpu::BufferCopyView {
-                buffer: &self.staging_depth_buffer,
+                buffer,
                 offset: 0,
                 bytes_per_row: 1,
                 rows_per_image: 1,
@@ -334,17 +356,6 @@ impl GUI {
                 depth: 1,
             },
         );
-    }
-
-    async fn get_depth(&mut self) {
-        let mapping_future = self.staging_depth_buffer.map_read(0, 1);
-        self.device.poll(wgpu::Maintain::Wait);
-        let mapping = mapping_future.await.unwrap();
-        self.interface.queue_message(controls::Message::Depth(
-            self.mouse_position.x as u32,
-            self.mouse_position.y as u32,
-            mapping.as_slice()[0],
-        ));
     }
 
     fn push_ir_data(&mut self, image: image::GrayImage) {
@@ -363,7 +374,7 @@ impl GUI {
         self.queue.submit(&[encoder.finish()]);
     }
 
-    fn render(&mut self, window: &Window) {
+    fn render(&mut self, window: &Window, proxy: EventLoopProxy<UserEvent>) {
         let frame = self
             .swap_chain
             .get_next_texture()
@@ -398,7 +409,10 @@ impl GUI {
             }
         }
 
-        self.copy_depth(&mut encoder);
+        let staging_depth_buffer = self.staging_depth_buffer_recv.try_recv();
+        if let Ok(ref buffer) = staging_depth_buffer {
+            self.copy_depth(&mut encoder, buffer);
+        }
 
         if let Some(ref texture) = self.compute.texture_binding {
             let mut rpass2d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -417,9 +431,26 @@ impl GUI {
             &self.iced_debug.overlay(),
         );
 
-        // [2020-06-09T18:01:01Z ERROR gfx_backend_vulkan] [Validation] Validation Error: [ VUID-vkQueuePresentKHR-pWaitSemaphores-03268 ] Object 0: handle = 0x1bd68ec4ec8, type = VK_OBJECT_TYPE_QUEUE; Object 1: handle = 0xd76249000000000c, type = VK_OBJECT_TYPE_SEMAPHORE; | MessageID = 0x251f8f7a | VkQueue 0x1bd68ec4ec8[] is waiting on VkSemaphore 0xd76249000000000c[] that has no way to be signaled. The Vulkan spec states: All elements of the pWaitSemaphores member of pPresentInfo must reference a semaphore signal operation that has been submitted for execution and any semaphore signal operations on which it depends (if any) must have also been submitted for execution. (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html#VUID-vkQueuePresentKHR-pWaitSemaphores-03268)
-        futures::executor::block_on(self.get_depth());
         self.queue.submit(&[encoder.finish()]);
+
+        if let Ok(buffer) = staging_depth_buffer {
+            // Update the depth picker at cursor position
+            let (x, y) = (self.mouse_position.x as u32, self.mouse_position.y as u32);
+            let sender = self.staging_depth_buffer_send.clone();
+
+            smol::Task::spawn(async move {
+                {
+                    let mapping = buffer.map_read(0, 1).await.unwrap();
+                    let _ = proxy.send_event(UserEvent::Message(controls::Message::Depth(
+                        x,
+                        y,
+                        mapping.as_slice()[0],
+                    )));
+                }
+                sender.send(buffer).await.unwrap();
+            })
+            .detach();
+        }
 
         // And update the mouse cursor
         window.set_cursor_icon(iced_winit::conversion::mouse_interaction(mouse_interaction));
@@ -450,13 +481,13 @@ impl GUI {
     }
 }
 
-pub fn run(
-    event_loop: EventLoop<JoyconData>,
+pub async fn run(
+    event_loop: EventLoop<UserEvent>,
     window: Window,
     thread_contact: mpsc::Sender<JoyconCmd>,
     _thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
 ) -> ! {
-    let mut gui = GUI::new(&window, thread_contact.clone());
+    let mut gui = GUI::new(&window, thread_contact.clone()).await;
 
     let mut hidden = false;
 
@@ -472,6 +503,8 @@ pub fn run(
 
     let mut frame_count = 0;
     let mut frame_counter = Instant::now();
+
+    let proxy = event_loop.create_proxy();
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
@@ -502,7 +535,7 @@ pub fn run(
             }
             Event::RedrawRequested(_) => {
                 if !hidden {
-                    gui.render(&window);
+                    gui.render(&window, proxy.clone());
                 }
             }
             Event::LoopDestroyed => {
@@ -520,16 +553,21 @@ pub fn run(
                     Err(_) => eprintln!("Joycon thread crashed"),
                 }*/
             }
-            Event::UserEvent(JoyconData::IRImage(image, position)) => {
-                gui.push_ir_data(image);
-                if gui.interface.program().ir_rotate() {
-                    gui.uniforms.set_ir_rotation(position.rotation);
-                } else {
-                    use cgmath::prelude::One;
-                    gui.uniforms.set_ir_rotation(cgmath::Quaternion::one());
+            Event::UserEvent(e) => match e {
+                UserEvent::IRImage(image, position) => {
+                    gui.push_ir_data(image);
+                    if gui.interface.program().ir_rotate() {
+                        gui.uniforms.set_ir_rotation(position.rotation);
+                    } else {
+                        use cgmath::prelude::One;
+                        gui.uniforms.set_ir_rotation(cgmath::Quaternion::one());
+                    }
+                    window.request_redraw();
                 }
-                window.request_redraw();
-            }
+                UserEvent::Message(m) => {
+                    gui.interface.queue_message(m);
+                }
+            },
             Event::DeviceEvent {
                 event: DeviceEvent::MouseMotion { delta },
                 ..
@@ -607,8 +645,9 @@ pub fn run(
     });
 }
 
-pub enum JoyconData {
+pub enum UserEvent {
     IRImage(image::GrayImage, joycon::Position),
+    Message(controls::Message),
 }
 
 pub enum JoyconCmd {

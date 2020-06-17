@@ -28,7 +28,7 @@ fn main() {
 
     let event_loop = EventLoop::with_user_event();
     let window = winit::window::WindowBuilder::new()
-        .with_maximized(true)
+        .with_maximized(false)
         .with_title("Joy")
         .build(&event_loop)
         .unwrap();
@@ -36,11 +36,16 @@ fn main() {
     let (thread_contact, recv) = mpsc::channel();
     let thread_handle = std::thread::spawn(|| real_main(proxy, recv));
 
-    render::run(event_loop, window, thread_contact, thread_handle);
+    smol::run(render::run(
+        event_loop,
+        window,
+        thread_contact,
+        thread_handle,
+    ));
 }
 
 fn real_main(
-    proxy: EventLoopProxy<JoyconData>,
+    proxy: EventLoopProxy<UserEvent>,
     recv: mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<()> {
     let mut image = ::image::GrayImage::new(240, 320);
@@ -51,7 +56,7 @@ fn real_main(
         .into();
     }
     assert!(proxy
-        .send_event(JoyconData::IRImage(image, Position::default()))
+        .send_event(UserEvent::IRImage(image, Position::default()))
         .is_ok());
     let mut api = HidApi::new()?;
     loop {
@@ -75,7 +80,7 @@ fn real_main(
 fn hid_main(
     device: hidapi::HidDevice,
     device_info: &hidapi::DeviceInfo,
-    proxy: EventLoopProxy<JoyconData>,
+    proxy: EventLoopProxy<UserEvent>,
     recv: &mpsc::Receiver<JoyconCmd>,
 ) -> anyhow::Result<bool> {
     let mut _mouse = mouse::Mouse::new();
@@ -115,7 +120,7 @@ fn hid_main(
 
         if let Some(image) = report.image {
             if proxy
-                .send_event(JoyconData::IRImage(image, last_position))
+                .send_event(UserEvent::IRImage(image, last_position))
                 .is_err()
             {
                 dbg!("shutdown ");
