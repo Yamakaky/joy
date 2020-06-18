@@ -1,7 +1,10 @@
 use hidapi::HidApi;
-use iced_winit::winit::{
-    self,
-    event_loop::{EventLoop, EventLoopProxy},
+use iced_winit::{
+    futures,
+    winit::{
+        self,
+        event_loop::{EventLoop, EventLoopProxy},
+    },
 };
 use joycon::{
     joycon_sys::{
@@ -36,7 +39,11 @@ fn main() {
     let (thread_contact, recv) = mpsc::channel();
     let thread_handle = std::thread::spawn(|| real_main(proxy, recv));
 
-    smol::run(render::run(
+    // Launch an executor in another thread pool since winit::run is blocking and !Send
+    // TODO: stoppable
+    std::thread::spawn(|| smol::run(futures::future::pending::<()>()));
+
+    smol::block_on(render::run(
         event_loop,
         window,
         thread_contact,

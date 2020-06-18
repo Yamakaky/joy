@@ -15,7 +15,6 @@ use iced_winit::{
 };
 use joycon::joycon_sys;
 use std::sync::mpsc;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 use uniforms::{Lights, Uniforms};
 
@@ -113,7 +112,7 @@ fn create_multisampled_framebuffer(
 
 struct GUI {
     surface: wgpu::Surface,
-    device: Arc<wgpu::Device>,
+    device: wgpu::Device,
     queue: wgpu::Queue,
     sc_desc: wgpu::SwapChainDescriptor,
     viewport: Viewport,
@@ -162,7 +161,6 @@ impl GUI {
                 limits: wgpu::Limits::default(),
             })
             .await;
-        let device = Arc::new(device);
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -231,6 +229,7 @@ impl GUI {
         );
 
         let (staging_depth_buffer_send, staging_depth_buffer_recv) = async_channel::unbounded();
+        // TODO: multiple multi-use staging buffers
         for _ in 0..5 {
             staging_depth_buffer_send
                 .send(device.create_buffer(&wgpu::BufferDescriptor {
@@ -241,16 +240,6 @@ impl GUI {
                 .await
                 .unwrap();
         }
-
-        std::thread::spawn({
-            let weak = Arc::downgrade(&device);
-            move || {
-                while let Some(device) = weak.upgrade() {
-                    device.poll(wgpu::Maintain::Wait);
-                    std::thread::sleep(Duration::from_millis(5));
-                }
-            }
-        });
 
         Self {
             surface,
