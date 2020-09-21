@@ -37,7 +37,11 @@ fn main() {
         .unwrap();
     let proxy = event_loop.create_proxy();
     let (thread_contact, recv) = mpsc::channel();
-    let thread_handle = std::thread::spawn(|| real_main(proxy, recv));
+    let thread_handle = std::thread::spawn(|| {
+        if let Err(e) = real_main(proxy, recv) {
+            eprintln!("{:?}", e);
+        }
+    });
 
     // Launch an executor in another thread pool since winit::run is blocking and !Send
     // TODO: stoppable
@@ -98,9 +102,10 @@ fn hid_main(
     println!("Calibrating...");
     device.enable_imu()?;
     device.load_calibration()?;
-    println!("Running...");
 
-    device.enable_ir(Resolution::R160x120)?;
+    if device.supports_ir() {
+        device.enable_ir(Resolution::R160x120)?;
+    }
     dbg!(device.set_home_light(light::HomeLight::new(
         0x8,
         0x2,
@@ -122,6 +127,7 @@ fn hid_main(
         },
     ))?;
 
+    println!("Running...");
     'main_loop: loop {
         let report = device.tick()?;
 

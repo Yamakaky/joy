@@ -474,7 +474,7 @@ pub async fn run(
     event_loop: EventLoop<UserEvent>,
     window: Window,
     thread_contact: mpsc::Sender<JoyconCmd>,
-    _thread_handle: std::thread::JoinHandle<anyhow::Result<()>>,
+    _thread_handle: std::thread::JoinHandle<()>,
 ) -> ! {
     let mut gui = GUI::new(&window, thread_contact.clone()).await;
 
@@ -490,7 +490,7 @@ pub async fn run(
     let mut last_tick = Instant::now();
     let mut modifiers = ModifiersState::default();
 
-    let mut frame_count = 0;
+    let mut _frame_count = 0;
     let mut frame_counter = Instant::now();
 
     let proxy = event_loop.create_proxy();
@@ -508,11 +508,11 @@ pub async fn run(
                 dbg!("resumed");
             }
             Event::RedrawEventsCleared => {
-                frame_count += 1;
+                _frame_count += 1;
                 if frame_counter.elapsed() > Duration::from_secs(1) {
-                    println!("{} fps", frame_count);
+                    //println!("{} fps", frame_count);
                     frame_counter = Instant::now();
-                    frame_count = 0;
+                    _frame_count = 0;
                 }
             }
             Event::MainEventsCleared => {

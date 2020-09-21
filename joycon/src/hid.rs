@@ -31,17 +31,19 @@ pub struct JoyCon {
     image: Image,
     enable_ir_loop: bool,
     imu_handler: crate::imu_handler::Handler,
+    device_type: u16,
 }
 
 impl JoyCon {
     pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> Result<JoyCon> {
+        let device_type = info.product_id();
         assert!([
             JOYCON_L_BT,
             JOYCON_R_BT,
             PRO_CONTROLLER,
             JOYCON_CHARGING_GRIP,
         ]
-        .contains(&info.product_id()));
+        .contains(&device_type));
         let mut joycon = JoyCon {
             device,
             info,
@@ -56,10 +58,15 @@ impl JoyCon {
                 imu::GyroSens::default(),
                 imu::AccSens::default(),
             ),
+            device_type,
         };
 
         joycon.set_report_mode_standard()?;
         Ok(joycon)
+    }
+
+    pub fn supports_ir(&self) -> bool {
+        self.device_type == JOYCON_R_BT
     }
 
     fn send(&mut self, report: &mut OutputReport) -> Result<()> {
@@ -74,8 +81,10 @@ impl JoyCon {
     fn recv(&mut self) -> Result<InputReport> {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
-        let nb_read = self.device.read(buffer)?;
-        assert_eq!(nb_read, buffer.len());
+        // TODO: 64 byte on pro controller, why ?
+        let _nb_read = self.device.read(buffer)?;
+        //dbg!(nb_read);
+        //assert_eq!(nb_read, buffer.len());
         report.validate();
         if let Some(frames) = report.imu_frames() {
             self.imu_handler.handle_frames(frames);
