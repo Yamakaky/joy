@@ -1,5 +1,6 @@
 use cgmath::vec2;
 use iced_wgpu::wgpu;
+use wgpu::util::DeviceExt;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -40,14 +41,22 @@ impl D2 {
                 uv: vec2(1., 0.),
             },
         ];
-        let vertex_buffer = device
-            .create_buffer_with_data(bytemuck::cast_slice(vertices), wgpu::BufferUsage::VERTEX);
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            usage: wgpu::BufferUsage::VERTEX,
+            contents: bytemuck::cast_slice(vertices),
+            label: Some("2D Vertex Buffer"),
+        });
         let indices: &[u32] = &[0, 1, 2, 2, 1, 3];
-        let index_buffer =
-            device.create_buffer_with_data(bytemuck::cast_slice(indices), wgpu::BufferUsage::INDEX);
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            usage: wgpu::BufferUsage::INDEX,
+            contents: bytemuck::cast_slice(indices),
+            label: Some("2D Index Buffer"),
+        });
 
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             bind_group_layouts: &[texture_binding_layout],
+            push_constant_ranges: &[],
+            label: Some("2D Pipeline Layout"),
         });
 
         let pipeline = super::create_render_pipeline(
@@ -73,8 +82,8 @@ impl D2 {
 
     pub fn render<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>, texture: &'a wgpu::BindGroup) {
         pass.set_pipeline(&self.pipeline);
-        pass.set_vertex_buffer(0, &self.vertex_buffer, 0, 0);
-        pass.set_index_buffer(&self.index_buffer, 0, 0);
+        pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
+        pass.set_index_buffer(self.index_buffer.slice(..));
         pass.set_bind_group(0, texture, &[]);
         pass.draw_indexed(0..6, 0, 0..1);
     }

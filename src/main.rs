@@ -1,6 +1,5 @@
 use hidapi::HidApi;
 use iced_winit::{
-    futures,
     winit::{
         self,
         event_loop::{EventLoop, EventLoopProxy},
@@ -42,10 +41,6 @@ fn main() {
             eprintln!("{:?}", e);
         }
     });
-
-    // Launch an executor in another thread pool since winit::run is blocking and !Send
-    // TODO: stoppable
-    std::thread::spawn(|| smol::run(futures::future::pending::<()>()));
 
     smol::block_on(render::run(
         event_loop,

@@ -20,13 +20,21 @@ impl Texture {
             label: Some("Normal Texture"),
             size,
             mip_level_count: 1,
-            array_layer_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba32Float,
             usage: wgpu::TextureUsage::STORAGE | wgpu::TextureUsage::SAMPLED,
         });
-        let view = texture.create_default_view();
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("Normal Texture View"),
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            format: Some(wgpu::TextureFormat::Rgba32Float),
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: 0,
+            level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
+        });
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -36,7 +44,9 @@ impl Texture {
             mipmap_filter: wgpu::FilterMode::Nearest,
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare: wgpu::CompareFunction::Undefined,
+            compare: None,
+            anisotropy_clamp: None,
+            label: None,
         });
 
         Self {
@@ -53,19 +63,27 @@ impl Texture {
             height: size.1,
             depth: 1,
         };
-        let desc = wgpu::TextureDescriptor {
-            label: Some("IR Texture"),
-            size,
-            mip_level_count: 1,
-            array_layer_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::R8Unorm,
-            usage: wgpu::TextureUsage::COPY_DST | wgpu::TextureUsage::SAMPLED,
-        };
-        let texture = device.create_texture(&desc);
-
-        let view = texture.create_default_view();
+        let texture = device.create_texture(
+            &(wgpu::TextureDescriptor {
+                label: Some("IR Texture"),
+                size,
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::R8Unorm,
+                usage: wgpu::TextureUsage::COPY_DST | wgpu::TextureUsage::SAMPLED,
+            }),
+        );
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("IR Texture View"),
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            format: Some(wgpu::TextureFormat::R8Unorm),
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: 0,
+            level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
+        });
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -75,7 +93,9 @@ impl Texture {
             mipmap_filter: wgpu::FilterMode::Nearest,
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare: wgpu::CompareFunction::Undefined,
+            compare: None,
+            anisotropy_clamp: None,
+            label: None,
         });
 
         Self {
@@ -97,21 +117,30 @@ impl Texture {
             height: sc_desc.height,
             depth: 1,
         };
-        let desc = wgpu::TextureDescriptor {
-            label,
-            size,
-            mip_level_count: 1,
-            array_layer_count: 1,
-            sample_count,
-            dimension: wgpu::TextureDimension::D2,
-            format: Self::DEPTH_FORMAT,
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT
-                | wgpu::TextureUsage::SAMPLED
-                | wgpu::TextureUsage::COPY_SRC,
-        };
-        let texture = device.create_texture(&desc);
-
-        let view = texture.create_default_view();
+        let texture = device.create_texture(
+            &(wgpu::TextureDescriptor {
+                label,
+                size,
+                mip_level_count: 1,
+                sample_count,
+                dimension: wgpu::TextureDimension::D2,
+                format: Self::DEPTH_FORMAT,
+                usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT
+                    | wgpu::TextureUsage::SAMPLED
+                    | wgpu::TextureUsage::COPY_SRC,
+            }),
+        );
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("IR Texture View"),
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            // TODO : check
+            format: Some(wgpu::TextureFormat::Depth24Plus),
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: 0,
+            level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
+        });
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -121,7 +150,9 @@ impl Texture {
             mipmap_filter: wgpu::FilterMode::Nearest,
             lod_min_clamp: -100.0,
             lod_max_clamp: 100.0,
-            compare: wgpu::CompareFunction::LessEqual,
+            compare: Some(wgpu::CompareFunction::LessEqual),
+            anisotropy_clamp: None,
+            label: None,
         });
 
         Self {
@@ -135,7 +166,7 @@ impl Texture {
     pub fn update(
         &mut self,
         device: &wgpu::Device,
-        encoder: &mut wgpu::CommandEncoder,
+        queue: &mut wgpu::Queue,
         texture: image::GrayImage,
     ) {
         let flat_samples = texture.as_flat_samples();
@@ -144,20 +175,17 @@ impl Texture {
         if old_size.width != width || old_size.height != height {
             *self = Texture::create_ir_texture(device, (width, height));
         }
-        let staging_buffer =
-            device.create_buffer_with_data(flat_samples.samples, wgpu::BufferUsage::COPY_SRC);
-        encoder.copy_buffer_to_texture(
-            wgpu::BufferCopyView {
-                buffer: &staging_buffer,
-                offset: 0,
-                bytes_per_row: flat_samples.layout.height_stride as u32,
-                rows_per_image: 0,
-            },
+        queue.write_texture(
             wgpu::TextureCopyView {
                 texture: &self.texture,
                 mip_level: 0,
-                array_layer: 0,
                 origin: wgpu::Origin3d::ZERO,
+            },
+            flat_samples.samples,
+            wgpu::TextureDataLayout {
+                offset: 0,
+                bytes_per_row: flat_samples.layout.height_stride as u32,
+                rows_per_image: 0,
             },
             self.size,
         );

@@ -1,4 +1,5 @@
 use buffer::BoundBuffer;
+use iced_core::Point;
 use iced_wgpu::{wgpu, Backend, Renderer, Settings, Viewport};
 use iced_winit::{
     program,
@@ -39,13 +40,13 @@ pub fn create_render_pipeline(
     sample_count: u32,
 ) -> wgpu::RenderPipeline {
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        layout: &layout,
+        layout: Some(layout),
         vertex_stage: wgpu::ProgrammableStageDescriptor {
-            module: &device.create_shader_module(vs_spv),
+            module: &device.create_shader_module(wgpu::ShaderModuleSource::SpirV(vs_spv.into())),
             entry_point: "main",
         },
         fragment_stage: Some(wgpu::ProgrammableStageDescriptor {
-            module: &device.create_shader_module(fs_spv),
+            module: &device.create_shader_module(wgpu::ShaderModuleSource::SpirV(fs_spv.into())),
             entry_point: "main",
         }),
         rasterization_state: Some(wgpu::RasterizationStateDescriptor {
@@ -54,6 +55,7 @@ pub fn create_render_pipeline(
             depth_bias: 0,
             depth_bias_slope_scale: 0.0,
             depth_bias_clamp: 0.0,
+            clamp_depth: false,
         }),
         primitive_topology: wgpu::PrimitiveTopology::TriangleList,
         color_states: &color_formats
@@ -69,10 +71,12 @@ pub fn create_render_pipeline(
             format,
             depth_write_enabled: true,
             depth_compare: wgpu::CompareFunction::Less,
-            stencil_front: wgpu::StencilStateFaceDescriptor::IGNORE,
-            stencil_back: wgpu::StencilStateFaceDescriptor::IGNORE,
-            stencil_read_mask: 0,
-            stencil_write_mask: 0,
+            stencil: wgpu::StencilStateDescriptor {
+                front: wgpu::StencilStateFaceDescriptor::IGNORE,
+                back: wgpu::StencilStateFaceDescriptor::IGNORE,
+                read_mask: 0,
+                write_mask: 0,
+            },
         }),
         sample_count,
         sample_mask: !0,
@@ -81,6 +85,7 @@ pub fn create_render_pipeline(
             index_format: wgpu::IndexFormat::Uint32,
             vertex_buffers: vertex_descs,
         },
+        label: Some("Render Pipeline"),
     })
 }
 
@@ -97,7 +102,6 @@ fn create_multisampled_framebuffer(
     let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
         size: multisampled_texture_extent,
         mip_level_count: 1,
-        array_layer_count: 1,
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: sc_desc.format,
@@ -107,7 +111,16 @@ fn create_multisampled_framebuffer(
 
     device
         .create_texture(multisampled_frame_descriptor)
-        .create_default_view()
+        .create_view(&wgpu::TextureViewDescriptor {
+            label: None,
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            format: None,
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: 0,
+            level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
+        })
 }
 
 struct GUI {
@@ -133,6 +146,7 @@ struct GUI {
     iced_debug: Debug,
     staging_depth_buffer_send: async_channel::Sender<wgpu::Buffer>,
     staging_depth_buffer_recv: async_channel::Receiver<wgpu::Buffer>,
+    staging_belt: wgpu::util::StagingBelt,
 }
 
 impl GUI {
@@ -141,26 +155,30 @@ impl GUI {
         let size = window.inner_size();
         let viewport =
             Viewport::with_physical_size(Size::new(size.width, size.height), window.scale_factor());
-        let surface = wgpu::Surface::create(window);
 
-        let adapter = wgpu::Adapter::request(
-            &wgpu::RequestAdapterOptions {
+        let instance = wgpu::Instance::new(wgpu::BackendBit::VULKAN);
+
+        let surface = unsafe { instance.create_surface(window) };
+
+        let adapter = instance
+            .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::Default,
                 compatible_surface: Some(&surface),
-            },
-            wgpu::BackendBit::VULKAN,
-        )
-        .await
-        .unwrap();
+            })
+            .await
+            .unwrap();
 
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                extensions: wgpu::Extensions {
-                    anisotropic_filtering: false,
+            .request_device(
+                &wgpu::DeviceDescriptor {
+                    limits: wgpu::Limits::default(),
+                    features: wgpu::Features::empty(),
+                    shader_validation: true,
                 },
-                limits: wgpu::Limits::default(),
-            })
-            .await;
+                None,
+            )
+            .await
+            .unwrap();
 
         let sc_desc = wgpu::SwapChainDescriptor {
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
@@ -197,7 +215,6 @@ impl GUI {
         let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
             size: multisampled_texture_extent,
             mip_level_count: 1,
-            array_layer_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
@@ -205,7 +222,16 @@ impl GUI {
             label: None,
         };
         let pointer_target = device.create_texture(multisampled_frame_descriptor);
-        let pointer_target_view = pointer_target.create_default_view();
+        let pointer_target_view = pointer_target.create_view(&wgpu::TextureViewDescriptor {
+            label: None,
+            dimension: Some(wgpu::TextureViewDimension::D2),
+            format: Some(wgpu::TextureFormat::R8Unorm),
+            aspect: wgpu::TextureAspect::All,
+            base_mip_level: 0,
+            level_count: None,
+            base_array_layer: 0,
+            array_layer_count: None,
+        });
 
         // Initialize iced
         let mut iced_debug = Debug::new();
@@ -224,18 +250,21 @@ impl GUI {
         let interface = program::State::new(
             controls::Controls::new(thread_contact),
             viewport.logical_size(),
+            // TODO
+            Point::ORIGIN,
             &mut iced_renderer,
             &mut iced_debug,
         );
 
         let (staging_depth_buffer_send, staging_depth_buffer_recv) = async_channel::unbounded();
         // TODO: multiple multi-use staging buffers
-        for _ in 0..5 {
+        for _ in 0u8..5 {
             staging_depth_buffer_send
                 .send(device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("depth reader"),
-                    size: 1,
+                    size: wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as wgpu::BufferAddress,
                     usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::MAP_READ,
+                    mapped_at_creation: false,
                 }))
                 .await
                 .unwrap();
@@ -264,6 +293,7 @@ impl GUI {
             iced_debug,
             staging_depth_buffer_send,
             staging_depth_buffer_recv,
+            staging_belt: wgpu::util::StagingBelt::new(1024 * 1024),
         }
     }
 
@@ -291,7 +321,6 @@ impl GUI {
         let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
             size: multisampled_texture_extent,
             mip_level_count: 1,
-            array_layer_count: 1,
             sample_count: self.sample_count,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
@@ -300,7 +329,18 @@ impl GUI {
         };
 
         self.pointer_target = self.device.create_texture(multisampled_frame_descriptor);
-        self.pointer_target_view = self.pointer_target.create_default_view();
+        self.pointer_target_view = self
+            .pointer_target
+            .create_view(&wgpu::TextureViewDescriptor {
+                label: None,
+                dimension: Some(wgpu::TextureViewDimension::D2),
+                format: Some(wgpu::TextureFormat::R8Unorm),
+                aspect: wgpu::TextureAspect::All,
+                base_mip_level: 0,
+                level_count: None,
+                base_array_layer: 0,
+                array_layer_count: None,
+            });
         self.mouse_position = PhysicalPosition::new(0., 0.);
     }
 
@@ -313,8 +353,9 @@ impl GUI {
         self.camera.update(dt);
         self.uniforms.update_view_proj(&self.camera);
         let _ = self.interface.update(
-            None,
             self.viewport.logical_size(),
+            Point::ORIGIN,
+            None,
             &mut self.iced_renderer,
             &mut self.iced_debug,
         );
@@ -326,7 +367,6 @@ impl GUI {
             wgpu::TextureCopyView {
                 texture: &self.pointer_target,
                 mip_level: 0,
-                array_layer: 0,
                 origin: wgpu::Origin3d {
                     x: self.mouse_position.x as u32,
                     y: self.mouse_position.y as u32,
@@ -335,9 +375,11 @@ impl GUI {
             },
             wgpu::BufferCopyView {
                 buffer,
-                offset: 0,
-                bytes_per_row: 1,
-                rows_per_image: 1,
+                layout: wgpu::TextureDataLayout {
+                    offset: 0,
+                    bytes_per_row: wgpu::COPY_BYTES_PER_ROW_ALIGNMENT,
+                    rows_per_image: 1,
+                },
             },
             wgpu::Extent3d {
                 width: 1,
@@ -353,20 +395,21 @@ impl GUI {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("IR compute shader"),
             });
-        self.uniforms.upload(&self.device, &mut encoder);
+        self.uniforms.upload(&mut self.queue);
         self.compute.push_ir_data(
             &self.device,
+            &mut self.queue,
             &mut encoder,
             &self.uniforms.bind_group(),
             image,
         );
-        self.queue.submit(&[encoder.finish()]);
+        self.queue.submit(Some(encoder.finish()));
     }
 
     fn render(&mut self, window: &Window, proxy: EventLoopProxy<UserEvent>) {
         let frame = self
             .swap_chain
-            .get_next_texture()
+            .get_current_frame()
             .expect("Timeout when acquiring next swap chain texture");
 
         let mut encoder = self
@@ -375,19 +418,20 @@ impl GUI {
                 label: Some("Rendering"),
             });
 
-        self.uniforms.upload(&self.device, &mut encoder);
-        self.lights.upload(&self.device, &mut encoder);
+        self.uniforms.upload(&mut self.queue);
+        self.lights.upload(&mut self.queue);
 
         {
             let mut rpass3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[
-                    self.color_attachment(&frame, wgpu::LoadOp::Clear),
+                    self.color_attachment(&frame, wgpu::LoadOp::Clear(wgpu::Color::BLUE)),
                     wgpu::RenderPassColorAttachmentDescriptor {
                         attachment: &self.pointer_target_view,
                         resolve_target: None,
-                        load_op: wgpu::LoadOp::Clear,
-                        store_op: wgpu::StoreOp::Store,
-                        clear_color: wgpu::Color::RED,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::RED),
+                            store: true,
+                        },
                     },
                 ],
                 depth_stencil_attachment: Some(self.render_d3.depth_stencil_attachement()),
@@ -413,27 +457,29 @@ impl GUI {
 
         let mouse_interaction = self.iced_renderer.backend_mut().draw(
             &self.device,
+            &mut self.staging_belt,
             &mut encoder,
-            &frame.view,
+            &frame.output.view,
             &self.viewport,
             self.interface.primitive(),
             &self.iced_debug.overlay(),
         );
 
-        self.queue.submit(&[encoder.finish()]);
+        self.queue.submit(Some(encoder.finish()));
 
         if let Ok(buffer) = staging_depth_buffer {
             // Update the depth picker at cursor position
             let (x, y) = (self.mouse_position.x as u32, self.mouse_position.y as u32);
             let sender = self.staging_depth_buffer_send.clone();
 
-            smol::Task::spawn(async move {
+            smol::spawn(async move {
                 {
-                    let mapping = buffer.map_read(0, 1).await.unwrap();
+                    let slice = buffer.slice(0..1);
+                    slice.map_async(wgpu::MapMode::Read).await.unwrap();
                     let _ = proxy.send_event(UserEvent::Message(controls::Message::Depth(
                         x,
                         y,
-                        mapping.as_slice()[0],
+                        slice.get_mapped_range()[0],
                     )));
                 }
                 sender.send(buffer).await.unwrap();
@@ -447,24 +493,26 @@ impl GUI {
 
     fn color_attachment<'a>(
         &'a self,
-        frame: &'a wgpu::SwapChainOutput,
-        load_op: wgpu::LoadOp,
+        frame: &'a wgpu::SwapChainFrame,
+        load_op: wgpu::LoadOp<wgpu::Color>,
     ) -> wgpu::RenderPassColorAttachmentDescriptor {
         if self.sample_count == 1 {
             wgpu::RenderPassColorAttachmentDescriptor {
-                attachment: &frame.view,
+                attachment: &frame.output.view,
                 resolve_target: None,
-                load_op,
-                store_op: wgpu::StoreOp::Store,
-                clear_color: wgpu::Color::BLUE,
+                ops: wgpu::Operations {
+                    load: load_op,
+                    store: true,
+                },
             }
         } else {
             wgpu::RenderPassColorAttachmentDescriptor {
                 attachment: &self.multisampled_framebuffer,
-                resolve_target: Some(&frame.view),
-                load_op,
-                store_op: wgpu::StoreOp::Store,
-                clear_color: wgpu::Color::BLUE,
+                resolve_target: Some(&frame.output.view),
+                ops: wgpu::Operations {
+                    load: load_op,
+                    store: true,
+                },
             }
         }
     }

@@ -4,27 +4,15 @@ use std::{
     any::type_name,
     ops::{Deref, DerefMut},
 };
+use wgpu::util::DeviceExt;
 
 pub trait Staged {
-    fn update<A: Pod>(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, data: &[A]);
+    fn update<A: Pod>(&self, queue: &mut wgpu::Queue, data: &[A]);
 }
 
 impl Staged for wgpu::Buffer {
-    fn update<A: Pod>(
-        &self,
-        device: &wgpu::Device,
-        encoder: &mut wgpu::CommandEncoder,
-        data: &[A],
-    ) {
-        let raw = bytemuck::cast_slice(data);
-        let staging_buffer = device.create_buffer_with_data(raw, wgpu::BufferUsage::COPY_SRC);
-        encoder.copy_buffer_to_buffer(
-            &staging_buffer,
-            0,
-            self,
-            0,
-            raw.len() as wgpu::BufferAddress,
-        );
+    fn update<A: Pod>(&self, queue: &mut wgpu::Queue, data: &[A]) {
+        queue.write_buffer(self, 0, bytemuck::cast_slice(data));
     }
 }
 
@@ -43,24 +31,28 @@ impl<T: Default + Pod> BoundBuffer<T> {
         visibility: wgpu::ShaderStage,
     ) -> Self {
         let inner = T::default();
-        let raw_inner = bytemuck::bytes_of(&inner);
-        let buffer = device.create_buffer_with_data(raw_inner, usage | wgpu::BufferUsage::COPY_DST);
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            usage: usage | wgpu::BufferUsage::COPY_DST,
+            contents: bytemuck::bytes_of(&inner),
+            label: Some("2D Vertex Buffer"),
+        });
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            bindings: &[wgpu::BindGroupLayoutEntry {
+            entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility,
-                ty: wgpu::BindingType::UniformBuffer { dynamic: false },
+                ty: wgpu::BindingType::UniformBuffer {
+                    dynamic: false,
+                    min_binding_size: None,
+                },
+                count: None,
             }],
             label: Some(&format!("{} bind group layout", type_name::<T>())),
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &bind_group_layout,
-            bindings: &[wgpu::Binding {
+            entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: wgpu::BindingResource::Buffer {
-                    buffer: &buffer,
-                    range: 0..raw_inner.len() as wgpu::BufferAddress,
-                },
+                resource: wgpu::BindingResource::Buffer(buffer.slice(..)),
             }],
             label: Some(&format!("{} bind group", type_name::<T>())),
         });
@@ -81,9 +73,9 @@ impl<T: Default + Pod> BoundBuffer<T> {
         &self.bind_group_layout
     }
 
-    pub fn upload(&mut self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
+    pub fn upload(&mut self, queue: &mut wgpu::Queue) {
         if self.dirty {
-            self.buffer.update(device, encoder, &[self.inner]);
+            self.buffer.update(queue, &[self.inner]);
             self.dirty = false;
         }
     }

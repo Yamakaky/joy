@@ -27,7 +27,7 @@ impl D3 {
 
         let normal_texture_binding_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                bindings: &[
+                entries: &[
                     wgpu::BindGroupLayoutEntry {
                         binding: 0,
                         visibility: wgpu::ShaderStage::FRAGMENT,
@@ -36,23 +36,25 @@ impl D3 {
                             component_type: wgpu::TextureComponentType::Float,
                             multisampled: false,
                         },
+                        count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
                         visibility: wgpu::ShaderStage::FRAGMENT,
                         ty: wgpu::BindingType::Sampler { comparison: false },
+                        count: None,
                     },
                 ],
                 label: Some("Normal texture 3D pipeline"),
             });
         let normal_texture_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &normal_texture_binding_layout,
-            bindings: &[
-                wgpu::Binding {
+            entries: &[
+                wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(&compute.normal_texture.view),
                 },
-                wgpu::Binding {
+                wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&compute.normal_texture.sampler),
                 },
@@ -66,6 +68,8 @@ impl D3 {
                 &normal_texture_binding_layout,
                 lights.bind_group_layout(),
             ],
+            push_constant_ranges: &[],
+            label: Some("3D Pipeline Layout"),
         });
 
         let pipeline = super::create_render_pipeline(
@@ -113,12 +117,14 @@ impl D3 {
     pub fn depth_stencil_attachement(&self) -> wgpu::RenderPassDepthStencilAttachmentDescriptor {
         wgpu::RenderPassDepthStencilAttachmentDescriptor {
             attachment: &self.depth_texture.view,
-            depth_load_op: wgpu::LoadOp::Clear,
-            depth_store_op: wgpu::StoreOp::Store,
-            clear_depth: 1.0,
-            stencil_load_op: wgpu::LoadOp::Clear,
-            stencil_store_op: wgpu::StoreOp::Store,
-            clear_stencil: 0,
+            depth_ops: Some(wgpu::Operations {
+                load: wgpu::LoadOp::Clear(1.0),
+                store: true,
+            }),
+            stencil_ops: Some(wgpu::Operations {
+                load: wgpu::LoadOp::Clear(0),
+                store: true,
+            }),
         }
     }
 
@@ -135,12 +141,12 @@ impl D3 {
     pub fn update_bindgroup(&mut self, device: &wgpu::Device, compute: &IRCompute) {
         self.normal_texture_binding = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &self.normal_texture_binding_layout,
-            bindings: &[
-                wgpu::Binding {
+            entries: &[
+                wgpu::BindGroupEntry {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(&compute.normal_texture.view),
                 },
-                wgpu::Binding {
+                wgpu::BindGroupEntry {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&compute.normal_texture.sampler),
                 },
@@ -157,8 +163,8 @@ impl D3 {
         lights: &'a BoundBuffer<Lights>,
     ) {
         pass.set_pipeline(&self.pipeline);
-        pass.set_vertex_buffer(0, compute.vertices(), 0, 0);
-        pass.set_index_buffer(compute.indices(), 0, 0);
+        pass.set_vertex_buffer(0, compute.vertices().slice(..));
+        pass.set_index_buffer(compute.indices().slice(..));
         pass.set_bind_group(0, &uniforms.bind_group(), &[]);
         pass.set_bind_group(1, &self.normal_texture_binding, &[]);
         pass.set_bind_group(2, &lights.bind_group(), &[]);
