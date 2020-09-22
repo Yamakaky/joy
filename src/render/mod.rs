@@ -100,19 +100,19 @@ fn create_multisampled_framebuffer(
         depth: 1,
     };
     let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
+        label: Some("Output Framebuffer Descriptor"),
         size: multisampled_texture_extent,
         mip_level_count: 1,
         sample_count,
         dimension: wgpu::TextureDimension::D2,
         format: sc_desc.format,
         usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-        label: None,
     };
 
     device
         .create_texture(multisampled_frame_descriptor)
         .create_view(&wgpu::TextureViewDescriptor {
-            label: None,
+            label: Some("Output Framebuffer View"),
             dimension: Some(wgpu::TextureViewDimension::D2),
             format: None,
             aspect: wgpu::TextureAspect::All,
@@ -219,11 +219,11 @@ impl GUI {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::COPY_SRC,
-            label: None,
+            label: Some("Pointer Texture Descriptor"),
         };
         let pointer_target = device.create_texture(multisampled_frame_descriptor);
         let pointer_target_view = pointer_target.create_view(&wgpu::TextureViewDescriptor {
-            label: None,
+            label: Some("Pointer Texture"),
             dimension: Some(wgpu::TextureViewDimension::D2),
             format: Some(wgpu::TextureFormat::R8Unorm),
             aspect: wgpu::TextureAspect::All,
@@ -258,7 +258,7 @@ impl GUI {
 
         let (staging_depth_buffer_send, staging_depth_buffer_recv) = async_channel::unbounded();
         // TODO: multiple multi-use staging buffers
-        for _ in 0u8..5 {
+        for _ in 0..5 {
             staging_depth_buffer_send
                 .send(device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("depth reader"),
@@ -325,14 +325,14 @@ impl GUI {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::R8Unorm,
             usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::COPY_SRC,
-            label: None,
+            label: Some("Pointer Texture Descriptor"),
         };
 
         self.pointer_target = self.device.create_texture(multisampled_frame_descriptor);
         self.pointer_target_view = self
             .pointer_target
             .create_view(&wgpu::TextureViewDescriptor {
-                label: None,
+                label: Some("Pointer Texture"),
                 dimension: Some(wgpu::TextureViewDimension::D2),
                 format: Some(wgpu::TextureFormat::R8Unorm),
                 aspect: wgpu::TextureAspect::All,
@@ -354,7 +354,7 @@ impl GUI {
         self.uniforms.update_view_proj(&self.camera);
         let _ = self.interface.update(
             self.viewport.logical_size(),
-            Point::ORIGIN,
+            Point::new(self.mouse_position.x as f32, self.mouse_position.y as f32),
             None,
             &mut self.iced_renderer,
             &mut self.iced_debug,
@@ -465,7 +465,9 @@ impl GUI {
             &self.iced_debug.overlay(),
         );
 
+        self.staging_belt.finish();
         self.queue.submit(Some(encoder.finish()));
+        smol::spawn(self.staging_belt.recall()).detach();
 
         if let Ok(buffer) = staging_depth_buffer {
             // Update the depth picker at cursor position
@@ -474,13 +476,14 @@ impl GUI {
 
             smol::spawn(async move {
                 {
-                    let slice = buffer.slice(0..1);
+                    let slice = buffer.slice(0..wgpu::COPY_BUFFER_ALIGNMENT);
                     slice.map_async(wgpu::MapMode::Read).await.unwrap();
                     let _ = proxy.send_event(UserEvent::Message(controls::Message::Depth(
                         x,
                         y,
                         slice.get_mapped_range()[0],
                     )));
+                    buffer.unmap();
                 }
                 sender.send(buffer).await.unwrap();
             })

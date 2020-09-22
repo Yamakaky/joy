@@ -46,7 +46,7 @@ impl Texture {
             lod_max_clamp: 100.0,
             compare: None,
             anisotropy_clamp: None,
-            label: None,
+            label: Some("Normal Texture Sampler"),
         });
 
         Self {
@@ -95,7 +95,7 @@ impl Texture {
             lod_max_clamp: 100.0,
             compare: None,
             anisotropy_clamp: None,
-            label: None,
+            label: Some("IR Texture Sampler"),
         });
 
         Self {
@@ -151,7 +151,7 @@ impl Texture {
             lod_max_clamp: 100.0,
             compare: Some(wgpu::CompareFunction::LessEqual),
             anisotropy_clamp: None,
-            label: None,
+            label: Some("IR Texture Sampler"),
         });
 
         Self {
