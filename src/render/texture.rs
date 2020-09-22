@@ -133,8 +133,7 @@ impl Texture {
         let view = texture.create_view(&wgpu::TextureViewDescriptor {
             label: Some("IR Texture View"),
             dimension: Some(wgpu::TextureViewDimension::D2),
-            // TODO : check
-            format: Some(wgpu::TextureFormat::Depth24Plus),
+            format: Some(Self::DEPTH_FORMAT),
             aspect: wgpu::TextureAspect::All,
             base_mip_level: 0,
             level_count: None,
