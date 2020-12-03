@@ -341,8 +341,8 @@ impl container::StyleSheet for StyleSheet {
             text_color: Some(Color::BLACK),
             border_color: Color::BLACK,
             background: Some(Background::Color(Color::WHITE)),
-            border_radius: 10,
-            border_width: 3,
+            border_radius: 10.,
+            border_width: 3.,
         }
     }
 }

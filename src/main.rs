@@ -1,9 +1,7 @@
 use hidapi::HidApi;
-use iced_winit::{
-    winit::{
-        self,
-        event_loop::{EventLoop, EventLoopProxy},
-    },
+use iced_winit::winit::{
+    self,
+    event_loop::{EventLoop, EventLoopProxy},
 };
 use joycon::{
     joycon_sys::{
@@ -22,7 +20,7 @@ mod mouse;
 mod render;
 
 fn main() {
-    env_logger::from_env(env_logger::Env::default().default_filter_or("warn")).init();
+    env_logger::init();
     std::panic::set_hook(Box::new(|x| {
         println!("{}", x);
         std::thread::sleep(std::time::Duration::from_secs(5));
