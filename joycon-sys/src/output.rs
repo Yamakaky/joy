@@ -255,8 +255,8 @@ impl RumbleSide {
 
         let hi_freq_hex = (Self::encode_freq(hi_freq) - 0x60) * 4;
         let low_freq_hex = (Self::encode_freq(low_freq) - 0x40) as u8;
-        let hi_amp_hex = ((100. * low_amp) as u8) << 1;
-        let low_amp_hex = ((228. - 128.) * hi_amp) as u8 + 0x80;
+        let hi_amp_hex = ((100. * hi_amp) as u8) << 1;
+        let low_amp_hex = ((228. - 128.) * low_amp) as u8 + 0x80;
         RumbleSide::from_encoded(
             [hi_freq_hex as u8, (hi_freq_hex >> 8) as u8],
             hi_amp_hex,
