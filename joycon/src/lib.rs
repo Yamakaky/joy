@@ -8,3 +8,5 @@ pub use calibration::*;
 pub use hid::*;
 pub use imu_handler::Position;
 pub use joycon_sys;
+
+pub use hidapi;

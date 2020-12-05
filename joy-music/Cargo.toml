@@ -8,5 +8,4 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
-hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 joycon = { path = "../joycon" }

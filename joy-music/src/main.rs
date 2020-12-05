@@ -1,5 +1,5 @@
-use hidapi::HidApi;
 use joycon::{
+    hidapi::{self, HidApi},
     joycon_sys::{
         input::BatteryLevel,
         light::{self, PlayerLight},

@@ -1,5 +1,5 @@
 [package]
-name = "joy"
+name = "joy-infrared"
 version = "0.1.0"
 authors = ["yamakaky"]
 edition = "2018"
@@ -8,7 +8,6 @@ edition = "2018"
 anyhow = "1.0"
 enigo = { version = "0.0.14", optional = false, default-features = false }
 env_logger = "0.8"
-hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 image = { version = "0.23", optional = false, default-features = false }
 iced_core = { version = "0.3", optional = false, default-features = false }
 iced_wgpu = { version = "0.3", optional = false, default-features = false }

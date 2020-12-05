@@ -1289,7 +1289,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "joy"
+name = "joy-infrared"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1298,7 +1298,6 @@ dependencies = [
  "cgmath",
  "enigo",
  "env_logger",
- "hidapi",
  "iced_core",
  "iced_wgpu",
  "iced_winit",
@@ -1313,7 +1312,6 @@ name = "joy-music"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "hidapi",
  "joycon",
 ]
 
