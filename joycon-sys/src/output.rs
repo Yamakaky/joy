@@ -78,6 +78,15 @@ impl OutputReport {
         })
     }
 
+    pub fn set_rumble(rumble: RumbleData) -> OutputReport {
+        OutputReport {
+            report_id: OutputReportId::RumbleOnly,
+            packet_counter: 0,
+            rumble_data: rumble,
+            u: OutputReportUnion { nothing: () },
+        }
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))
@@ -144,6 +153,8 @@ impl fmt::Debug for OutputReport {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 union OutputReportUnion {
+    // For OutputReportId::RumbleOnly
+    nothing: (),
     // For OutputReportId::RumbleAndSubcmd
     subcmd: SubcommandRequest,
     // For OutputReportId::RequestMCUData

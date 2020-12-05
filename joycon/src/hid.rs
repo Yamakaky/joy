@@ -101,6 +101,11 @@ impl JoyCon {
         Ok(report)
     }
 
+    pub fn set_rumble(&mut self, rumble: RumbleData) -> Result<()> {
+        self.send(&mut OutputReport::set_rumble(rumble))?;
+        Ok(())
+    }
+
     pub fn tick(&mut self) -> Result<Report> {
         let report = self.recv()?;
         let std_report = report.standard().expect("should be standard");
