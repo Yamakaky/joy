@@ -4,4 +4,5 @@ members = [
     "joycon",
     "joy-infrared",
     "joy-music",
+    "gyromouse",
 ]

@@ -1117,6 +1117,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gyromouse"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "enigo",
+ "joycon",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"

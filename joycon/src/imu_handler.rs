@@ -1,11 +1,13 @@
 use crate::calibration::Calibration;
 use cgmath::*;
+use imu::IMU_SAMPLE_DURATION;
 use joycon_sys::*;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Position {
     pub last_delta_rotation: Euler<Deg<f64>>,
     pub rotation: Quaternion<f64>,
+    pub rotation_speed: Euler<Deg<f64>>,
     pub accel: Vector3<f64>,
     pub speed: Vector3<f64>,
     pub position: Vector3<f64>,
@@ -17,6 +19,7 @@ impl Position {
         Self {
             last_delta_rotation: zero,
             rotation: Quaternion::from(zero),
+            rotation_speed: zero,
             accel: Vector3::zero(),
             speed: Vector3::zero(),
             position: Vector3::zero(),
@@ -114,6 +117,11 @@ impl Handler {
             );
             self.position.last_delta_rotation = delta_rotation;
             self.position.rotation = self.position.rotation * Quaternion::from(delta_rotation);
+            self.position.rotation_speed = Euler {
+                x: self.position.last_delta_rotation.x / IMU_SAMPLE_DURATION,
+                y: self.position.last_delta_rotation.y / IMU_SAMPLE_DURATION,
+                z: self.position.last_delta_rotation.z / IMU_SAMPLE_DURATION,
+            };
             self.position.accel = raw_acc - self.calib_accel.get_average();
 
             if let Some(ref mut cb) = self.imu_cb {
