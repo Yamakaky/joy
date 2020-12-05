@@ -1,0 +1,12 @@
+[package]
+name = "joy-music"
+version = "0.1.0"
+authors = ["Mikaël Fourrier <mikael.fourrier@pm.me>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
+joycon = { path = "../joycon" }

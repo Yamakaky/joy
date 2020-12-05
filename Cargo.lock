@@ -1311,6 +1311,11 @@ dependencies = [
 [[package]]
 name = "joy-music"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "hidapi",
+ "joycon",
+]
 
 [[package]]
 name = "joycon"
