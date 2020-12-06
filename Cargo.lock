@@ -1132,6 +1132,7 @@ name = "gyromouse"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cgmath",
  "enigo",
  "joycon",
 ]

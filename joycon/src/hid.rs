@@ -1,13 +1,12 @@
 use crate::image::Image;
-use crate::{imu_handler, Position};
+use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};
-use joycon_sys::input::*;
-use joycon_sys::light;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
 use joycon_sys::spi::*;
 use joycon_sys::*;
+use joycon_sys::{input::*, light};
 
 const WAIT_TIMEOUT: u32 = 60;
 
@@ -15,9 +14,10 @@ const WAIT_TIMEOUT: u32 = 60;
 pub struct Report {
     pub left_stick: (f64, f64),
     pub right_stick: (f64, f64),
+    pub buttons: ButtonsStatus,
     pub info: DeviceStatus,
     pub image: Option<image::GrayImage>,
-    pub position: Position,
+    pub imu: Option<[imu_handler::IMU; 3]>,
 }
 
 pub struct JoyCon {
@@ -120,9 +120,12 @@ impl JoyCon {
         Ok(Report {
             left_stick,
             right_stick,
+            buttons: std_report.buttons,
             info: std_report.info,
             image: self.image.last_image.take(),
-            position: *self.imu_handler.position(),
+            imu: report
+                .imu_frames()
+                .map(|f| self.imu_handler.handle_frames(f)),
         })
     }
 
@@ -399,10 +402,6 @@ impl JoyCon {
     pub fn enable_imu(&mut self) -> Result<()> {
         self.send_subcmd_wait(SubcommandRequest::set_imu_enabled(true))?;
         Ok(())
-    }
-
-    pub fn set_imu_callback(&mut self, cb: Box<dyn FnMut(&imu_handler::Position)>) {
-        self.imu_handler.set_cb(cb);
     }
 
     // TODO: needed?

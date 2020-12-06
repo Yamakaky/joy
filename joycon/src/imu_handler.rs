@@ -1,7 +1,24 @@
 use crate::calibration::Calibration;
 use cgmath::*;
-use imu::IMU_SAMPLE_DURATION;
 use joycon_sys::*;
+
+/// Acceleration and gyroscope data for the controller.
+///
+/// https://camo.githubusercontent.com/3e980a22532232f4b28ddbea4f119e55c7025ddb52efdaffb96a22f06cb203b3/687474703a2f2f6374636165722e636f6d2f7769692f7377697463682f6a6f79636f6e5f6163632d6779726f5f7269676874322e706e67
+#[derive(Debug, Copy, Clone)]
+pub struct IMU {
+    /// Current rotation speed.
+    ///
+    /// Yaw, pitch, roll in this order. Unit in degree per second (dps).
+    pub gyro: Vector3<f64>,
+    /// Current acceleration.
+    pub accel: Vector3<f64>,
+}
+
+impl IMU {
+    pub const SAMPLE_DURATION: f64 = imu::IMU_SAMPLE_DURATION;
+    pub const SAMPLE_PER_SECOND: u32 = imu::IMU_SAMPLES_PER_SECOND;
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Position {
@@ -34,28 +51,24 @@ impl Default for Position {
 }
 
 pub struct Handler {
-    imu_cb: Option<Box<dyn FnMut(&Position)>>,
     calib_gyro: Calibration,
     gyro_sens: imu::GyroSens,
     calib_accel: Calibration,
     accel_sens: imu::AccSens,
     factory_calibration: spi::SensorCalibration,
     user_calibration: spi::UserSensorCalibration,
-    position: Position,
     calib_nb: u32,
 }
 
 impl Handler {
     pub fn new(gyro_sens: imu::GyroSens, accel_sens: imu::AccSens) -> Self {
         Handler {
-            imu_cb: None,
             calib_gyro: Calibration::with_capacity(200),
             gyro_sens,
             calib_accel: Calibration::with_capacity(200),
             accel_sens,
             factory_calibration: spi::SensorCalibration::default(),
             user_calibration: spi::UserSensorCalibration::default(),
-            position: Position::new(),
             calib_nb: 0,
         }
     }
@@ -66,14 +79,6 @@ impl Handler {
 
     pub fn set_user(&mut self, calib: spi::UserSensorCalibration) {
         self.user_calibration = calib;
-    }
-
-    pub fn set_cb(&mut self, cb: Box<dyn FnMut(&Position)>) {
-        self.imu_cb = Some(cb);
-    }
-
-    pub fn position(&self) -> &Position {
-        &self.position
     }
 
     fn acc_calib(&self) -> Vector3<f64> {
@@ -88,46 +93,27 @@ impl Handler {
             .unwrap_or_else(|| self.factory_calibration.gyro_offset())
     }
 
-    pub fn handle_frames(&mut self, frames: &[imu::Frame]) {
+    pub fn handle_frames(&mut self, frames: &[imu::Frame]) -> [IMU; 3] {
         let gyro_offset = self.gyro_calib();
         let acc_offset = self.acc_calib();
-        for frame in frames.iter().rev() {
-            let raw_delta_rotation = frame.rotation(gyro_offset, self.gyro_sens);
-            // TODO: define axis and make sure it's accurate
-            let raw_delta_rotation = Euler {
-                x: raw_delta_rotation.y,
-                y: -raw_delta_rotation.z,
-                z: -raw_delta_rotation.x,
-            };
+        let mut out = [IMU {
+            gyro: Vector3::zero(),
+            accel: Vector3::zero(),
+        }; 3];
+        for (frame, out) in frames.iter().zip(out.iter_mut()) {
+            let raw_rotation = frame.rotation_dps(gyro_offset, self.gyro_sens);
             let raw_acc = frame.accel_g(acc_offset, self.accel_sens);
             if self.calib_nb > 0 {
-                self.calib_gyro.push(Vector3::new(
-                    raw_delta_rotation.x.0,
-                    raw_delta_rotation.y.0,
-                    raw_delta_rotation.z.0,
-                ));
+                self.calib_gyro.push(raw_rotation);
                 self.calib_accel.push(raw_acc);
                 self.calib_nb -= 1;
             }
-            let c = self.calib_gyro.get_average();
-            let delta_rotation = Euler::new(
-                raw_delta_rotation.x - Deg(c.x),
-                raw_delta_rotation.y - Deg(c.y),
-                raw_delta_rotation.z - Deg(c.z),
-            );
-            self.position.last_delta_rotation = delta_rotation;
-            self.position.rotation = self.position.rotation * Quaternion::from(delta_rotation);
-            self.position.rotation_speed = Euler {
-                x: self.position.last_delta_rotation.x / IMU_SAMPLE_DURATION,
-                y: self.position.last_delta_rotation.y / IMU_SAMPLE_DURATION,
-                z: self.position.last_delta_rotation.z / IMU_SAMPLE_DURATION,
+            *out = IMU {
+                gyro: raw_rotation - self.calib_gyro.get_average(),
+                accel: raw_acc - self.calib_accel.get_average(),
             };
-            self.position.accel = raw_acc - self.calib_accel.get_average();
-
-            if let Some(ref mut cb) = self.imu_cb {
-                cb(&self.position);
-            }
         }
+        out
     }
 
     pub fn reset_calibration(&mut self) {

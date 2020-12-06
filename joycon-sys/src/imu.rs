@@ -1,5 +1,5 @@
 use crate::common::*;
-use cgmath::{Deg, Euler, Vector3};
+use cgmath::Vector3;
 use std::fmt;
 
 pub const IMU_SAMPLE_DURATION: f64 = 0.005;
@@ -28,14 +28,8 @@ impl Frame {
 
     /// The rotation described in this frame.
     /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
-    pub fn rotation(&self, offset: Vector3<f64>, sens: GyroSens) -> Euler<Deg<f64>> {
-        let dps = (self.raw_gyro() - offset) * sens.factor() * IMU_SAMPLE_DURATION;
-        // TODO: define axis and make sure it's accurate
-        Euler {
-            x: Deg(dps.x),
-            y: Deg(dps.y),
-            z: Deg(dps.z),
-        }
+    pub fn rotation_dps(&self, offset: Vector3<f64>, sens: GyroSens) -> Vector3<f64> {
+        (self.raw_gyro() - offset) * sens.factor()
     }
 }
 

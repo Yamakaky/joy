@@ -1,8 +1,10 @@
+use cgmath::Vector2;
+use cgmath::Zero;
 use std::collections::VecDeque;
 
 pub struct GyroMouse {
     /// Accumulated orientation
-    pub orientation: (f64, f64),
+    pub orientation: Vector2<f64>,
 
     /// Enables smoothing for slow movements.
     ///
@@ -12,7 +14,7 @@ pub struct GyroMouse {
     ///
     /// Rotations smaller than this will be smoothed over a small period of time.
     pub smooth_threshold: f64,
-    smooth_buffer: VecDeque<(f64, f64)>,
+    smooth_buffer: VecDeque<Vector2<f64>>,
 
     /// Stabilize slow movements
     ///
@@ -42,11 +44,11 @@ impl GyroMouse {
     /// Good default values for a 2D mouse.
     pub fn d2() -> GyroMouse {
         GyroMouse {
-            orientation: (0., 0.),
+            orientation: Vector2::zero(),
 
             apply_smoothing: true,
             smooth_threshold: 5.,
-            smooth_buffer: [(0., 0.); 10].iter().cloned().collect(),
+            smooth_buffer: [Vector2::zero(); 10].iter().cloned().collect(),
 
             apply_tightening: true,
             tightening_threshold: 5.,
@@ -62,9 +64,10 @@ impl GyroMouse {
     }
 
     /// Good default values for a 3D mouse.
+    #[allow(dead_code)]
     pub fn d3() -> GyroMouse {
         GyroMouse {
-            orientation: (0., 0.),
+            orientation: Vector2::zero(),
 
             apply_smoothing: false,
             smooth_threshold: 0.,
@@ -86,7 +89,7 @@ impl GyroMouse {
     /// Process a new gyro sample.
     ///
     /// Updates `self.orientation` and returns the applied change.
-    pub fn process(&mut self, mut rot: (f64, f64), dt: f64) -> (f64, f64) {
+    pub fn process(&mut self, mut rot: Vector2<f64>, dt: f64) -> Vector2<f64> {
         if self.apply_smoothing {
             rot = self.tiered_smooth(rot);
         }
@@ -94,48 +97,45 @@ impl GyroMouse {
             rot = self.tight(rot);
         }
         let sens = self.get_sens(rot);
-        self.orientation.0 += rot.0 * sens * dt;
-        self.orientation.1 += rot.1 * sens * dt;
-        (rot.0 * sens * dt, rot.1 * sens * dt)
+        let delta = rot * sens * dt;
+        self.orientation += delta;
+        delta
     }
 
-    fn tiered_smooth(&mut self, rot: (f64, f64)) -> (f64, f64) {
+    fn tiered_smooth(&mut self, rot: Vector2<f64>) -> Vector2<f64> {
         let thresh_high = self.smooth_threshold;
         let thresh_low = thresh_high / 2.;
-        let magnitude = (rot.0.powf(2.) + rot.1.powf(2.)).sqrt();
+        let magnitude = (rot.x.powf(2.) + rot.y.powf(2.)).sqrt();
         let weight = ((magnitude - thresh_low) / (thresh_high - thresh_low))
             .max(0.)
             .min(1.);
-        let smoothed = self.smooth((rot.0 * (1. - weight), rot.1 * (1. - weight)));
-        (rot.0 * weight + smoothed.0, rot.1 * weight + smoothed.1)
+        let smoothed = self.smooth(rot * (1. - weight));
+        rot * weight + smoothed
     }
 
-    fn smooth(&mut self, rot: (f64, f64)) -> (f64, f64) {
+    fn smooth(&mut self, rot: Vector2<f64>) -> Vector2<f64> {
         self.smooth_buffer.pop_back();
         self.smooth_buffer.push_front(rot);
         let sum = self
             .smooth_buffer
             .iter()
-            .fold((0., 0.), |acc, x| (acc.0 + x.0, acc.1 + x.1));
-        (
-            sum.0 / self.smooth_buffer.len() as f64,
-            sum.1 / self.smooth_buffer.len() as f64,
-        )
+            .fold(Vector2::zero(), |acc, x| acc + x);
+        sum / self.smooth_buffer.len() as f64
     }
 
-    fn tight(&mut self, rot: (f64, f64)) -> (f64, f64) {
-        let magnitude = (rot.0.powf(2.) + rot.1.powf(2.)).sqrt();
+    fn tight(&mut self, rot: Vector2<f64>) -> Vector2<f64> {
+        let magnitude = (rot.x.powf(2.) + rot.y.powf(2.)).sqrt();
         if magnitude < self.tightening_threshold {
             let scale = magnitude / self.tightening_threshold;
-            (rot.0 * scale, rot.1 * scale)
+            rot * scale
         } else {
             rot
         }
     }
 
-    fn get_sens(&self, rot: (f64, f64)) -> f64 {
+    fn get_sens(&self, rot: Vector2<f64>) -> f64 {
         if self.apply_acceleration {
-            let magnitude = (rot.0.powf(2.) + rot.1.powf(2.)).sqrt();
+            let magnitude = (rot.x.powf(2.) + rot.y.powf(2.)).sqrt();
             let factor = ((magnitude - self.acceleration_slow_threshold)
                 / (self.acceleration_fast_threshold - self.acceleration_slow_threshold))
                 .max(0.)

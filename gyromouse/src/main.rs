@@ -1,15 +1,15 @@
 mod gyromouse;
 mod mapping;
 
-use enigo::{Key, KeyboardControllable, MouseControllable};
+use cgmath::Zero;
+use cgmath::{vec2, Vector2};
+use enigo::MouseControllable;
 use gyromouse::GyroMouse;
 use joycon::{
     hidapi::{self, HidApi},
     joycon_sys::{
         input::BatteryLevel,
         light::{self, PlayerLight},
-        output::RumbleData,
-        output::RumbleSide,
         NINTENDO_VENDOR_ID,
     },
     JoyCon,
@@ -63,31 +63,30 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
     ))?;
 
     let mut gyromouse = GyroMouse::d2();
-    gyromouse.orientation = (500., 500.);
+    gyromouse.orientation = Vector2::new(0., 0.);
     gyromouse.apply_tightening = false;
     gyromouse.apply_smoothing = false;
     gyromouse.apply_acceleration = false;
     gyromouse.sensitivity = 32.;
     let mut enigo = enigo::Enigo::new();
-    enigo.key_click(Key::Layout(';'));
 
     let mut now = std::time::Instant::now();
     loop {
         let report = device.tick()?;
-        gyromouse.process(
-            (
-                report.position.rotation_speed.y.0,
-                report.position.rotation_speed.x.0,
-            ),
-            1. / 66.,
-        );
-        enigo.mouse_move_to(
-            gyromouse.orientation.0.max(0.).min(1000.) as i32,
-            gyromouse.orientation.1.max(0.).min(1000.) as i32,
-        );
+        if let Some(imu) = report.imu {
+            let mut delta_position = Vector2::zero();
+            for frame in &imu {
+                delta_position += gyromouse.process(
+                    vec2(-frame.gyro.z, frame.gyro.y),
+                    joycon::IMU::SAMPLE_DURATION,
+                );
+            }
+            enigo.mouse_move_relative(delta_position.x as i32, delta_position.y as i32);
+        }
         if now.elapsed().as_millis() > 500 {
             dbg!(gyromouse.orientation);
             now = std::time::Instant::now();
+            dbg!(report.buttons);
         }
     }
 

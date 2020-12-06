@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
+cgmath = "0.17.0"
 enigo = "0.0.14"
 joycon = { path = "../joycon" }
