@@ -100,7 +100,7 @@ impl Handler {
             gyro: Vector3::zero(),
             accel: Vector3::zero(),
         }; 3];
-        for (frame, out) in frames.iter().zip(out.iter_mut()) {
+        for (frame, out) in frames.iter().rev().zip(out.iter_mut()) {
             let raw_rotation = frame.rotation_dps(gyro_offset, self.gyro_sens);
             let raw_acc = frame.accel_g(acc_offset, self.accel_sens);
             if self.calib_nb > 0 {
@@ -112,6 +112,9 @@ impl Handler {
                 gyro: raw_rotation - self.calib_gyro.get_average(),
                 accel: raw_acc - self.calib_accel.get_average(),
             };
+            // TODO: pro controller is inverted
+            out.gyro.y = -out.gyro.y;
+            out.gyro.z = -out.gyro.z;
         }
         out
     }
