@@ -1,5 +1,4 @@
-use cgmath::Vector2;
-use cgmath::Zero;
+use cgmath::{Vector2, Zero};
 use std::collections::VecDeque;
 
 pub struct GyroMouse {
@@ -88,7 +87,11 @@ impl GyroMouse {
 
     /// Process a new gyro sample.
     ///
+    /// Parameter is pitch + yaw.
+    ///
     /// Updates `self.orientation` and returns the applied change.
+    ///
+    /// `orientation` and return value have origin in bottom left.
     pub fn process(&mut self, mut rot: Vector2<f64>, dt: f64) -> Vector2<f64> {
         if self.apply_smoothing {
             rot = self.tiered_smooth(rot);

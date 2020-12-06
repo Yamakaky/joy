@@ -1,8 +1,9 @@
 mod gyromouse;
 mod mapping;
 
-use cgmath::Zero;
-use cgmath::{vec2, Vector2};
+use std::time::Duration;
+
+use cgmath::{vec2, Vector2, Zero};
 use enigo::MouseControllable;
 use gyromouse::GyroMouse;
 use joycon::{
@@ -70,23 +71,28 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
     gyromouse.sensitivity = 32.;
     let mut enigo = enigo::Enigo::new();
 
-    let mut now = std::time::Instant::now();
+    const ACCUMULATE: bool = false;
+
     loop {
         let report = device.tick()?;
         if let Some(imu) = report.imu {
             let mut delta_position = Vector2::zero();
-            for frame in &imu {
-                delta_position += gyromouse.process(
-                    vec2(-frame.gyro.z, frame.gyro.y),
+            for (i, frame) in imu.iter().enumerate() {
+                let offset = gyromouse.process(
+                    vec2(frame.gyro.z, frame.gyro.y),
                     joycon::IMU::SAMPLE_DURATION,
                 );
+                delta_position += offset;
+                if !ACCUMULATE {
+                    if i > 0 {
+                        std::thread::sleep(Duration::from_secs_f64(joycon::IMU::SAMPLE_DURATION));
+                    }
+                    enigo.mouse_move_relative(offset.x as i32, -offset.y as i32);
+                }
             }
-            enigo.mouse_move_relative(delta_position.x as i32, delta_position.y as i32);
-        }
-        if now.elapsed().as_millis() > 500 {
-            dbg!(gyromouse.orientation);
-            now = std::time::Instant::now();
-            dbg!(report.buttons);
+            if ACCUMULATE {
+                enigo.mouse_move_relative(delta_position.x as i32, -delta_position.y as i32);
+            }
         }
     }
 
