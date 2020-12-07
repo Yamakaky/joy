@@ -222,7 +222,7 @@ impl From<u8> for BatteryLevel {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct ButtonsStatus {
     pub right: RightButtons,
     pub middle: MiddleButtons,
@@ -231,7 +231,7 @@ pub struct ButtonsStatus {
 
 bitfield::bitfield! {
     #[repr(transparent)]
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     pub struct RightButtons(u8);
     impl Debug;
     pub y, _: 0;
@@ -245,7 +245,7 @@ bitfield::bitfield! {
 }
 bitfield::bitfield! {
     #[repr(transparent)]
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     pub struct MiddleButtons(u8);
     impl Debug;
     pub minus, _: 0;
@@ -260,7 +260,7 @@ bitfield::bitfield! {
 
 bitfield::bitfield! {
     #[repr(transparent)]
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     pub struct LeftButtons(u8);
     impl Debug;
     pub down, _: 0;
