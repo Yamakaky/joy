@@ -47,7 +47,7 @@ impl GyroMouse {
 
             apply_smoothing: true,
             smooth_threshold: 5.,
-            smooth_buffer: [Vector2::zero(); 10].iter().cloned().collect(),
+            smooth_buffer: [Vector2::zero(); 25].iter().cloned().collect(),
 
             apply_tightening: true,
             tightening_threshold: 5.,
