@@ -18,6 +18,11 @@ use joycon::{
 };
 use mapping::{Action, Buttons, JoyKey, Layer};
 
+#[derive(Debug, Copy, Clone)]
+pub enum ExtAction {
+    ToggleGyro(bool),
+}
+
 fn main() -> anyhow::Result<()> {
     let mut api = HidApi::new()?;
     loop {
@@ -78,36 +83,47 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
     let mut mapping = get_mapping();
     let mut last_buttons = ButtonsStatus::default();
 
+    let mut gyro_enabled = true;
+
     loop {
         let report = device.tick()?;
 
         diff(&mut mapping, last_buttons, report.buttons);
-        mapping.tick(Instant::now());
         last_buttons = report.buttons;
 
-        if let Some(imu) = report.imu {
-            let mut delta_position = Vector2::zero();
-            for (i, frame) in imu.iter().enumerate() {
-                let offset = gyromouse.process(
-                    vec2(frame.gyro.z, frame.gyro.y),
-                    joycon::IMU::SAMPLE_DURATION,
-                );
-                delta_position += offset;
-                if !ACCUMULATE {
-                    if i > 0 {
-                        std::thread::sleep(Duration::from_secs_f64(joycon::IMU::SAMPLE_DURATION));
-                    }
-                    enigo.mouse_move_relative(offset.x as i32, -offset.y as i32);
-                }
+        for action in mapping.tick(Instant::now()).drain(..) {
+            match action {
+                ExtAction::ToggleGyro(gyro) => gyro_enabled = gyro,
             }
-            if ACCUMULATE {
-                enigo.mouse_move_relative(delta_position.x as i32, -delta_position.y as i32);
+        }
+
+        if gyro_enabled {
+            if let Some(imu) = report.imu {
+                let mut delta_position = Vector2::zero();
+                for (i, frame) in imu.iter().enumerate() {
+                    let offset = gyromouse.process(
+                        vec2(frame.gyro.z, frame.gyro.y),
+                        joycon::IMU::SAMPLE_DURATION,
+                    );
+                    delta_position += offset;
+                    if !ACCUMULATE {
+                        if i > 0 {
+                            std::thread::sleep(Duration::from_secs_f64(
+                                joycon::IMU::SAMPLE_DURATION,
+                            ));
+                        }
+                        enigo.mouse_move_relative(offset.x as i32, -offset.y as i32);
+                    }
+                }
+                if ACCUMULATE {
+                    enigo.mouse_move_relative(delta_position.x as i32, -delta_position.y as i32);
+                }
             }
         }
     }
 }
 
-fn get_mapping() -> Buttons {
+fn get_mapping() -> Buttons<ExtAction> {
     let mut mapping = Buttons::new();
 
     mapping.set_binding(
@@ -139,6 +155,15 @@ fn get_mapping() -> Buttons {
             ..Default::default()
         },
     );
+    mapping.set_binding(
+        JoyKey::E,
+        0,
+        Layer {
+            on_down: Some(Action::Ext(ExtAction::ToggleGyro(false))),
+            on_up: Some(Action::Ext(ExtAction::ToggleGyro(true))),
+            ..Default::default()
+        },
+    );
 
     mapping
 }
@@ -154,7 +179,7 @@ macro_rules! diff {
     };
 }
 
-fn diff(mapping: &mut Buttons, old: ButtonsStatus, new: ButtonsStatus) {
+fn diff(mapping: &mut Buttons<ExtAction>, old: ButtonsStatus, new: ButtonsStatus) {
     let now = Instant::now();
     diff!(mapping, now, old, new, left, up, Up);
     diff!(mapping, now, old, new, left, down, Down);
