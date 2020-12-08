@@ -2,9 +2,6 @@ use cgmath::{Vector2, Zero};
 use std::collections::VecDeque;
 
 pub struct GyroMouse {
-    /// Accumulated orientation
-    pub orientation: Vector2<f64>,
-
     /// Enables smoothing for slow movements.
     ///
     /// http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc8
@@ -40,11 +37,30 @@ pub struct GyroMouse {
 }
 
 impl GyroMouse {
+    /// Nothing applied.
+    #[allow(dead_code)]
+    pub fn blank() -> GyroMouse {
+        GyroMouse {
+            apply_smoothing: false,
+            smooth_threshold: 5.,
+            smooth_buffer: VecDeque::new(),
+
+            apply_tightening: false,
+            tightening_threshold: 5.,
+
+            apply_acceleration: false,
+            acceleration_slow_sens: 8.,
+            acceleration_slow_threshold: 5.,
+            acceleration_fast_sens: 16.,
+            acceleration_fast_threshold: 75.,
+
+            sensitivity: 1.,
+        }
+    }
     /// Good default values for a 2D mouse.
+    #[allow(dead_code)]
     pub fn d2() -> GyroMouse {
         GyroMouse {
-            orientation: Vector2::zero(),
-
             apply_smoothing: true,
             smooth_threshold: 5.,
             smooth_buffer: [Vector2::zero(); 25].iter().cloned().collect(),
@@ -66,8 +82,6 @@ impl GyroMouse {
     #[allow(dead_code)]
     pub fn d3() -> GyroMouse {
         GyroMouse {
-            orientation: Vector2::zero(),
-
             apply_smoothing: false,
             smooth_threshold: 0.,
             smooth_buffer: VecDeque::new(),
@@ -100,9 +114,7 @@ impl GyroMouse {
             rot = self.tight(rot);
         }
         let sens = self.get_sens(rot);
-        let delta = rot * sens * dt;
-        self.orientation += delta;
-        delta
+        rot * sens * dt
     }
 
     fn tiered_smooth(&mut self, rot: Vector2<f64>) -> Vector2<f64> {

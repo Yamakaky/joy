@@ -4,7 +4,7 @@ mod mapping;
 use std::time::{Duration, Instant};
 
 use cgmath::{vec2, Vector2, Zero};
-use enigo::MouseControllable;
+use enigo::{Enigo, MouseControllable};
 use gyromouse::GyroMouse;
 use joycon::{
     hidapi::{self, HidApi},
@@ -70,15 +70,11 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
         },
     ))?;
 
-    let mut gyromouse = GyroMouse::d2();
-    gyromouse.orientation = Vector2::new(0., 0.);
-    gyromouse.apply_tightening = false;
-    gyromouse.apply_smoothing = false;
-    gyromouse.apply_acceleration = false;
-    gyromouse.sensitivity = 32.;
-    let mut enigo = enigo::Enigo::new();
+    let mut gyromouse = GyroMouse::blank();
+    let mut enigo = Enigo::new();
 
-    const ACCUMULATE: bool = false;
+    const SMOOTH_RATE: bool = false;
+    let mut error_accumulator = Vector2::zero();
 
     let mut mapping = get_mapping();
     let mut last_buttons = ButtonsStatus::default();
@@ -106,21 +102,29 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
                         joycon::IMU::SAMPLE_DURATION,
                     );
                     delta_position += offset;
-                    if !ACCUMULATE {
+                    if !SMOOTH_RATE {
                         if i > 0 {
                             std::thread::sleep(Duration::from_secs_f64(
                                 joycon::IMU::SAMPLE_DURATION,
                             ));
                         }
-                        enigo.mouse_move_relative(offset.x as i32, -offset.y as i32);
+                        mouse_move(&mut enigo, offset, &mut error_accumulator);
                     }
                 }
-                if ACCUMULATE {
-                    enigo.mouse_move_relative(delta_position.x as i32, -delta_position.y as i32);
+                if SMOOTH_RATE {
+                    mouse_move(&mut enigo, delta_position, &mut error_accumulator);
                 }
             }
         }
     }
+}
+
+// mouse movement is pixel perfect, so we keep track of the error.
+fn mouse_move(enigo: &mut Enigo, offset: Vector2<f64>, error_accumulator: &mut Vector2<f64>) {
+    let sum = offset + *error_accumulator;
+    let rounded = vec2(sum.x.round(), sum.y.round());
+    *error_accumulator = sum - rounded;
+    enigo.mouse_move_relative(rounded.x as i32, -rounded.y as i32);
 }
 
 fn get_mapping() -> Buttons<ExtAction> {
