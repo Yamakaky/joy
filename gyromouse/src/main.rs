@@ -1,7 +1,7 @@
 mod gyromouse;
 mod mapping;
 
-use std::{collections::HashMap, time::Duration};
+use std::time::{Duration, Instant};
 
 use cgmath::{vec2, Vector2, Zero};
 use enigo::MouseControllable;
@@ -16,7 +16,7 @@ use joycon::{
     },
     JoyCon,
 };
-use mapping::{Action, JoyKey, Joystick, KeyEntry};
+use mapping::{Action, Buttons, JoyKey, Layer};
 
 fn main() -> anyhow::Result<()> {
     let mut api = HidApi::new()?;
@@ -82,14 +82,12 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
         let report = device.tick()?;
 
         diff(&mut mapping, last_buttons, report.buttons);
+        mapping.tick(Instant::now());
         last_buttons = report.buttons;
 
         if let Some(imu) = report.imu {
             let mut delta_position = Vector2::zero();
             for (i, frame) in imu.iter().enumerate() {
-                if frame.gyro.z == 0. && frame.gyro.y == 0. {
-                    dbg!("empty");
-                }
                 let offset = gyromouse.process(
                     vec2(frame.gyro.z, frame.gyro.y),
                     joycon::IMU::SAMPLE_DURATION,
@@ -107,80 +105,77 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
             }
         }
     }
-
-    dbg!(device.set_home_light(light::HomeLight::new(0x8, 0x4, 0x0, &[]))?);
-
-    Ok(())
 }
 
-fn get_mapping() -> Joystick {
-    let mut mapping = Joystick::new();
+fn get_mapping() -> Buttons {
+    let mut mapping = Buttons::new();
 
-    let mut layer0 = HashMap::new();
-    layer0.insert(
+    mapping.set_binding(
         JoyKey::S,
-        KeyEntry {
+        0,
+        Layer {
             on_down: Some(Action::KeyPress('a', None)),
-            on_hold: None,
             on_up: Some(Action::KeyPress('b', None)),
+            ..Default::default()
         },
     );
-    layer0.insert(
-        JoyKey::L,
-        KeyEntry {
-            on_down: Some(Action::KeyPress('z', None)),
-            on_hold: Some(Action::Layer(1, Some(true))),
-            on_up: Some(Action::Layer(1, Some(false))),
-        },
-    );
-    mapping.add_layer(0, layer0);
-
-    let mut layer1 = HashMap::new();
-    layer1.insert(
+    mapping.set_binding(
         JoyKey::S,
-        KeyEntry {
+        1,
+        Layer {
             on_down: Some(Action::KeyPress('x', None)),
-            on_hold: None,
             on_up: Some(Action::KeyPress('y', None)),
+            ..Default::default()
         },
     );
-    mapping.add_layer(1, layer1);
+    mapping.set_binding(
+        JoyKey::L,
+        0,
+        Layer {
+            on_click: Some(Action::KeyPress('z', None)),
+            on_hold_down: Some(Action::Layer(1, true)),
+            on_hold_up: Some(Action::Layer(1, false)),
+            on_double_click: Some(Action::KeyPress('p', None)),
+            ..Default::default()
+        },
+    );
 
     mapping
 }
 
 macro_rules! diff {
-    ($mapping:ident, $old:expr, $new:expr, $side: ident, $member:ident, $key:ident) => {
+    ($mapping:ident, $now:ident, $old:expr, $new:expr, $side:ident, $member:ident, $key:ident) => {
         if !$old.$side.$member() && $new.$side.$member() {
-            $mapping.key_down(JoyKey::$key);
+            $mapping.key_down(JoyKey::$key, $now);
         }
         if $old.$side.$member() && !$new.$side.$member() {
-            $mapping.key_up(JoyKey::$key);
+            $mapping.key_up(JoyKey::$key, $now);
         }
     };
 }
 
-fn diff(mapping: &mut Joystick, old: ButtonsStatus, new: ButtonsStatus) {
-    diff!(mapping, old, new, left, up, Up);
-    diff!(mapping, old, new, left, down, Down);
-    diff!(mapping, old, new, left, left, Left);
-    diff!(mapping, old, new, left, right, Right);
-    diff!(mapping, old, new, left, l, L);
-    diff!(mapping, old, new, left, zl, ZL);
-    diff!(mapping, old, new, left, sl, SL);
-    diff!(mapping, old, new, left, sr, SR);
-    diff!(mapping, old, new, middle, lstick, L3);
-    diff!(mapping, old, new, middle, rstick, R3);
-    diff!(mapping, old, new, middle, minus, Minus);
-    diff!(mapping, old, new, middle, plus, Plus);
-    diff!(mapping, old, new, middle, capture, Capture);
-    diff!(mapping, old, new, middle, home, Home);
-    diff!(mapping, old, new, right, y, W);
-    diff!(mapping, old, new, right, x, N);
-    diff!(mapping, old, new, right, b, S);
-    diff!(mapping, old, new, right, a, E);
-    diff!(mapping, old, new, right, r, R);
-    diff!(mapping, old, new, right, zr, ZR);
-    diff!(mapping, old, new, right, sl, SL);
-    diff!(mapping, old, new, right, sr, SR);
+fn diff(mapping: &mut Buttons, old: ButtonsStatus, new: ButtonsStatus) {
+    let now = Instant::now();
+    diff!(mapping, now, old, new, left, up, Up);
+    diff!(mapping, now, old, new, left, down, Down);
+    diff!(mapping, now, old, new, left, left, Left);
+    diff!(mapping, now, old, new, left, right, Right);
+    diff!(mapping, now, old, new, left, l, L);
+    diff!(mapping, now, old, new, left, zl, ZL);
+    diff!(mapping, now, old, new, left, sl, SL);
+    diff!(mapping, now, old, new, left, sr, SR);
+    diff!(mapping, now, old, new, middle, lstick, L3);
+    diff!(mapping, now, old, new, middle, rstick, R3);
+    diff!(mapping, now, old, new, middle, minus, Minus);
+    diff!(mapping, now, old, new, middle, plus, Plus);
+    diff!(mapping, now, old, new, middle, capture, Capture);
+    diff!(mapping, now, old, new, middle, home, Home);
+    diff!(mapping, now, old, new, right, y, W);
+    diff!(mapping, now, old, new, right, x, N);
+    diff!(mapping, now, old, new, right, b, S);
+    diff!(mapping, now, old, new, right, a, E);
+    diff!(mapping, now, old, new, right, r, R);
+    diff!(mapping, now, old, new, right, zr, ZR);
+    diff!(mapping, now, old, new, right, sl, SL);
+    diff!(mapping, now, old, new, right, sr, SR);
 }

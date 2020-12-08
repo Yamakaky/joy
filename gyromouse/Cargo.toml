@@ -10,4 +10,5 @@ edition = "2018"
 anyhow = "1.0"
 cgmath = "0.17.0"
 enigo = "0.0.14"
+enum-map = "0.6.4"
 joycon = { path = "../joycon" }
