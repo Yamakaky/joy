@@ -31,7 +31,7 @@ jobs:
         key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
     - name: deps
-      run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev
+      run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libudev-dev
     - name: Build
       run: cargo build --workspace --verbose
     - name: Run tests
