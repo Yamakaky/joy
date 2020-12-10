@@ -69,7 +69,7 @@ impl JoyCon {
         self.device_type == JOYCON_R_BT
     }
 
-    fn send(&mut self, report: &mut OutputReport) -> Result<()> {
+    pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
@@ -78,7 +78,7 @@ impl JoyCon {
         Ok(())
     }
 
-    fn recv(&mut self) -> Result<InputReport> {
+    pub fn recv(&mut self) -> Result<InputReport> {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
         // TODO: 64 byte on pro controller, why ?
