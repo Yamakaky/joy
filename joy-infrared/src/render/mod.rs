@@ -643,7 +643,7 @@ pub async fn run(
                                     virtual_keycode: Some(VirtualKeyCode::Space),
                                     ..
                                 },
-                            ..position
+                            ..
                         } => {
                             grabbed = set_grabbed(&window, !grabbed);
                         }
