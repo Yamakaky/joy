@@ -594,10 +594,10 @@ pub async fn run(
                 }*/
             }
             Event::UserEvent(e) => match e {
-                UserEvent::IRImage(image, position) => {
+                UserEvent::IRImage(image, orientation) => {
                     gui.push_ir_data(image);
                     if gui.interface.program().ir_rotate() {
-                        gui.uniforms.set_ir_rotation(position.rotation);
+                        gui.uniforms.set_ir_rotation(orientation);
                     } else {
                         use cgmath::prelude::One;
                         gui.uniforms.set_ir_rotation(cgmath::Quaternion::one());
@@ -643,7 +643,7 @@ pub async fn run(
                                     virtual_keycode: Some(VirtualKeyCode::Space),
                                     ..
                                 },
-                            ..
+                            ..position
                         } => {
                             grabbed = set_grabbed(&window, !grabbed);
                         }
@@ -686,7 +686,7 @@ pub async fn run(
 }
 
 pub enum UserEvent {
-    IRImage(image::GrayImage, joycon::Position),
+    IRImage(image::GrayImage, cgmath::Quaternion<f64>),
     Message(controls::Message),
 }
 
