@@ -1,4 +1,5 @@
 use hidapi::HidApi;
+use cgmath::prelude::One;
 use iced_winit::winit::{
     self,
     event_loop::{EventLoop, EventLoopProxy},
@@ -60,7 +61,7 @@ fn real_main(
         .into();
     }
     assert!(proxy
-        .send_event(UserEvent::IRImage(image, Position::default()))
+        .send_event(UserEvent::IRImage(image, cgmath::Quaternion::one()))
         .is_ok());
     let mut api = HidApi::new()?;
     loop {
@@ -106,7 +107,7 @@ fn hid_main(
         &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
     ))?);
 
-    let mut last_position = Position::default();
+    let mut last_position = cgmath::Quaternion::one();
     let battery_level = device.tick()?.info.battery_level();
 
     device.set_player_light(light::PlayerLights::new(
@@ -132,7 +133,7 @@ fn hid_main(
                 dbg!("shutdown ");
                 break 'main_loop;
             }
-            last_position = report.position;
+            // TODO: update last_position
         }
 
         'recv_loop: loop {
