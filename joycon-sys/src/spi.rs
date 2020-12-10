@@ -90,11 +90,12 @@ impl fmt::Debug for SPIResultData {
     }
 }
 
+// TODO: clean
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SticksCalibration {
-    pub left: StickCalibration,
-    pub right: StickCalibration,
+    pub left: LeftStickCalibration,
+    pub right: RightStickCalibration,
 }
 
 #[repr(packed)]
@@ -106,13 +107,13 @@ pub struct UserSticksCalibration {
 
 #[repr(packed)]
 #[derive(Copy, Clone, Default)]
-pub struct StickCalibration {
+pub struct LeftStickCalibration {
     max: [u8; 3],
     center: [u8; 3],
     min: [u8; 3],
 }
 
-impl StickCalibration {
+impl LeftStickCalibration {
     fn conv_x(&self, raw: [u8; 3]) -> u16 {
         (((raw[1] as u16) << 8) & 0xF00) | raw[0] as u16
     }
@@ -163,7 +164,76 @@ impl StickCalibration {
     }
 }
 
-impl fmt::Debug for StickCalibration {
+impl fmt::Debug for LeftStickCalibration {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("StickCalibration")
+            .field("min", &self.min())
+            .field("center", &self.center())
+            .field("max", &self.max())
+            .finish()
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Default)]
+pub struct RightStickCalibration {
+    center: [u8; 3],
+    min: [u8; 3],
+    max: [u8; 3],
+}
+
+impl RightStickCalibration {
+    fn conv_x(&self, raw: [u8; 3]) -> u16 {
+        (((raw[1] as u16) << 8) & 0xF00) | raw[0] as u16
+    }
+
+    fn conv_y(&self, raw: [u8; 3]) -> u16 {
+        ((raw[2] as u16) << 4) | (raw[1] >> 4) as u16
+    }
+
+    pub fn max(&self) -> (u16, u16) {
+        let center = self.center();
+        (
+            (center.0 + self.conv_x(self.max)).min(0xFFF),
+            (center.1 + self.conv_y(self.max)).min(0xFFF),
+        )
+    }
+
+    pub fn center(&self) -> (u16, u16) {
+        (self.conv_x(self.center), self.conv_y(self.center))
+    }
+
+    pub fn min(&self) -> (u16, u16) {
+        let center = self.center();
+        (
+            center.0.saturating_sub(self.conv_x(self.min)),
+            center.1.saturating_sub(self.conv_y(self.min)),
+        )
+    }
+
+    pub fn value_from_raw(&self, x: u16, y: u16) -> (f64, f64) {
+        let min = self.min();
+        let center = self.center();
+        let max = self.max();
+        let rel_x = x.max(min.0).min(max.0) as f64 - center.0 as f64;
+        let rel_y = y.max(min.1).min(max.1) as f64 - center.1 as f64;
+
+        (
+            if rel_x >= 0. {
+                rel_x / (max.0 as f64 - center.0 as f64)
+            } else {
+                rel_x / (center.0 as f64 - min.0 as f64)
+            },
+            if rel_y >= 0. {
+                rel_y / (max.1 as f64 - center.1 as f64)
+            } else {
+                rel_y / (center.1 as f64 - min.1 as f64)
+            },
+        )
+    }
+}
+
+impl fmt::Debug for RightStickCalibration {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("StickCalibration")
             .field("min", &self.min())
@@ -177,11 +247,12 @@ impl fmt::Debug for StickCalibration {
 #[derive(Copy, Clone)]
 pub struct UserStickCalibration {
     magic: [u8; 2],
-    calib: StickCalibration,
+    // TODO: left and right are different
+    calib: LeftStickCalibration,
 }
 
 impl UserStickCalibration {
-    pub fn calib(&self) -> Option<StickCalibration> {
+    pub fn calib(&self) -> Option<LeftStickCalibration> {
         if self.magic == USER_CALIB_MAGIC {
             Some(self.calib)
         } else {

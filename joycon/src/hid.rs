@@ -26,8 +26,8 @@ pub struct JoyCon {
     counter: u8,
     pub max_raw_gyro: i16,
     pub max_raw_accel: i16,
-    left_stick_calib: StickCalibration,
-    right_stick_calib: StickCalibration,
+    left_stick_calib: LeftStickCalibration,
+    right_stick_calib: RightStickCalibration,
     image: Image,
     enable_ir_loop: bool,
     imu_handler: crate::imu_handler::Handler,
@@ -50,8 +50,8 @@ impl JoyCon {
             counter: 0,
             max_raw_gyro: 0,
             max_raw_accel: 0,
-            left_stick_calib: StickCalibration::default(),
-            right_stick_calib: StickCalibration::default(),
+            left_stick_calib: LeftStickCalibration::default(),
+            right_stick_calib: RightStickCalibration::default(),
             image: Image::new(),
             enable_ir_loop: false,
             imu_handler: crate::imu_handler::Handler::new(
@@ -142,13 +142,16 @@ impl JoyCon {
 
         let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
         let factory_settings = factory_result.sticks_factory_calib().unwrap();
-        let user_result = self.read_spi(RANGE_USER_CALIBRATION_STICKS)?;
-        let user_settings = user_result.sticks_user_calib().unwrap();
-        self.left_stick_calib = user_settings.left.calib().unwrap_or(factory_settings.left);
-        self.right_stick_calib = user_settings
-            .right
-            .calib()
-            .unwrap_or(factory_settings.right);
+        //let user_result = self.read_spi(RANGE_USER_CALIBRATION_STICKS)?;
+        //let user_settings = user_result.sticks_user_calib().unwrap();
+        //self.left_stick_calib = user_settings.left.calib().unwrap_or(factory_settings.left);
+        //self.right_stick_calib = user_settings
+        //    .right
+        //    .calib()
+        //    .unwrap_or(factory_settings.right);
+        // TODO: fix
+        self.left_stick_calib = factory_settings.left;
+        self.right_stick_calib = factory_settings.right;
 
         Ok(())
     }
