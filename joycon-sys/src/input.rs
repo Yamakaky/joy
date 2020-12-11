@@ -439,7 +439,7 @@ pub struct DeviceInfo {
     // Unknown. Seems to be always 01
     _somethingelse: u8,
     // bool
-    pub use_spi_colors: u8,
+    pub use_spi_colors: RawId<UseSPIColors>,
 }
 
 #[repr(packed)]
@@ -486,6 +486,14 @@ impl fmt::Display for WhichController {
             }
         )
     }
+}
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, Eq, PartialEq)]
+pub enum UseSPIColors {
+    No = 0,
+    WithoutGrip = 1,
+    IncludingGrip = 2,
 }
 
 #[repr(packed)]

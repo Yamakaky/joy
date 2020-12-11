@@ -2,11 +2,12 @@ use clap::Clap;
 use joycon::{
     hidapi::HidApi,
     joycon_sys::{
-        input::{BatteryLevel, Stick},
+        input::{BatteryLevel, Stick, UseSPIColors},
         light::{self, PlayerLight},
         spi::{
-            RANGE_FACTORY_CALIBRATION_SENSORS, RANGE_FACTORY_CALIBRATION_STICKS,
-            RANGE_USER_CALIBRATION_SENSORS, RANGE_USER_CALIBRATION_STICKS,
+            RANGE_CONTROLLER_COLOR, RANGE_FACTORY_CALIBRATION_SENSORS,
+            RANGE_FACTORY_CALIBRATION_STICKS, RANGE_USER_CALIBRATION_SENSORS,
+            RANGE_USER_CALIBRATION_STICKS,
         },
         NINTENDO_VENDOR_ID,
     },
@@ -134,6 +135,17 @@ fn get(joycon: &mut JoyCon) -> anyhow::Result<()> {
         "{}, MAC {}, firmware version {}",
         dev_info.which_controller, dev_info.mac_address, dev_info.firmware_version
     );
+    println!();
+
+    println!("Controller color:");
+    let color = joycon.read_spi(RANGE_CONTROLLER_COLOR)?;
+    let color = color.color().unwrap();
+    println!("  body: {}", color.body);
+    println!("  buttons: {}", color.buttons);
+    if dev_info.use_spi_colors == UseSPIColors::IncludingGrip {
+        println!("  left grip: {}", color.left_grip);
+        println!("  right grip: {}", color.right_grip);
+    }
     println!();
 
     let imu_factory_result = joycon.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;

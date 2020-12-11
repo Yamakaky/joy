@@ -11,6 +11,8 @@ pub const RANGE_FACTORY_CALIBRATION_STICKS: SPIRange = SPIRange(0x603D, 0x12);
 pub const RANGE_USER_CALIBRATION_STICKS: SPIRange = SPIRange(0x8010, 0x16);
 pub const RANGE_USER_CALIBRATION_SENSORS: SPIRange = SPIRange(0x8026, 0x1A);
 
+pub const RANGE_CONTROLLER_COLOR: SPIRange = SPIRange(0x6050, 12);
+
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SPIReadRequest {
@@ -93,6 +95,14 @@ impl SPIReadResult {
             None
         }
     }
+
+    pub fn color(&self) -> Option<&ControllerColor> {
+        if self.range() == RANGE_CONTROLLER_COLOR {
+            Some(unsafe { &self.data.color })
+        } else {
+            None
+        }
+    }
 }
 
 #[repr(packed)]
@@ -114,6 +124,7 @@ union SPIData {
     sticks_user_calib: UserSticksCalibration,
     imu_factory_calib: SensorCalibration,
     imu_user_calib: UserSensorCalibration,
+    color: ControllerColor,
 }
 
 impl fmt::Debug for SPIData {
@@ -402,4 +413,23 @@ impl UserSensorCalibration {
             None
         }
     }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Color(u8, u8, u8);
+
+impl fmt::Display for Color {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "#{:02x}{:02x}{:02x}", self.0, self.1, self.2)
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug, Default)]
+pub struct ControllerColor {
+    pub body: Color,
+    pub buttons: Color,
+    pub left_grip: Color,
+    pub right_grip: Color,
 }
