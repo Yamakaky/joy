@@ -361,6 +361,14 @@ impl SubcommandReply {
         }
     }
 
+    pub fn spi_write_success(&self) -> Option<bool> {
+        if self.subcommand_id == SubcommandId::SPIWrite {
+            Some(self.ack.is_ok() && unsafe { self.u.spi_write.success() })
+        } else {
+            None
+        }
+    }
+
     pub unsafe fn ir_status(&self) -> (RawId<MCUReportId>, IRStatus) {
         // seems to be true
         assert_eq!(self.subcommand_id, SubcommandId::SetMCUConf);
@@ -414,6 +422,7 @@ union SubcommandReplyUnion {
     // add to validate() when adding variant
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
+    spi_write: SPIWriteResult,
     ir_status: (RawId<MCUReportId>, IRStatus),
 }
 

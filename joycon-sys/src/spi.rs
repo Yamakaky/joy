@@ -32,10 +32,30 @@ impl SPIReadRequest {
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
+pub struct SPIWriteRequest {
+    address: [u8; 4],
+    size: u8,
+    data: SPIData,
+}
+
+impl From<ControllerColor> for SPIWriteRequest {
+    fn from(color: ControllerColor) -> SPIWriteRequest {
+        let range = RANGE_CONTROLLER_COLOR;
+        assert!(range.1 <= 0x1d);
+        SPIWriteRequest {
+            address: range.0.to_le_bytes(),
+            size: range.1,
+            data: SPIData { color },
+        }
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug)]
 pub struct SPIReadResult {
     address: [u8; 4],
     size: u8,
-    data: SPIResultData,
+    data: SPIData,
 }
 
 impl SPIReadResult {
@@ -76,15 +96,27 @@ impl SPIReadResult {
 }
 
 #[repr(packed)]
+#[derive(Copy, Clone, Debug)]
+pub struct SPIWriteResult {
+    status: u8,
+}
+
+impl SPIWriteResult {
+    pub fn success(&self) -> bool {
+        self.status == 0
+    }
+}
+
+#[repr(packed)]
 #[derive(Copy, Clone)]
-union SPIResultData {
+union SPIData {
     sticks_factory_calib: SticksCalibration,
     sticks_user_calib: UserSticksCalibration,
     imu_factory_calib: SensorCalibration,
     imu_user_calib: UserSensorCalibration,
 }
 
-impl fmt::Debug for SPIResultData {
+impl fmt::Debug for SPIData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("SPIResultData").finish()
     }

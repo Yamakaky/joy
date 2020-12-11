@@ -32,6 +32,7 @@ pub enum SubcommandId {
     RequestDeviceInfo = 0x02,
     SetInputReportMode = 0x03,
     SPIRead = 0x10,
+    SPIWrite = 0x11,
     SetMCUConf = 0x21,
     SetMCUState = 0x22,
     SetPlayerLights = 0x30,

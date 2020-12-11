@@ -209,6 +209,11 @@ impl JoyCon {
         );
         Ok(*result)
     }
+
+    pub fn write_spi(&mut self, value: impl Into<SPIWriteRequest>) -> Result<bool> {
+        let reply = self.send_subcmd_wait(value.into())?;
+        Ok(reply.spi_write_success().unwrap())
+    }
 }
 
 /// MCU handling (infrared camera and NFC reader)

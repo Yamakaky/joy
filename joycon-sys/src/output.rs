@@ -322,6 +322,7 @@ union SubcommandRequestUnion {
     mcu_mode: MCUMode,
     mcu_cmd: MCUCommand,
     spi_read: SPIReadRequest,
+    spi_write: SPIWriteRequest,
     imu_sensitivity: crate::imu::Sensitivity,
 }
 
@@ -339,6 +340,15 @@ impl From<SPIReadRequest> for SubcommandRequest {
         SubcommandRequest {
             subcommand_id: SubcommandId::SPIRead,
             u: SubcommandRequestUnion { spi_read },
+        }
+    }
+}
+
+impl From<SPIWriteRequest> for SubcommandRequest {
+    fn from(spi_write: SPIWriteRequest) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SPIWrite,
+            u: SubcommandRequestUnion { spi_write },
         }
     }
 }
