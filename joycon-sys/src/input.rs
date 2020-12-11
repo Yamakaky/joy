@@ -467,7 +467,7 @@ impl fmt::Display for MACAddress {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, Eq, PartialEq)]
 pub enum WhichController {
     LeftJoyCon = 1,
     RightJoyCon = 2,

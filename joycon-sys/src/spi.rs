@@ -1,7 +1,7 @@
-use crate::common::*;
+use crate::{common::*, input::UseSPIColors};
 use byteorder::{ByteOrder, LittleEndian};
 use cgmath::Vector3;
-use std::fmt;
+use std::{fmt, num::ParseIntError, str::FromStr};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct SPIRange(u32, u8);
@@ -11,6 +11,7 @@ pub const RANGE_FACTORY_CALIBRATION_STICKS: SPIRange = SPIRange(0x603D, 0x12);
 pub const RANGE_USER_CALIBRATION_STICKS: SPIRange = SPIRange(0x8010, 0x16);
 pub const RANGE_USER_CALIBRATION_SENSORS: SPIRange = SPIRange(0x8026, 0x1A);
 
+pub const RANGE_CONTROLLER_COLOR_USE_SPI: SPIRange = SPIRange(0x601B, 1);
 pub const RANGE_CONTROLLER_COLOR: SPIRange = SPIRange(0x6050, 12);
 
 #[repr(packed)]
@@ -48,6 +49,20 @@ impl From<ControllerColor> for SPIWriteRequest {
             address: range.0.to_le_bytes(),
             size: range.1,
             data: SPIData { color },
+        }
+    }
+}
+
+impl From<UseSPIColors> for SPIWriteRequest {
+    fn from(use_spi_colors: UseSPIColors) -> SPIWriteRequest {
+        let range = RANGE_CONTROLLER_COLOR_USE_SPI;
+        assert!(range.1 <= 0x1d);
+        SPIWriteRequest {
+            address: range.0.to_le_bytes(),
+            size: range.1,
+            data: SPIData {
+                use_spi_colors: use_spi_colors.into(),
+            },
         }
     }
 }
@@ -125,6 +140,7 @@ union SPIData {
     imu_factory_calib: SensorCalibration,
     imu_user_calib: UserSensorCalibration,
     color: ControllerColor,
+    use_spi_colors: RawId<UseSPIColors>,
 }
 
 impl fmt::Debug for SPIData {
@@ -422,6 +438,20 @@ pub struct Color(u8, u8, u8);
 impl fmt::Display for Color {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "#{:02x}{:02x}{:02x}", self.0, self.1, self.2)
+    }
+}
+
+impl FromStr for Color {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // TODO: do better
+        assert!(s.len() == 6);
+        Ok(Color(
+            u8::from_str_radix(s.get(0..2).unwrap(), 16)?,
+            u8::from_str_radix(s.get(2..4).unwrap(), 16)?,
+            u8::from_str_radix(s.get(4..6).unwrap(), 16)?,
+        ))
     }
 }
 

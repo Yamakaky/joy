@@ -1,11 +1,12 @@
+use anyhow::Result;
 use clap::Clap;
 use joycon::{
     hidapi::HidApi,
     joycon_sys::{
-        input::{BatteryLevel, Stick, UseSPIColors},
+        input::{BatteryLevel, Stick, UseSPIColors, WhichController},
         light::{self, PlayerLight},
         spi::{
-            RANGE_CONTROLLER_COLOR, RANGE_FACTORY_CALIBRATION_SENSORS,
+            ControllerColor, RANGE_CONTROLLER_COLOR, RANGE_FACTORY_CALIBRATION_SENSORS,
             RANGE_FACTORY_CALIBRATION_STICKS, RANGE_USER_CALIBRATION_SENSORS,
             RANGE_USER_CALIBRATION_STICKS,
         },
@@ -26,6 +27,7 @@ struct Opts {
 enum SubCommand {
     Calibrate(Calibrate),
     Get,
+    Set(Set),
 }
 
 #[derive(Clap)]
@@ -40,7 +42,26 @@ enum CalibrateE {
     Gyroscope,
 }
 
-fn main() -> anyhow::Result<()> {
+#[derive(Clap)]
+struct Set {
+    #[clap(subcommand)]
+    subcmd: SetE,
+}
+
+#[derive(Clap)]
+enum SetE {
+    Color(SetColor),
+}
+
+#[derive(Clap)]
+struct SetColor {
+    body: String,
+    buttons: String,
+    left_grip: Option<String>,
+    right_grip: Option<String>,
+}
+
+fn main() -> Result<()> {
     let opts = Opts::parse();
 
     let api = HidApi::new()?;
@@ -77,6 +98,9 @@ fn main() -> anyhow::Result<()> {
                 CalibrateE::Gyroscope => unimplemented!(),
             },
             SubCommand::Get => get(&mut joycon)?,
+            SubCommand::Set(set) => match set.subcmd {
+                SetE::Color(arg) => set_color(&mut joycon, arg)?,
+            },
         }
     } else {
         eprintln!("No device found");
@@ -84,7 +108,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn calibrate_sticks(joycon: &mut JoyCon) -> anyhow::Result<()> {
+fn calibrate_sticks(joycon: &mut JoyCon) -> Result<()> {
     println!("Don't move the sticks...");
     sleep(Duration::from_secs(1));
     let (left_neutral, right_neutral) = raw_sticks(joycon)?;
@@ -123,13 +147,13 @@ fn calibrate_sticks(joycon: &mut JoyCon) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn raw_sticks(joycon: &mut JoyCon) -> anyhow::Result<(Stick, Stick)> {
+fn raw_sticks(joycon: &mut JoyCon) -> Result<(Stick, Stick)> {
     let report = joycon.recv()?;
     let std_report = report.standard().expect("should be standard");
     Ok((std_report.left_stick, std_report.right_stick))
 }
 
-fn get(joycon: &mut JoyCon) -> anyhow::Result<()> {
+fn get(joycon: &mut JoyCon) -> Result<()> {
     let dev_info = joycon.get_dev_info()?;
     println!(
         "{}, MAC {}, firmware version {}",
@@ -227,5 +251,31 @@ fn get(joycon: &mut JoyCon) -> anyhow::Result<()> {
     }
     println!("");
 
+    Ok(())
+}
+
+fn set_color(joycon: &mut JoyCon, arg: SetColor) -> Result<()> {
+    let dev_info = joycon.get_dev_info()?;
+    let is_pro_controller = dev_info.which_controller == WhichController::ProController;
+
+    let mut colors = ControllerColor {
+        body: arg.body.parse()?,
+        buttons: arg.buttons.parse()?,
+        ..Default::default()
+    };
+    if let (Some(left), Some(right)) = (arg.left_grip, arg.right_grip) {
+        if is_pro_controller {
+            colors.left_grip = left.parse()?;
+            colors.right_grip = right.parse()?;
+            if dev_info.use_spi_colors != UseSPIColors::IncludingGrip {
+                joycon.write_spi(UseSPIColors::IncludingGrip)?;
+            }
+        } else {
+            panic!("grips can only be set on pro controller");
+        }
+    }
+    println!("Setting controller colors to {:x?}", colors);
+    joycon.write_spi(colors)?;
+    println!("Reconnect your controller");
     Ok(())
 }
