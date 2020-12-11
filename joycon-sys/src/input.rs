@@ -420,17 +420,41 @@ union SubcommandReplyUnion {
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct DeviceInfo {
-    pub firmware_version: [u8; 2],
+    pub firmware_version: FirmwareVersion,
     // 1=Left Joy-Con, 2=Right Joy-Con, 3=Pro Controller
     pub which_controller: RawId<WhichController>,
     // Unknown. Seems to be always 02
     _something: u8,
     // Big endian
-    pub mac_address: [u8; 6],
+    pub mac_address: MACAddress,
     // Unknown. Seems to be always 01
     _somethingelse: u8,
     // bool
     pub use_spi_colors: u8,
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug)]
+pub struct FirmwareVersion(pub [u8; 2]);
+
+impl fmt::Display for FirmwareVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}", self.0[0], self.0[1])
+    }
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug)]
+pub struct MACAddress(pub [u8; 6]);
+
+impl fmt::Display for MACAddress {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+            self.0[0], self.0[1], self.0[2], self.0[3], self.0[4], self.0[5]
+        )
+    }
 }
 
 #[repr(u8)]
@@ -439,6 +463,20 @@ pub enum WhichController {
     LeftJoyCon = 1,
     RightJoyCon = 2,
     ProController = 3,
+}
+
+impl fmt::Display for WhichController {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match *self {
+                WhichController::LeftJoyCon => "Left JoyCon",
+                WhichController::RightJoyCon => "Right JoyCon",
+                WhichController::ProController => "Pro Controller",
+            }
+        )
+    }
 }
 
 #[repr(packed)]

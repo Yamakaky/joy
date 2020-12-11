@@ -127,6 +127,18 @@ impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
     }
 }
 
+impl<Id: fmt::Display + FromPrimitive + Copy> fmt::Display for RawId<Id> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(id) = self.try_into() {
+            write!(f, "{}", id)
+        } else {
+            f.debug_tuple("RawId")
+                .field(&format!("0x{:x}", self.0))
+                .finish()
+        }
+    }
+}
+
 impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
     fn eq(&self, other: &Id) -> bool {
         self.try_into().map(|x| x == *other).unwrap_or(false)

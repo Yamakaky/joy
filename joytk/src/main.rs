@@ -129,6 +129,13 @@ fn raw_sticks(joycon: &mut JoyCon) -> anyhow::Result<(Stick, Stick)> {
 }
 
 fn get(joycon: &mut JoyCon) -> anyhow::Result<()> {
+    let dev_info = joycon.get_dev_info()?;
+    println!(
+        "{}, MAC {}, firmware version {}",
+        dev_info.which_controller, dev_info.mac_address, dev_info.firmware_version
+    );
+    println!();
+
     let imu_factory_result = joycon.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
     let imu_factory_settings = imu_factory_result.imu_factory_calib().unwrap();
     let imu_user_result = joycon.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
