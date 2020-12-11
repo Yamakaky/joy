@@ -4,6 +4,10 @@ use joycon::{
     joycon_sys::{
         input::{BatteryLevel, Stick},
         light::{self, PlayerLight},
+        spi::{
+            RANGE_FACTORY_CALIBRATION_SENSORS, RANGE_FACTORY_CALIBRATION_STICKS,
+            RANGE_USER_CALIBRATION_SENSORS, RANGE_USER_CALIBRATION_STICKS,
+        },
         NINTENDO_VENDOR_ID,
     },
     JoyCon,
@@ -19,8 +23,8 @@ struct Opts {
 
 #[derive(Clap)]
 enum SubCommand {
-    #[clap(version = "1.0")]
     Calibrate(Calibrate),
+    Get,
 }
 
 #[derive(Clap)]
@@ -46,12 +50,12 @@ fn main() -> anyhow::Result<()> {
         let device = device_info.open_device(&api)?;
         let mut joycon = JoyCon::new(device, device_info.clone())?;
 
-        dbg!(joycon.set_home_light(light::HomeLight::new(
+        joycon.set_home_light(light::HomeLight::new(
             0x8,
             0x2,
             0x0,
             &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
-        ))?);
+        ))?;
 
         let battery_level = joycon.tick()?.info.battery_level();
 
@@ -71,6 +75,7 @@ fn main() -> anyhow::Result<()> {
                 CalibrateE::Sticks => calibrate_sticks(&mut joycon)?,
                 CalibrateE::Gyroscope => unimplemented!(),
             },
+            SubCommand::Get => get(&mut joycon)?,
         }
     } else {
         eprintln!("No device found");
@@ -121,4 +126,87 @@ fn raw_sticks(joycon: &mut JoyCon) -> anyhow::Result<(Stick, Stick)> {
     let report = joycon.recv()?;
     let std_report = report.standard().expect("should be standard");
     Ok((std_report.left_stick, std_report.right_stick))
+}
+
+fn get(joycon: &mut JoyCon) -> anyhow::Result<()> {
+    let imu_factory_result = joycon.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
+    let imu_factory_settings = imu_factory_result.imu_factory_calib().unwrap();
+    let imu_user_result = joycon.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
+    let imu_user_settings = imu_user_result.imu_user_calib().unwrap();
+
+    println!("Gyroscope calibration data:");
+    println!(
+        "  factory: offset ({:?}), factor ({:?})",
+        imu_factory_settings.gyro_offset().cast::<i16>().unwrap(),
+        imu_factory_settings.gyro_factor().cast::<u16>().unwrap(),
+    );
+    if let Some(settings) = imu_user_settings.calib() {
+        println!(
+            "  user: offset ({:?}), factor ({:?})",
+            settings.gyro_offset().cast::<i16>().unwrap(),
+            settings.gyro_factor().cast::<u16>().unwrap(),
+        );
+    } else {
+        println!("  no user");
+    }
+    println!("");
+    println!("Accelerometer calibration data:");
+    println!(
+        "  factory: offset ({:?}), factor ({:?})",
+        imu_factory_settings.acc_offset().cast::<i16>().unwrap(),
+        imu_factory_settings.acc_factor().cast::<u16>().unwrap(),
+    );
+    if let Some(settings) = imu_user_settings.calib() {
+        println!(
+            "  user: offset ({:?}), factor ({:?})",
+            settings.acc_offset().cast::<i16>().unwrap(),
+            settings.acc_factor().cast::<u16>().unwrap(),
+        );
+    } else {
+        println!("  no user");
+    }
+    println!("");
+
+    let sticks_factory_result = joycon.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
+    let sticks_factory_settings = sticks_factory_result.sticks_factory_calib().unwrap();
+    let sticks_user_result = joycon.read_spi(RANGE_USER_CALIBRATION_STICKS)?;
+    let sticks_user_settings = sticks_user_result.sticks_user_calib().unwrap();
+    println!("Left stick calibration data");
+    println!(
+        "  factory: min {:x?}, center {:x?}, max {:x?}",
+        sticks_factory_settings.left.min(),
+        sticks_factory_settings.left.center(),
+        sticks_factory_settings.left.max()
+    );
+    if let Some(left) = sticks_user_settings.left.calib() {
+        println!(
+            "  user: min {:x?}, center {:x?}, max {:x?}",
+            left.min(),
+            left.center(),
+            left.max()
+        );
+    } else {
+        println!("  no user");
+    }
+    println!("");
+    println!("Right stick calibration data");
+    println!(
+        "  factory: min {:x?}, center {:x?}, max {:x?}",
+        sticks_factory_settings.right.min(),
+        sticks_factory_settings.right.center(),
+        sticks_factory_settings.right.max()
+    );
+    if let Some(right) = sticks_user_settings.right.calib() {
+        println!(
+            "  user: min {:x?}, center {:x?}, max {:x?}",
+            right.min(),
+            right.center(),
+            right.max()
+        );
+    } else {
+        println!("  no user");
+    }
+    println!("");
+
+    Ok(())
 }

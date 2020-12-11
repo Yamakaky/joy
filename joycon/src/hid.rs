@@ -199,7 +199,7 @@ impl JoyCon {
         bail!("Timeout while waiting for subcommand");
     }
 
-    fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
+    pub fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
         let reply = self.send_subcmd_wait(SPIReadRequest::new(range))?;
         let result = reply.spi_result().unwrap();
         ensure!(

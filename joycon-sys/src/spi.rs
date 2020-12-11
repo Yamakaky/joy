@@ -332,6 +332,13 @@ pub struct UserSensorCalibration {
 }
 
 impl UserSensorCalibration {
+    pub fn calib(&self) -> Option<SensorCalibration> {
+        if self.magic == USER_CALIB_MAGIC {
+            Some(self.calib)
+        } else {
+            None
+        }
+    }
     pub fn acc_offset(&self) -> Option<Vector3<f64>> {
         if self.magic == USER_CALIB_MAGIC {
             Some(self.calib.acc_offset())
