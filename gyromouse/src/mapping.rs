@@ -219,7 +219,7 @@ impl<Ext: Copy> Buttons<Ext> {
 
     fn find_binding(&self, key: JoyKey) -> Layer<Ext> {
         let layers = &self.bindings[key];
-        for i in &self.current_layers {
+        for i in self.current_layers.iter().rev() {
             if let Some(layer) = layers.get(&i) {
                 if layer.is_good() {
                     return *layer;
