@@ -1,10 +1,9 @@
 use enum_map::{Enum, EnumMap};
-use std::time::Instant;
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, fmt::Debug, time::Duration};
+use std::{str::FromStr, time::Instant};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Action<ExtAction> {
-    KeyPress(char, Option<bool>),
     Layer(u8, bool),
     Ext(ExtAction),
 }
@@ -31,6 +30,37 @@ pub enum JoyKey {
     Plus,
     Capture,
     Home,
+}
+
+impl FromStr for JoyKey {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use JoyKey::*;
+        Ok(match s {
+            "Up" => Up,
+            "Down" => Down,
+            "Left" => Left,
+            "Right" => Right,
+            "N" => N,
+            "S" => S,
+            "E" => E,
+            "W" => W,
+            "L" => L,
+            "R" => R,
+            "ZL" => ZL,
+            "ZR" => ZR,
+            "SL" => SL,
+            "SR" => SR,
+            "L3" => L3,
+            "R3" => R3,
+            "Minus" => Minus,
+            "Plus" => Plus,
+            "Capture" => Capture,
+            "Home" => Home,
+            _ => unreachable!(),
+        })
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -120,8 +150,8 @@ impl<Ext: Copy> Buttons<Ext> {
         }
     }
 
-    pub fn set_binding(&mut self, key: JoyKey, layer: u8, binding: Layer<Ext>) {
-        self.bindings[key].insert(layer, binding);
+    pub fn get(&mut self, key: JoyKey, layer: u8) -> &mut Layer<Ext> {
+        self.bindings[key].entry(layer).or_default()
     }
 
     pub fn tick(&mut self, now: Instant) -> &mut Vec<Ext> {
@@ -231,9 +261,6 @@ impl<Ext: Copy> Buttons<Ext> {
 
     fn action(action: &Action<Ext>, current_layers: &mut Vec<u8>, ext_actions: &mut Vec<Ext>) {
         match *action {
-            Action::KeyPress(c, None) => println!("click {}", c),
-            Action::KeyPress(c, Some(true)) => println!("down {}", c),
-            Action::KeyPress(c, Some(false)) => println!("up {}", c),
             Action::Layer(l, true) => {
                 if current_layers.contains(&l) {
                     current_layers.retain(|x| *x != l);

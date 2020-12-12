@@ -1,10 +1,11 @@
 mod gyromouse;
 mod mapping;
+mod parse;
 
 use std::time::{Duration, Instant};
 
 use cgmath::{vec2, Vector2, Zero};
-use enigo::{Enigo, MouseControllable};
+use enigo::{Enigo, Key, KeyboardControllable, MouseControllable};
 use gyromouse::GyroMouse;
 use joycon::{
     hidapi::{self, HidApi},
@@ -16,10 +17,12 @@ use joycon::{
     },
     JoyCon,
 };
-use mapping::{Action, Buttons, JoyKey, Layer};
+use mapping::{Buttons, JoyKey};
+use parse::parse_file;
 
 #[derive(Debug, Copy, Clone)]
 pub enum ExtAction {
+    KeyPress(Key, Option<bool>),
     ToggleGyro(bool),
 }
 
@@ -70,13 +73,14 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
         },
     ))?;
 
-    let mut gyromouse = GyroMouse::blank();
+    let mut gyromouse = GyroMouse::d2();
     let mut enigo = Enigo::new();
 
     const SMOOTH_RATE: bool = false;
     let mut error_accumulator = Vector2::zero();
 
-    let mut mapping = get_mapping();
+    let mut mapping = Buttons::new();
+    parse_file("R x\nR,E y\nS a", &mut mapping);
     let mut last_buttons = ButtonsStatus::default();
 
     let mut gyro_enabled = true;
@@ -90,6 +94,9 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
         for action in mapping.tick(Instant::now()).drain(..) {
             match action {
                 ExtAction::ToggleGyro(gyro) => gyro_enabled = gyro,
+                ExtAction::KeyPress(c, None) => enigo.key_click(c),
+                ExtAction::KeyPress(c, Some(true)) => enigo.key_down(c),
+                ExtAction::KeyPress(c, Some(false)) => enigo.key_up(c),
             }
         }
 
@@ -125,51 +132,6 @@ fn mouse_move(enigo: &mut Enigo, offset: Vector2<f64>, error_accumulator: &mut V
     let rounded = vec2(sum.x.round(), sum.y.round());
     *error_accumulator = sum - rounded;
     enigo.mouse_move_relative(rounded.x as i32, -rounded.y as i32);
-}
-
-fn get_mapping() -> Buttons<ExtAction> {
-    let mut mapping = Buttons::new();
-
-    mapping.set_binding(
-        JoyKey::S,
-        0,
-        Layer {
-            on_down: Some(Action::KeyPress('a', None)),
-            on_up: Some(Action::KeyPress('b', None)),
-            ..Default::default()
-        },
-    );
-    mapping.set_binding(
-        JoyKey::S,
-        1,
-        Layer {
-            on_down: Some(Action::KeyPress('x', None)),
-            on_up: Some(Action::KeyPress('y', None)),
-            ..Default::default()
-        },
-    );
-    mapping.set_binding(
-        JoyKey::L,
-        0,
-        Layer {
-            on_click: Some(Action::KeyPress('z', None)),
-            on_hold_down: Some(Action::Layer(1, true)),
-            on_hold_up: Some(Action::Layer(1, false)),
-            on_double_click: Some(Action::KeyPress('p', None)),
-            ..Default::default()
-        },
-    );
-    mapping.set_binding(
-        JoyKey::E,
-        0,
-        Layer {
-            on_down: Some(Action::Ext(ExtAction::ToggleGyro(false))),
-            on_up: Some(Action::Ext(ExtAction::ToggleGyro(true))),
-            ..Default::default()
-        },
-    );
-
-    mapping
 }
 
 macro_rules! diff {
