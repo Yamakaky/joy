@@ -229,6 +229,72 @@ pub struct ButtonsStatus {
     pub left: LeftButtons,
 }
 
+impl fmt::Display for ButtonsStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.right.a() {
+            write!(f, " A")?;
+        }
+        if self.right.b() {
+            write!(f, " B")?;
+        }
+        if self.right.x() {
+            write!(f, " X")?;
+        }
+        if self.right.y() {
+            write!(f, " Y")?;
+        }
+        if self.left.up() {
+            write!(f, " UP")?;
+        }
+        if self.left.down() {
+            write!(f, " DOWN")?;
+        }
+        if self.left.left() {
+            write!(f, " LEFT")?;
+        }
+        if self.left.right() {
+            write!(f, " RIGHT")?;
+        }
+        if self.left.l() {
+            write!(f, " L")?;
+        }
+        if self.left.zl() {
+            write!(f, " ZL")?;
+        }
+        if self.right.r() {
+            write!(f, " R")?;
+        }
+        if self.right.zr() {
+            write!(f, " ZR")?;
+        }
+        if self.left.sl() || self.right.sl() {
+            write!(f, " SR")?;
+        }
+        if self.left.sr() || self.right.sr() {
+            write!(f, " SR")?;
+        }
+        if self.middle.lstick() {
+            write!(f, " L3")?;
+        }
+        if self.middle.rstick() {
+            write!(f, " R3")?;
+        }
+        if self.middle.minus() {
+            write!(f, " -")?;
+        }
+        if self.middle.plus() {
+            write!(f, " +")?;
+        }
+        if self.middle.capture() {
+            write!(f, " CAPTURE")?;
+        }
+        if self.middle.home() {
+            write!(f, " HOME")?;
+        }
+        Ok(())
+    }
+}
+
 bitfield::bitfield! {
     #[repr(transparent)]
     #[derive(Copy, Clone, Default)]

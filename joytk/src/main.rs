@@ -1,4 +1,5 @@
 use anyhow::Result;
+use cgmath::{Deg, Euler, One, Quaternion};
 use clap::Clap;
 use joycon::{
     hidapi::HidApi,
@@ -14,8 +15,8 @@ use joycon::{
     },
     JoyCon,
 };
-use std::thread::sleep;
 use std::time::Duration;
+use std::{thread::sleep, time::Instant};
 
 #[derive(Clap)]
 struct Opts {
@@ -28,6 +29,7 @@ enum SubCommand {
     Calibrate(Calibrate),
     Get,
     Set(Set),
+    Monitor,
 }
 
 #[derive(Clap)]
@@ -101,6 +103,7 @@ fn main() -> Result<()> {
             SubCommand::Set(set) => match set.subcmd {
                 SetE::Color(arg) => set_color(&mut joycon, arg)?,
             },
+            SubCommand::Monitor => monitor(&mut joycon)?,
         }
     } else {
         eprintln!("No device found");
@@ -278,4 +281,35 @@ fn set_color(joycon: &mut JoyCon, arg: SetColor) -> Result<()> {
     joycon.write_spi(colors)?;
     println!("Reconnect your controller");
     Ok(())
+}
+
+fn monitor(joycon: &mut JoyCon) -> Result<()> {
+    joycon.enable_imu()?;
+    joycon.load_calibration()?;
+    let mut orientation = Quaternion::one();
+    let mut now = Instant::now();
+    loop {
+        let report = joycon.tick()?;
+        for frame in &report.imu.unwrap() {
+            orientation = orientation
+                * Quaternion::from(Euler::new(
+                    Deg(frame.gyro.y * 0.005),
+                    Deg(frame.gyro.z * 0.005),
+                    Deg(frame.gyro.x * 0.005),
+                ));
+        }
+        if now.elapsed() > Duration::from_millis(500) {
+            now = Instant::now();
+            println!("Clicked: {}", report.buttons);
+
+            let euler_rot = Euler::from(orientation);
+            let pitch = Deg::from(euler_rot.x);
+            let yaw = Deg::from(euler_rot.y);
+            let roll = Deg::from(euler_rot.z);
+            println!(
+                "Rotation: pitch {:?}, yaw {:?}, roll {:?}",
+                pitch, yaw, roll
+            );
+        }
+    }
 }

@@ -1449,6 +1449,7 @@ name = "joytk"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cgmath",
  "clap",
  "joycon",
 ]
