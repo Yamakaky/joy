@@ -1,6 +1,7 @@
 use crate::image::Image;
 use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};
+use cgmath::Vector2;
 use joycon_sys::mcu::ir::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
@@ -12,8 +13,8 @@ const WAIT_TIMEOUT: u32 = 60;
 
 #[derive(Debug, Clone)]
 pub struct Report {
-    pub left_stick: (f64, f64),
-    pub right_stick: (f64, f64),
+    pub left_stick: Vector2<f64>,
+    pub right_stick: Vector2<f64>,
     pub buttons: ButtonsStatus,
     pub info: DeviceStatus,
     pub image: Option<image::GrayImage>,

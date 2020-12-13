@@ -1,10 +1,11 @@
 mod gyromouse;
+mod joystick;
 mod mapping;
 mod parse;
 
 use std::time::{Duration, Instant};
 
-use cgmath::{vec2, Vector2, Zero};
+use cgmath::{vec2, InnerSpace, Vector2, Zero};
 use enigo::{Enigo, Key, KeyboardControllable, MouseControllable};
 use gyromouse::GyroMouse;
 use joycon::{
@@ -17,6 +18,7 @@ use joycon::{
     },
     JoyCon,
 };
+use joystick::CameraStick;
 use mapping::{Buttons, JoyKey};
 use parse::parse_file;
 
@@ -83,7 +85,9 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
     parse_file("R x\nR,E y\nS a", &mut mapping);
     let mut last_buttons = ButtonsStatus::default();
 
-    let mut gyro_enabled = true;
+    let mut rstick = CameraStick::default();
+
+    let mut gyro_enabled = false;
 
     loop {
         let report = device.tick()?;
@@ -98,6 +102,12 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
                 ExtAction::KeyPress(c, Some(true)) => enigo.key_down(c),
                 ExtAction::KeyPress(c, Some(false)) => enigo.key_up(c),
             }
+        }
+
+        let offset = rstick.handle(report.right_stick);
+        if offset.magnitude() != 0. {
+            dbg!(offset);
+            mouse_move(&mut enigo, offset, &mut error_accumulator);
         }
 
         if gyro_enabled {

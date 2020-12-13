@@ -1,6 +1,6 @@
 use crate::{common::*, input::UseSPIColors};
 use byteorder::{ByteOrder, LittleEndian};
-use cgmath::Vector3;
+use cgmath::{vec2, Vector2, Vector3};
 use std::{fmt, num::ParseIntError, str::FromStr};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -201,14 +201,14 @@ impl LeftStickCalibration {
         )
     }
 
-    pub fn value_from_raw(&self, x: u16, y: u16) -> (f64, f64) {
+    pub fn value_from_raw(&self, x: u16, y: u16) -> Vector2<f64> {
         let min = self.min();
         let center = self.center();
         let max = self.max();
         let rel_x = x.max(min.0).min(max.0) as f64 - center.0 as f64;
         let rel_y = y.max(min.1).min(max.1) as f64 - center.1 as f64;
 
-        (
+        vec2(
             if rel_x >= 0. {
                 rel_x / (max.0 as f64 - center.0 as f64)
             } else {
@@ -270,14 +270,14 @@ impl RightStickCalibration {
         )
     }
 
-    pub fn value_from_raw(&self, x: u16, y: u16) -> (f64, f64) {
+    pub fn value_from_raw(&self, x: u16, y: u16) -> Vector2<f64> {
         let min = self.min();
         let center = self.center();
         let max = self.max();
         let rel_x = x.max(min.0).min(max.0) as f64 - center.0 as f64;
         let rel_y = y.max(min.1).min(max.1) as f64 - center.1 as f64;
 
-        (
+        vec2(
             if rel_x >= 0. {
                 rel_x / (max.0 as f64 - center.0 as f64)
             } else {
