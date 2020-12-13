@@ -24,9 +24,13 @@ pub fn parse_file(content: &str, mapping: &mut Buttons<ExtAction>) {
                 None,
             )));
         } else {
-            mapping.get(k1, 0).on_click = Some(Action::Ext(ExtAction::KeyPress(
+            mapping.get(k1, 0).on_down = Some(Action::Ext(ExtAction::KeyPress(
                 Key::Layout(v.chars().next().unwrap()),
-                None,
+                Some(true),
+            )));
+            mapping.get(k1, 0).on_up = Some(Action::Ext(ExtAction::KeyPress(
+                Key::Layout(v.chars().next().unwrap()),
+                Some(false),
             )));
         }
     }

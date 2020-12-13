@@ -18,7 +18,7 @@ use joycon::{
     },
     JoyCon,
 };
-use joystick::CameraStick;
+use joystick::{ButtonStick, CameraStick};
 use mapping::{Buttons, JoyKey};
 use parse::parse_file;
 
@@ -82,9 +82,13 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
     let mut error_accumulator = Vector2::zero();
 
     let mut mapping = Buttons::new();
-    parse_file("R x\nR,E y\nS a", &mut mapping);
+    parse_file(
+        "LLeft a\nLRight d\nLUp w\nLDown s\nR x\nR,E y\nS a",
+        &mut mapping,
+    );
     let mut last_buttons = ButtonsStatus::default();
 
+    let mut lstick = ButtonStick::left(0.4);
     let mut rstick = CameraStick::default();
 
     let mut gyro_enabled = false;
@@ -104,6 +108,7 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
             }
         }
 
+        lstick.handle(report.left_stick, &mut mapping);
         let offset = rstick.handle(report.right_stick);
         if offset.magnitude() != 0. {
             dbg!(offset);

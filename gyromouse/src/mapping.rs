@@ -14,6 +14,14 @@ pub enum JoyKey {
     Down,
     Left,
     Right,
+    LUp,
+    LDown,
+    LLeft,
+    LRight,
+    RUp,
+    RDown,
+    RLeft,
+    RRight,
     N,
     S,
     E,
@@ -42,6 +50,14 @@ impl FromStr for JoyKey {
             "Down" => Down,
             "Left" => Left,
             "Right" => Right,
+            "LUp" => LUp,
+            "LDown" => LDown,
+            "LLeft" => LLeft,
+            "LRight" => LRight,
+            "RUp" => RUp,
+            "RDown" => RDown,
+            "RLeft" => RLeft,
+            "RRight" => RRight,
             "N" => N,
             "S" => S,
             "E" => E,
@@ -70,6 +86,15 @@ enum KeyStatus {
     Hold,
     DoubleUp,
     DoubleDown,
+}
+
+impl KeyStatus {
+    pub fn is_down(self) -> bool {
+        match self {
+            KeyStatus::Down | KeyStatus::DoubleDown | KeyStatus::Hold => true,
+            KeyStatus::Up | KeyStatus::DoubleUp => false,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -190,6 +215,9 @@ impl<Ext: Copy> Buttons<Ext> {
     }
 
     pub fn key_down(&mut self, key: JoyKey, now: Instant) {
+        if self.state[key].status.is_down() {
+            return;
+        }
         let binding = self.find_binding(key);
         if let Some(ref down) = binding.on_down {
             Self::action(down, &mut self.current_layers, &mut self.ext_actions);
@@ -210,6 +238,9 @@ impl<Ext: Copy> Buttons<Ext> {
     }
 
     pub fn key_up(&mut self, key: JoyKey, now: Instant) {
+        if !self.state[key].status.is_down() {
+            return;
+        }
         let binding = self.find_binding(key);
         if let Some(ref up) = binding.on_up {
             Self::action(up, &mut self.current_layers, &mut self.ext_actions);
@@ -239,6 +270,14 @@ impl<Ext: Copy> Buttons<Ext> {
         }
         self.state[key].status = new_status;
         self.state[key].last_update = now;
+    }
+
+    pub fn key(&mut self, key: JoyKey, pressed: bool, now: Instant) {
+        if pressed {
+            self.key_down(key, now);
+        } else {
+            self.key_up(key, now);
+        }
     }
 
     fn maybe_click(binding: &Layer<Ext>, current_layers: &mut Vec<u8>, ext_actions: &mut Vec<Ext>) {
