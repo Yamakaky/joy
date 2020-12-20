@@ -107,7 +107,7 @@ fn hid_main(
         &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
     ))?);
 
-    let mut last_position = cgmath::Quaternion::one();
+    let last_position = cgmath::Quaternion::one();
     let battery_level = device.tick()?.info.battery_level();
 
     device.set_player_light(light::PlayerLights::new(
