@@ -24,8 +24,27 @@ use parse::parse_file;
 
 #[derive(Debug, Copy, Clone)]
 pub enum ExtAction {
-    KeyPress(Key, Option<bool>),
-    ToggleGyro(bool),
+    KeyPress(Key, ClickType),
+    ToggleGyro(ClickType),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ClickType {
+    Press,
+    Release,
+    Click,
+    Toggle,
+}
+
+impl ClickType {
+    pub fn apply(self, val: bool) -> bool {
+        match self {
+            ClickType::Press => true,
+            ClickType::Release => false,
+            ClickType::Click => unimplemented!(),
+            ClickType::Toggle => !val,
+        }
+    }
 }
 
 fn main() -> anyhow::Result<()> {
@@ -85,7 +104,7 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
     parse_file(
         "LLeft a\nLRight d\nLUp w\nLDown s\nR x\nR,E y\nS a",
         &mut mapping,
-    );
+    )?;
     let mut last_buttons = ButtonsStatus::default();
 
     let mut lstick = ButtonStick::left(0.4);
@@ -101,10 +120,11 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
 
         for action in mapping.tick(Instant::now()).drain(..) {
             match action {
-                ExtAction::ToggleGyro(gyro) => gyro_enabled = gyro,
-                ExtAction::KeyPress(c, None) => enigo.key_click(c),
-                ExtAction::KeyPress(c, Some(true)) => enigo.key_down(c),
-                ExtAction::KeyPress(c, Some(false)) => enigo.key_up(c),
+                ExtAction::ToggleGyro(gyro) => gyro_enabled = gyro.apply(gyro_enabled),
+                ExtAction::KeyPress(c, ClickType::Click) => enigo.key_click(c),
+                ExtAction::KeyPress(c, ClickType::Press) => enigo.key_down(c),
+                ExtAction::KeyPress(c, ClickType::Release) => enigo.key_up(c),
+                ExtAction::KeyPress(_, ClickType::Toggle) => unimplemented!(),
             }
         }
 
