@@ -16,8 +16,20 @@ use crate::{
     ClickType, ExtAction,
 };
 
+fn convert_action_mod(
+    action: &JSMAction,
+    action_mod: Option<ActionModifier>,
+    default: ClickType,
+) -> Option<Action<ExtAction>> {
+    let action_type = match action_mod {
+        None => default,
+        Some(ActionModifier::Toggle) => ClickType::Toggle,
+        Some(ActionModifier::Instant) => ClickType::Click,
+    };
+    Some(Action::Ext((action.action, action_type).into()))
+}
+
 fn map_key(layer: &mut Layer<ExtAction>, actions: &Vec<JSMAction>) {
-    use ActionModifier::*;
     use EventModifier::*;
 
     let mut first = true;
@@ -28,41 +40,24 @@ fn map_key(layer: &mut Layer<ExtAction>, actions: &Vec<JSMAction>) {
                 .unwrap_or_else(|| if first { Tap } else { Hold }),
             action.action_mod,
         ) {
-            (Tap, None) => {
-                layer.on_click = Some(Action::Ext((action.action, ClickType::Click).into()));
+            (Tap, modifier) => {
+                layer.on_click = convert_action_mod(action, modifier, ClickType::Click);
             }
-            (Tap, Some(Toggle)) => {
-                layer.on_click = Some(Action::Ext((action.action, ClickType::Toggle).into()));
+            (Hold, modifier) => {
+                layer.on_hold_down = convert_action_mod(action, modifier, ClickType::Press);
+                if modifier.is_none() {
+                    layer.on_hold_down = convert_action_mod(action, modifier, ClickType::Release);
+                }
             }
-            (Tap, Some(Instant)) => {
-                layer.on_click = Some(Action::Ext((action.action, ClickType::Click).into()));
-            }
-            (Hold, None) => {
-                layer.on_hold_down = Some(Action::Ext((action.action, ClickType::Press).into()));
-                layer.on_hold_up = Some(Action::Ext((action.action, ClickType::Release).into()));
-            }
-            (Hold, Some(Toggle)) => {
-                layer.on_hold_down = Some(Action::Ext((action.action, ClickType::Toggle).into()));
-            }
-            (Hold, Some(Instant)) => {
-                layer.on_hold_down = Some(Action::Ext((action.action, ClickType::Click).into()));
-            }
-            (Start, None) => {
-                layer.on_down = Some(Action::Ext((action.action, ClickType::Press).into()));
-                layer.on_up = Some(Action::Ext((action.action, ClickType::Release).into()));
-            }
-            (Start, Some(Toggle)) => {
-                layer.on_down = Some(Action::Ext((action.action, ClickType::Toggle).into()));
-            }
-            (Start, Some(Instant)) => {
-                layer.on_down = Some(Action::Ext((action.action, ClickType::Click).into()));
+            (Start, modifier) => {
+                layer.on_down = convert_action_mod(action, modifier, ClickType::Press);
+                if modifier.is_none() {
+                    layer.on_down = convert_action_mod(action, modifier, ClickType::Release);
+                }
             }
             (Release, None) => unreachable!(),
-            (Release, Some(Toggle)) => {
-                layer.on_up = Some(Action::Ext((action.action, ClickType::Toggle).into()));
-            }
-            (Release, Some(Instant)) => {
-                layer.on_up = Some(Action::Ext((action.action, ClickType::Click).into()));
+            (Release, modifier) => {
+                layer.on_up = convert_action_mod(action, modifier, ClickType::Release);
             }
             (Turbo, _) => unimplemented!(),
         }
