@@ -6,7 +6,7 @@ mod parse;
 use std::time::{Duration, Instant};
 
 use cgmath::{vec2, InnerSpace, Vector2, Zero};
-use enigo::{Enigo, Key, KeyboardControllable, MouseControllable};
+use enigo::{Enigo, Key, KeyboardControllable, MouseButton, MouseControllable};
 use gyromouse::GyroMouse;
 use joycon::{
     hidapi::{self, HidApi},
@@ -25,6 +25,7 @@ use parse::parse_file;
 #[derive(Debug, Copy, Clone)]
 pub enum ExtAction {
     KeyPress(Key, ClickType),
+    MousePress(MouseButton, ClickType),
     ToggleGyro(ClickType),
 }
 
@@ -102,7 +103,7 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
 
     let mut mapping = Buttons::new();
     parse_file(
-        "LLeft a\nLRight d\nLUp w\nLDown s\nR x\nR,E y\nS a",
+        "LLeft = a\nLRight = d\nLUp = w\nLDown  =s\nR =x\nR,E= y\nS =a",
         &mut mapping,
     )?;
     let mut last_buttons = ButtonsStatus::default();
@@ -125,6 +126,10 @@ fn hid_main(device: hidapi::HidDevice, device_info: &hidapi::DeviceInfo) -> anyh
                 ExtAction::KeyPress(c, ClickType::Press) => enigo.key_down(c),
                 ExtAction::KeyPress(c, ClickType::Release) => enigo.key_up(c),
                 ExtAction::KeyPress(_, ClickType::Toggle) => unimplemented!(),
+                ExtAction::MousePress(c, ClickType::Click) => enigo.mouse_click(c),
+                ExtAction::MousePress(c, ClickType::Press) => enigo.mouse_down(c),
+                ExtAction::MousePress(c, ClickType::Release) => enigo.mouse_up(c),
+                ExtAction::MousePress(_, ClickType::Toggle) => unimplemented!(),
             }
         }
 

@@ -5,7 +5,7 @@ use nom::{
         complete::{newline, not_line_ending, satisfy, space0, space1},
         is_alphanumeric,
     },
-    combinator::{all_consuming, opt, value},
+    combinator::{all_consuming, map, opt, value},
     error::context,
     multi::{separated_list0, separated_list1},
     IResult,
@@ -76,6 +76,7 @@ pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons<ExtAction>) -> IRe
                 map_key(mapping.get(k2, k1 as u8), actions);
             }
             Cmd::Map(Key::Simul(_k1, _k2), ref _actions) => unimplemented!(),
+            _ => unimplemented!(),
         }
     }
     Ok(("", ()))
@@ -106,12 +107,16 @@ pub struct JSMAction {
 #[derive(Debug, Copy, Clone)]
 pub enum ActionType {
     Key(enigo::Key),
+    Mouse(enigo::MouseButton),
+    Special(SpecialKey),
 }
 
 impl From<(ActionType, ClickType)> for ExtAction {
     fn from((a, b): (ActionType, ClickType)) -> Self {
         match a {
             ActionType::Key(k) => ExtAction::KeyPress(k, b),
+            ActionType::Mouse(k) => ExtAction::MousePress(k, b),
+            _ => unimplemented!(),
         }
     }
 }
@@ -123,9 +128,18 @@ pub enum Key {
     Chorded(JoyKey, JoyKey),
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum SpecialKey {
+    GyroEnable(ClickType),
+    GyroInvertX(bool),
+    GyroInvertY(bool),
+    GyroTrackBall(bool),
+}
+
 #[derive(Debug, Clone)]
 pub enum Cmd {
     Map(Key, Vec<JSMAction>),
+    Special(SpecialKey),
 }
 
 fn keys(input: &str) -> IResult<&str, Key> {
@@ -141,7 +155,6 @@ fn keys(input: &str) -> IResult<&str, Key> {
         Ok((input, Key::Simul(k1, k2)))
     }
     fn chorded(input: &str) -> IResult<&str, Key> {
-        dbg!(input);
         let (input, k1) = joykey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag(",")(input)?;
@@ -157,7 +170,11 @@ fn action(input: &str) -> IResult<&str, JSMAction> {
         value(ActionModifier::Toggle, tag_no_case("^")),
         value(ActionModifier::Instant, tag_no_case("!")),
     )))(input)?;
-    let (input, key) = keyboardkey(input)?;
+    let (input, action) = alt((
+        map(keyboardkey, ActionType::Key),
+        map(mousekey, ActionType::Mouse),
+        map(special, ActionType::Special),
+    ))(input)?;
     let (input, event_mod) = opt(alt((
         value(EventModifier::Tap, tag_no_case("'")),
         value(EventModifier::Hold, tag_no_case("_")),
@@ -170,7 +187,7 @@ fn action(input: &str) -> IResult<&str, JSMAction> {
         JSMAction {
             action_mod,
             event_mod,
-            action: ActionType::Key(key),
+            action,
         },
     ))
 }
@@ -185,7 +202,7 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
 }
 
 fn cmd(input: &str) -> IResult<&str, Cmd> {
-    binding(input)
+    alt((binding, map(special, Cmd::Special)))(input)
 }
 
 fn comment(input: &str) -> IResult<&str, ()> {
@@ -248,9 +265,71 @@ fn keyboardkey(input: &str) -> IResult<&str, enigo::Key> {
     use enigo::Key::*;
     let char_parse =
         |input| satisfy(|c| is_alphanumeric(c as u8))(input).map(|(i, x)| (i, Layout(x)));
+    let key_parse = |key, tag| value(key, tag_no_case(tag));
     alt((
-        value(Alt, tag_no_case("alt")),
-        value(Backspace, tag_no_case("backspace")),
-        char_parse,
+        alt((
+            key_parse(Alt, "alt"),
+            key_parse(Backspace, "backspace"),
+            key_parse(CapsLock, "capslock"),
+            key_parse(Control, "Control"),
+            key_parse(Delete, "Delete"),
+            key_parse(DownArrow, "up"),
+            key_parse(End, "End"),
+            key_parse(Escape, "Escape"),
+            key_parse(F1, "F1"),
+            key_parse(F10, "F10"),
+            key_parse(F11, "F11"),
+            key_parse(F12, "F12"),
+            key_parse(F2, "F2"),
+            key_parse(F3, "F3"),
+            key_parse(F4, "F4"),
+            key_parse(F5, "F5"),
+        )),
+        alt((
+            key_parse(F6, "F6"),
+            key_parse(F7, "F7"),
+            key_parse(F8, "F8"),
+            key_parse(F9, "F9"),
+            key_parse(Home, "Home"),
+            key_parse(LeftArrow, "left"),
+            key_parse(Meta, "Meta"),
+            key_parse(Option, "Option"),
+            key_parse(PageDown, "PageDown"),
+            key_parse(PageUp, "PageUp"),
+            key_parse(Return, "Return"),
+            key_parse(RightArrow, "roght"),
+            key_parse(Shift, "Shift"),
+            key_parse(Space, "Space"),
+            key_parse(Tab, "Tab"),
+            key_parse(UpArrow, "up"),
+            char_parse,
+        )),
+    ))(input)
+}
+
+fn mousekey(input: &str) -> IResult<&str, enigo::MouseButton> {
+    use enigo::MouseButton::*;
+    let key_parse = |key, tag| value(key, tag_no_case(tag));
+    alt((
+        key_parse(Left, "LMouse"),
+        key_parse(Middle, "MMouse"),
+        key_parse(Right, "RMouse"),
+        key_parse(ScrollUp, "scrollup"),
+        key_parse(ScrollDown, "scrolldown"),
+        key_parse(ScrollLeft, "scrollleft"),
+        key_parse(ScrollRight, "scrollright"),
+    ))(input)
+}
+
+fn special(input: &str) -> IResult<&str, SpecialKey> {
+    use SpecialKey::*;
+    let parse = |key, tag| value(key, tag_no_case(tag));
+    alt((
+        parse(GyroEnable(ClickType::Click), "gyro_on"),
+        parse(GyroEnable(ClickType::Release), "gyro_off"),
+        parse(GyroEnable(ClickType::Toggle), "gyro_toggle"),
+        parse(GyroInvertX(true), "gyro_inv_x"),
+        parse(GyroInvertY(true), "gyro_inv_y"),
+        parse(GyroTrackBall(true), "gyro_trackball"),
     ))(input)
 }
