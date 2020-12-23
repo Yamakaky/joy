@@ -6,6 +6,13 @@ use std::{convert::TryFrom, fmt, num::ParseIntError, str::FromStr};
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct SPIRange(u32, u8);
 
+impl SPIRange {
+    pub unsafe fn new(offset: u32, size: u8) -> SPIRange {
+        assert!(size <= 0x1D);
+        SPIRange(offset, size)
+    }
+}
+
 const RANGE_FACTORY_CALIBRATION_SENSORS: SPIRange = SPIRange(0x6020, 0x18);
 const RANGE_FACTORY_CALIBRATION_STICKS: SPIRange = SPIRange(0x603D, 0x12);
 const RANGE_USER_CALIBRATION_STICKS: SPIRange = SPIRange(0x8010, 0x16);
@@ -61,6 +68,19 @@ pub struct SPIWriteRequest {
     address: [u8; 4],
     size: u8,
     data: SPIData,
+}
+
+impl SPIWriteRequest {
+    pub unsafe fn new(range: SPIRange, data: &[u8]) -> SPIWriteRequest {
+        assert_eq!(range.1 as usize, data.len());
+        let mut raw = [0; 0x1D];
+        raw[..range.1 as usize].copy_from_slice(data);
+        SPIWriteRequest {
+            address: range.0.to_le_bytes(),
+            size: range.1,
+            data: SPIData { raw },
+        }
+    }
 }
 
 impl From<ControllerColor> for SPIWriteRequest {
@@ -122,6 +142,10 @@ impl SPIReadResult {
     pub fn range(&self) -> SPIRange {
         SPIRange(LittleEndian::read_u32(&self.address), self.size)
     }
+
+    pub fn raw(&self) -> [u8; 0x1D] {
+        unsafe { self.data.raw }
+    }
 }
 
 #[repr(packed)]
@@ -145,6 +169,7 @@ union SPIData {
     imu_user_calib: UserSensorCalibration,
     color: ControllerColor,
     use_spi_colors: RawId<UseSPIColors>,
+    raw: [u8; 0x1D],
 }
 
 impl fmt::Debug for SPIData {
@@ -409,6 +434,16 @@ pub struct SensorCalibration {
 }
 
 impl SensorCalibration {
+    pub fn reset() -> SensorCalibration {
+        let zero = [I16LE([0; 2]); 3];
+        SensorCalibration {
+            acc_orig: zero,
+            acc_sens: zero,
+            gyro_orig: zero,
+            gyro_sens: zero,
+        }
+    }
+
     pub fn acc_offset(&self) -> Vector3<f64> {
         vector_from_raw(self.acc_orig)
     }
@@ -439,7 +474,7 @@ impl SensorCalibration {
 
     pub fn set_gyro_factor(&mut self, factor: Vector3<f64>) {
         self.gyro_sens = raw_from_vector(factor);
-}
+    }
 }
 
 impl SPI for SensorCalibration {
@@ -464,12 +499,22 @@ impl TryFrom<SPIReadResult> for SensorCalibration {
 }
 
 const USER_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
+const USER_NO_CALIB_MAGIC: [u8; 2] = [0xFF; 2];
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug, Default)]
 pub struct UserSensorCalibration {
     magic: [u8; 2],
     calib: SensorCalibration,
+}
+
+impl UserSensorCalibration {
+    pub fn reset() -> UserSensorCalibration {
+        UserSensorCalibration {
+            magic: USER_NO_CALIB_MAGIC,
+            calib: SensorCalibration::reset(),
+        }
+    }
 }
 
 impl SPI for UserSensorCalibration {

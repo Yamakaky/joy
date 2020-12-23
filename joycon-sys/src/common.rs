@@ -65,7 +65,7 @@ impl fmt::Debug for U16LE {
 }
 
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
-pub struct I16LE([u8; 2]);
+pub struct I16LE(pub [u8; 2]);
 
 impl From<i16> for I16LE {
     fn from(u: i16) -> I16LE {

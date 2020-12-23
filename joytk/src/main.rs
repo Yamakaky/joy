@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cgmath::{vec3, Deg, ElementWise, Euler, InnerSpace, One, Quaternion, Vector3};
+use cgmath::{Deg, Euler, One, Quaternion, Vector3};
 use clap::Clap;
 use joycon::{
     hidapi::HidApi,
@@ -7,14 +7,14 @@ use joycon::{
         input::{BatteryLevel, Stick, UseSPIColors, WhichController},
         light::{self, PlayerLight},
         spi::{
-            ControllerColor, SensorCalibration, SticksCalibration, UserSensorCalibration,
+            ControllerColor, SPIRange, SensorCalibration, SticksCalibration, UserSensorCalibration,
             UserSticksCalibration,
         },
         NINTENDO_VENDOR_ID,
     },
     JoyCon,
 };
-use std::{io::Write, time::Duration};
+use std::{fs::OpenOptions, io::Write, time::Duration};
 use std::{thread::sleep, time::Instant};
 
 #[derive(Clap)]
@@ -29,6 +29,8 @@ enum SubCommand {
     Get,
     Set(Set),
     Monitor,
+    Dump,
+    Restore,
 }
 
 #[derive(Clap)]
@@ -41,6 +43,7 @@ struct Calibrate {
 enum CalibrateE {
     Sticks,
     Gyroscope,
+    Reset,
 }
 
 #[derive(Clap)]
@@ -97,17 +100,54 @@ fn main() -> Result<()> {
             SubCommand::Calibrate(calib) => match calib.subcmd {
                 CalibrateE::Sticks => calibrate_sticks(&mut joycon)?,
                 CalibrateE::Gyroscope => calibrate_gyro(&mut joycon)?,
+                CalibrateE::Reset => reset_calibration(&mut joycon)?,
             },
             SubCommand::Get => get(&mut joycon)?,
             SubCommand::Set(set) => match set.subcmd {
                 SetE::Color(arg) => set_color(&mut joycon, arg)?,
             },
             SubCommand::Monitor => monitor(&mut joycon)?,
+            SubCommand::Dump => dump(&mut joycon)?,
+            SubCommand::Restore => restore(&mut joycon)?,
         }
     } else {
         eprintln!("No device found");
     }
     Ok(())
+}
+
+fn reset_calibration(joycon: &mut JoyCon) -> Result<()> {
+    joycon.write_spi(UserSensorCalibration::reset())?;
+    Ok(())
+}
+
+fn dump(joycon: &mut JoyCon) -> Result<()> {
+    let mut out = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open("/tmp/out.raw")?;
+    let mut offset = 0;
+    let size = 0x1D;
+    // TODO: why value
+    let mut last_percent = 0;
+    while offset + (size as u32) < 0x80000 {
+        let percent = offset * 100 / 0x80000;
+        if last_percent != percent {
+            println!("{}%", percent);
+            last_percent = percent;
+        }
+        let slice = joycon.read_spi_raw(unsafe { SPIRange::new(offset, size) })?;
+        out.write(&slice)?;
+        offset += size as u32;
+    }
+    let last_size = (0x80000 - offset) as u8;
+    let slice = joycon.read_spi_raw(unsafe { SPIRange::new(offset, last_size) })?;
+    out.write(&slice)?;
+    Ok(())
+}
+
+fn restore(_joycon: &mut JoyCon) -> Result<()> {
+    unimplemented!()
 }
 
 fn calibrate_gyro(joycon: &mut JoyCon) -> Result<()> {
@@ -117,7 +157,7 @@ fn calibrate_gyro(joycon: &mut JoyCon) -> Result<()> {
 
     let mut gyro_reports = Vec::new();
     let mut acc_reports = Vec::new();
-    for i in (0..1).rev() {
+    for i in (0..10).rev() {
         print!("{}, ", i);
         std::io::stdout().flush()?;
         let now = Instant::now();
@@ -143,21 +183,14 @@ fn calibrate_gyro(joycon: &mut JoyCon) -> Result<()> {
     }
     println!();
     let gyro_avg = gyro_reports.iter().sum::<Vector3<f64>>() / gyro_reports.len() as f64;
-    let acc_avg = acc_reports.iter().sum::<Vector3<f64>>() / acc_reports.len() as f64;
-    //let acc_avg = vec3(-688., 0., 4038.);
-    let acc =
-        (acc_avg).div_element_wise(vec3(16384., 16384., 16384.) - vec3(174., -18., 429.)) * 4.;
-    dbg!(acc_avg);
-    dbg!(acc);
-    dbg!(acc.magnitude());
 
     let factory: SensorCalibration = joycon.read_spi()?;
     let user: UserSensorCalibration = joycon.read_spi()?;
     let mut calib = user.calib().unwrap_or(factory);
     calib.set_gyro_offset(gyro_avg);
 
-    //println!("Writing calibration data {:x?}", calib);
-    //joycon.write_spi(UserSensorCalibration::from(calib))?;
+    println!("Writing calibration data {:x?}", calib);
+    joycon.write_spi(UserSensorCalibration::from(calib))?;
 
     Ok(())
 }
