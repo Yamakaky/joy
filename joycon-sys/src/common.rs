@@ -100,6 +100,14 @@ pub fn vector_from_raw(raw: [I16LE; 3]) -> Vector3<f64> {
     )
 }
 
+pub fn raw_from_vector(v: Vector3<f64>) -> [I16LE; 3] {
+    [
+        (v.x as i16).into(),
+        (v.y as i16).into(),
+        (v.z as i16).into(),
+    ]
+}
+
 #[repr(transparent)]
 #[derive(Copy, Clone)]
 pub struct RawId<Id>(u8, PhantomData<Id>);

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cgmath::{Deg, Euler, One, Quaternion};
+use cgmath::{vec3, Deg, ElementWise, Euler, InnerSpace, One, Quaternion, Vector3};
 use clap::Clap;
 use joycon::{
     hidapi::HidApi,
@@ -96,7 +96,7 @@ fn main() -> Result<()> {
         match opts.subcmd {
             SubCommand::Calibrate(calib) => match calib.subcmd {
                 CalibrateE::Sticks => calibrate_sticks(&mut joycon)?,
-                CalibrateE::Gyroscope => unimplemented!(),
+                CalibrateE::Gyroscope => calibrate_gyro(&mut joycon)?,
             },
             SubCommand::Get => get(&mut joycon)?,
             SubCommand::Set(set) => match set.subcmd {
@@ -107,6 +107,58 @@ fn main() -> Result<()> {
     } else {
         eprintln!("No device found");
     }
+    Ok(())
+}
+
+fn calibrate_gyro(joycon: &mut JoyCon) -> Result<()> {
+    joycon.enable_imu()?;
+    println!("Don't move the controller...");
+    sleep(Duration::from_secs(1));
+
+    let mut gyro_reports = Vec::new();
+    let mut acc_reports = Vec::new();
+    for i in (0..1).rev() {
+        print!("{}, ", i);
+        std::io::stdout().flush()?;
+        let now = Instant::now();
+        while now.elapsed() < Duration::from_secs(1) {
+            let report = joycon.tick()?;
+            gyro_reports.extend(
+                report
+                    .raw
+                    .imu_frames()
+                    .unwrap()
+                    .iter()
+                    .map(|x| x.raw_gyro()),
+            );
+            acc_reports.extend(
+                report
+                    .raw
+                    .imu_frames()
+                    .unwrap()
+                    .iter()
+                    .map(|x| x.raw_accel()),
+            );
+        }
+    }
+    println!();
+    let gyro_avg = gyro_reports.iter().sum::<Vector3<f64>>() / gyro_reports.len() as f64;
+    let acc_avg = acc_reports.iter().sum::<Vector3<f64>>() / acc_reports.len() as f64;
+    //let acc_avg = vec3(-688., 0., 4038.);
+    let acc =
+        (acc_avg).div_element_wise(vec3(16384., 16384., 16384.) - vec3(174., -18., 429.)) * 4.;
+    dbg!(acc_avg);
+    dbg!(acc);
+    dbg!(acc.magnitude());
+
+    let factory: SensorCalibration = joycon.read_spi()?;
+    let user: UserSensorCalibration = joycon.read_spi()?;
+    let mut calib = user.calib().unwrap_or(factory);
+    calib.set_gyro_offset(gyro_avg);
+
+    //println!("Writing calibration data {:x?}", calib);
+    //joycon.write_spi(UserSensorCalibration::from(calib))?;
+
     Ok(())
 }
 

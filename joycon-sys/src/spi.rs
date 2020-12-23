@@ -413,17 +413,33 @@ impl SensorCalibration {
         vector_from_raw(self.acc_orig)
     }
 
+    pub fn set_acc_offset(&mut self, offset: Vector3<f64>) {
+        self.acc_orig = raw_from_vector(offset);
+    }
+
     pub fn acc_factor(&self) -> Vector3<f64> {
         vector_from_raw(self.acc_sens)
+    }
+
+    pub fn set_acc_factor(&mut self, factor: Vector3<f64>) {
+        self.acc_sens = raw_from_vector(factor);
     }
 
     pub fn gyro_offset(&self) -> Vector3<f64> {
         vector_from_raw(self.gyro_orig)
     }
 
+    pub fn set_gyro_offset(&mut self, offset: Vector3<f64>) {
+        self.gyro_orig = raw_from_vector(offset);
+    }
+
     pub fn gyro_factor(&self) -> Vector3<f64> {
         vector_from_raw(self.gyro_sens)
     }
+
+    pub fn set_gyro_factor(&mut self, factor: Vector3<f64>) {
+        self.gyro_sens = raw_from_vector(factor);
+}
 }
 
 impl SPI for SensorCalibration {
@@ -459,6 +475,27 @@ pub struct UserSensorCalibration {
 impl SPI for UserSensorCalibration {
     fn range() -> SPIRange {
         RANGE_USER_CALIBRATION_SENSORS
+    }
+}
+impl From<SensorCalibration> for UserSensorCalibration {
+    fn from(calib: SensorCalibration) -> Self {
+        UserSensorCalibration {
+            magic: USER_CALIB_MAGIC,
+            calib,
+        }
+    }
+}
+
+impl From<UserSensorCalibration> for SPIWriteRequest {
+    fn from(calib: UserSensorCalibration) -> Self {
+        let range = UserSensorCalibration::range();
+        SPIWriteRequest {
+            address: range.0.to_le_bytes(),
+            size: range.1,
+            data: SPIData {
+                imu_user_calib: calib.into(),
+            },
+        }
     }
 }
 
