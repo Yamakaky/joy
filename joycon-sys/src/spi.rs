@@ -1,18 +1,40 @@
 use crate::{common::*, input::UseSPIColors};
 use byteorder::{ByteOrder, LittleEndian};
 use cgmath::{vec2, Vector2, Vector3};
-use std::{fmt, num::ParseIntError, str::FromStr};
+use std::{convert::TryFrom, fmt, num::ParseIntError, str::FromStr};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct SPIRange(u32, u8);
 
-pub const RANGE_FACTORY_CALIBRATION_SENSORS: SPIRange = SPIRange(0x6020, 0x18);
-pub const RANGE_FACTORY_CALIBRATION_STICKS: SPIRange = SPIRange(0x603D, 0x12);
-pub const RANGE_USER_CALIBRATION_STICKS: SPIRange = SPIRange(0x8010, 0x16);
-pub const RANGE_USER_CALIBRATION_SENSORS: SPIRange = SPIRange(0x8026, 0x1A);
+const RANGE_FACTORY_CALIBRATION_SENSORS: SPIRange = SPIRange(0x6020, 0x18);
+const RANGE_FACTORY_CALIBRATION_STICKS: SPIRange = SPIRange(0x603D, 0x12);
+const RANGE_USER_CALIBRATION_STICKS: SPIRange = SPIRange(0x8010, 0x16);
+const RANGE_USER_CALIBRATION_SENSORS: SPIRange = SPIRange(0x8026, 0x1A);
 
-pub const RANGE_CONTROLLER_COLOR_USE_SPI: SPIRange = SPIRange(0x601B, 1);
-pub const RANGE_CONTROLLER_COLOR: SPIRange = SPIRange(0x6050, 12);
+const RANGE_CONTROLLER_COLOR_USE_SPI: SPIRange = SPIRange(0x601B, 1);
+const RANGE_CONTROLLER_COLOR: SPIRange = SPIRange(0x6050, 12);
+
+pub trait SPI: TryFrom<SPIReadResult, Error = WrongRangeError> {
+    fn range() -> SPIRange;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct WrongRangeError {
+    expected: SPIRange,
+    got: SPIRange,
+}
+
+impl fmt::Display for WrongRangeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "wrong SPI range: expected {:?}, got {:?}",
+            self.expected, self.got
+        )
+    }
+}
+
+impl std::error::Error for WrongRangeError {}
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
@@ -43,7 +65,7 @@ pub struct SPIWriteRequest {
 
 impl From<ControllerColor> for SPIWriteRequest {
     fn from(color: ControllerColor) -> SPIWriteRequest {
-        let range = RANGE_CONTROLLER_COLOR;
+        let range = ControllerColor::range();
         assert!(range.1 <= 0x1d);
         SPIWriteRequest {
             address: range.0.to_le_bytes(),
@@ -53,9 +75,15 @@ impl From<ControllerColor> for SPIWriteRequest {
     }
 }
 
+impl SPI for UseSPIColors {
+    fn range() -> SPIRange {
+        RANGE_CONTROLLER_COLOR_USE_SPI
+    }
+}
+
 impl From<UseSPIColors> for SPIWriteRequest {
     fn from(use_spi_colors: UseSPIColors) -> SPIWriteRequest {
-        let range = RANGE_CONTROLLER_COLOR_USE_SPI;
+        let range = UseSPIColors::range();
         assert!(range.1 <= 0x1d);
         SPIWriteRequest {
             address: range.0.to_le_bytes(),
@@ -63,6 +91,21 @@ impl From<UseSPIColors> for SPIWriteRequest {
             data: SPIData {
                 use_spi_colors: use_spi_colors.into(),
             },
+        }
+    }
+}
+
+impl TryFrom<SPIReadResult> for UseSPIColors {
+    type Error = WrongRangeError;
+
+    fn try_from(value: SPIReadResult) -> Result<Self, Self::Error> {
+        if value.range() == Self::range() {
+            Ok(unsafe { value.data.use_spi_colors.try_into().unwrap() })
+        } else {
+            Err(WrongRangeError {
+                expected: Self::range(),
+                got: value.range(),
+            })
         }
     }
 }
@@ -78,45 +121,6 @@ pub struct SPIReadResult {
 impl SPIReadResult {
     pub fn range(&self) -> SPIRange {
         SPIRange(LittleEndian::read_u32(&self.address), self.size)
-    }
-
-    pub fn sticks_factory_calib(&self) -> Option<&SticksCalibration> {
-        if self.range() == RANGE_FACTORY_CALIBRATION_STICKS {
-            Some(unsafe { &self.data.sticks_factory_calib })
-        } else {
-            None
-        }
-    }
-
-    pub fn sticks_user_calib(&self) -> Option<&UserSticksCalibration> {
-        if self.range() == RANGE_USER_CALIBRATION_STICKS {
-            Some(unsafe { &self.data.sticks_user_calib })
-        } else {
-            None
-        }
-    }
-    pub fn imu_factory_calib(&self) -> Option<&SensorCalibration> {
-        if self.range() == RANGE_FACTORY_CALIBRATION_SENSORS {
-            Some(unsafe { &self.data.imu_factory_calib })
-        } else {
-            None
-        }
-    }
-
-    pub fn imu_user_calib(&self) -> Option<&UserSensorCalibration> {
-        if self.range() == RANGE_USER_CALIBRATION_SENSORS {
-            Some(unsafe { &self.data.imu_user_calib })
-        } else {
-            None
-        }
-    }
-
-    pub fn color(&self) -> Option<&ControllerColor> {
-        if self.range() == RANGE_CONTROLLER_COLOR {
-            Some(unsafe { &self.data.color })
-        } else {
-            None
-        }
     }
 }
 
@@ -155,6 +159,27 @@ impl fmt::Debug for SPIData {
 pub struct SticksCalibration {
     pub left: LeftStickCalibration,
     pub right: RightStickCalibration,
+}
+
+impl SPI for SticksCalibration {
+    fn range() -> SPIRange {
+        RANGE_FACTORY_CALIBRATION_STICKS
+    }
+}
+
+impl TryFrom<SPIReadResult> for SticksCalibration {
+    type Error = WrongRangeError;
+
+    fn try_from(value: SPIReadResult) -> Result<Self, Self::Error> {
+        if value.range() == Self::range() {
+            Ok(unsafe { value.data.sticks_factory_calib })
+        } else {
+            Err(WrongRangeError {
+                expected: Self::range(),
+                got: value.range(),
+            })
+        }
+    }
 }
 
 #[repr(packed)]
@@ -309,6 +334,26 @@ pub struct UserStickCalibration {
     // TODO: left and right are different
     calib: LeftStickCalibration,
 }
+impl SPI for UserSticksCalibration {
+    fn range() -> SPIRange {
+        RANGE_USER_CALIBRATION_STICKS
+    }
+}
+
+impl TryFrom<SPIReadResult> for UserSticksCalibration {
+    type Error = WrongRangeError;
+
+    fn try_from(value: SPIReadResult) -> Result<Self, Self::Error> {
+        if value.range() == Self::range() {
+            Ok(unsafe { value.data.sticks_user_calib })
+        } else {
+            Err(WrongRangeError {
+                expected: Self::range(),
+                got: value.range(),
+            })
+        }
+    }
+}
 
 impl UserStickCalibration {
     pub fn calib(&self) -> Option<LeftStickCalibration> {
@@ -381,6 +426,27 @@ impl SensorCalibration {
     }
 }
 
+impl SPI for SensorCalibration {
+    fn range() -> SPIRange {
+        RANGE_FACTORY_CALIBRATION_SENSORS
+    }
+}
+
+impl TryFrom<SPIReadResult> for SensorCalibration {
+    type Error = WrongRangeError;
+
+    fn try_from(value: SPIReadResult) -> Result<Self, Self::Error> {
+        if value.range() == Self::range() {
+            Ok(unsafe { value.data.imu_factory_calib })
+        } else {
+            Err(WrongRangeError {
+                expected: Self::range(),
+                got: value.range(),
+            })
+        }
+    }
+}
+
 const USER_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
 
 #[repr(packed)]
@@ -388,6 +454,27 @@ const USER_CALIB_MAGIC: [u8; 2] = [0xB2, 0xA1];
 pub struct UserSensorCalibration {
     magic: [u8; 2],
     calib: SensorCalibration,
+}
+
+impl SPI for UserSensorCalibration {
+    fn range() -> SPIRange {
+        RANGE_USER_CALIBRATION_SENSORS
+    }
+}
+
+impl TryFrom<SPIReadResult> for UserSensorCalibration {
+    type Error = WrongRangeError;
+
+    fn try_from(value: SPIReadResult) -> Result<Self, Self::Error> {
+        if value.range() == Self::range() {
+            Ok(unsafe { value.data.imu_user_calib })
+        } else {
+            Err(WrongRangeError {
+                expected: Self::range(),
+                got: value.range(),
+            })
+        }
+    }
 }
 
 impl UserSensorCalibration {
@@ -462,4 +549,25 @@ pub struct ControllerColor {
     pub buttons: Color,
     pub left_grip: Color,
     pub right_grip: Color,
+}
+
+impl SPI for ControllerColor {
+    fn range() -> SPIRange {
+        RANGE_CONTROLLER_COLOR
+    }
+}
+
+impl TryFrom<SPIReadResult> for ControllerColor {
+    type Error = WrongRangeError;
+
+    fn try_from(value: SPIReadResult) -> Result<Self, Self::Error> {
+        if value.range() == Self::range() {
+            Ok(unsafe { value.data.color })
+        } else {
+            Err(WrongRangeError {
+                expected: Self::range(),
+                got: value.range(),
+            })
+        }
+    }
 }

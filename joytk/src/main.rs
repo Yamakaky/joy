@@ -7,15 +7,14 @@ use joycon::{
         input::{BatteryLevel, Stick, UseSPIColors, WhichController},
         light::{self, PlayerLight},
         spi::{
-            ControllerColor, RANGE_CONTROLLER_COLOR, RANGE_FACTORY_CALIBRATION_SENSORS,
-            RANGE_FACTORY_CALIBRATION_STICKS, RANGE_USER_CALIBRATION_SENSORS,
-            RANGE_USER_CALIBRATION_STICKS,
+            ControllerColor, SensorCalibration, SticksCalibration, UserSensorCalibration,
+            UserSticksCalibration,
         },
         NINTENDO_VENDOR_ID,
     },
     JoyCon,
 };
-use std::time::Duration;
+use std::{io::Write, time::Duration};
 use std::{thread::sleep, time::Instant};
 
 #[derive(Clap)]
@@ -165,8 +164,7 @@ fn get(joycon: &mut JoyCon) -> Result<()> {
     println!();
 
     println!("Controller color:");
-    let color = joycon.read_spi(RANGE_CONTROLLER_COLOR)?;
-    let color = color.color().unwrap();
+    let color: ControllerColor = joycon.read_spi()?;
     println!("  body: {}", color.body);
     println!("  buttons: {}", color.buttons);
     if dev_info.use_spi_colors == UseSPIColors::IncludingGrip {
@@ -175,10 +173,8 @@ fn get(joycon: &mut JoyCon) -> Result<()> {
     }
     println!();
 
-    let imu_factory_result = joycon.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
-    let imu_factory_settings = imu_factory_result.imu_factory_calib().unwrap();
-    let imu_user_result = joycon.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
-    let imu_user_settings = imu_user_result.imu_user_calib().unwrap();
+    let imu_factory_settings: SensorCalibration = joycon.read_spi()?;
+    let imu_user_settings: UserSensorCalibration = joycon.read_spi()?;
 
     println!("Gyroscope calibration data:");
     println!(
@@ -213,10 +209,8 @@ fn get(joycon: &mut JoyCon) -> Result<()> {
     }
     println!("");
 
-    let sticks_factory_result = joycon.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
-    let sticks_factory_settings = sticks_factory_result.sticks_factory_calib().unwrap();
-    let sticks_user_result = joycon.read_spi(RANGE_USER_CALIBRATION_STICKS)?;
-    let sticks_user_settings = sticks_user_result.sticks_user_calib().unwrap();
+    let sticks_factory_settings: SticksCalibration = joycon.read_spi()?;
+    let sticks_user_settings: UserSticksCalibration = joycon.read_spi()?;
     println!("Left stick calibration data");
     println!(
         "  factory: min {:x?}, center {:x?}, max {:x?}",

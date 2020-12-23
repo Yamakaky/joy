@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::image::Image;
 use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};
@@ -19,6 +21,7 @@ pub struct Report {
     pub info: DeviceStatus,
     pub image: Option<image::GrayImage>,
     pub imu: Option<[imu_handler::IMU; 3]>,
+    pub raw: InputReport,
 }
 
 pub struct JoyCon {
@@ -127,22 +130,20 @@ impl JoyCon {
             imu: report
                 .imu_frames()
                 .map(|f| self.imu_handler.handle_frames(f)),
+            raw: report,
         })
     }
 
     pub fn load_calibration(&mut self) -> Result<()> {
-        let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_SENSORS)?;
-        let factory_settings = factory_result.imu_factory_calib().unwrap();
-        self.imu_handler.set_factory(*factory_settings);
+        let factor_sensor_calib = self.read_spi()?;
+        self.imu_handler.set_factory(factor_sensor_calib);
 
-        let user_result = self.read_spi(RANGE_USER_CALIBRATION_SENSORS)?;
-        let user_settings = user_result.imu_user_calib().unwrap();
-        self.imu_handler.set_user(*user_settings);
+        let user_sensor_calib = self.read_spi()?;
+        self.imu_handler.set_user(user_sensor_calib);
 
         self.imu_handler.reset_calibration();
 
-        let factory_result = self.read_spi(RANGE_FACTORY_CALIBRATION_STICKS)?;
-        let factory_settings = factory_result.sticks_factory_calib().unwrap();
+        let factory_settings: SticksCalibration = self.read_spi()?;
         //let user_result = self.read_spi(RANGE_USER_CALIBRATION_STICKS)?;
         //let user_settings = user_result.sticks_user_calib().unwrap();
         //self.left_stick_calib = user_settings.left.calib().unwrap_or(factory_settings.left);
@@ -200,18 +201,13 @@ impl JoyCon {
         bail!("Timeout while waiting for subcommand");
     }
 
-    pub fn read_spi(&mut self, range: SPIRange) -> Result<SPIReadResult> {
-        let reply = self.send_subcmd_wait(SPIReadRequest::new(range))?;
+    pub fn read_spi<S: SPI>(&mut self) -> Result<S> {
+        let reply = self.send_subcmd_wait(SPIReadRequest::new(S::range()))?;
         let result = reply.spi_result().unwrap();
-        ensure!(
-            range == result.range(),
-            "invalid range {:?}",
-            result.range()
-        );
-        Ok(*result)
+        Ok((*result).try_into()?)
     }
 
-    pub fn write_spi(&mut self, value: impl Into<SPIWriteRequest>) -> Result<bool> {
+    pub fn write_spi<S: SPI + Into<SPIWriteRequest>>(&mut self, value: S) -> Result<bool> {
         let reply = self.send_subcmd_wait(value.into())?;
         Ok(reply.spi_write_success().unwrap())
     }
