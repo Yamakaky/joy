@@ -1456,7 +1456,6 @@ name = "joycon-sys"
 version = "0.1.0"
 dependencies = [
  "bitfield",
- "byteorder",
  "cgmath",
  "num",
  "num-derive",

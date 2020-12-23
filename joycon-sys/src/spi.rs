@@ -1,5 +1,4 @@
 use crate::{common::*, input::UseSPIColors};
-use byteorder::{ByteOrder, LittleEndian};
 use cgmath::{vec2, Vector2, Vector3};
 use std::{convert::TryFrom, fmt, num::ParseIntError, str::FromStr};
 
@@ -53,10 +52,8 @@ pub struct SPIReadRequest {
 impl SPIReadRequest {
     pub fn new(range: SPIRange) -> SPIReadRequest {
         assert!(range.1 <= 0x1d);
-        let mut buf = [0; 4];
-        LittleEndian::write_u32(&mut buf, range.0);
         SPIReadRequest {
-            offset: buf,
+            offset: range.0.to_le_bytes(),
             size: range.1,
         }
     }
@@ -140,7 +137,7 @@ pub struct SPIReadResult {
 
 impl SPIReadResult {
     pub fn range(&self) -> SPIRange {
-        SPIRange(LittleEndian::read_u32(&self.address), self.size)
+        SPIRange(u32::from_le_bytes(self.address), self.size)
     }
 
     pub fn raw(&self) -> [u8; 0x1D] {

@@ -1,4 +1,3 @@
-use byteorder::{ByteOrder, LittleEndian};
 use cgmath::Vector3;
 use num::{FromPrimitive, ToPrimitive};
 use std::fmt;
@@ -46,15 +45,13 @@ pub struct U16LE([u8; 2]);
 
 impl From<u16> for U16LE {
     fn from(u: u16) -> Self {
-        let mut val = [0; 2];
-        LittleEndian::write_u16(&mut val, u);
-        U16LE(val)
+        U16LE(u.to_le_bytes())
     }
 }
 
 impl From<U16LE> for u16 {
     fn from(u: U16LE) -> u16 {
-        LittleEndian::read_u16(&u.0)
+        u16::from_le_bytes(u.0)
     }
 }
 
@@ -69,15 +66,13 @@ pub struct I16LE(pub [u8; 2]);
 
 impl From<i16> for I16LE {
     fn from(u: i16) -> I16LE {
-        let mut val = [0; 2];
-        LittleEndian::write_i16(&mut val, u);
-        I16LE(val)
+        I16LE(u.to_le_bytes())
     }
 }
 
 impl From<I16LE> for i16 {
     fn from(u: I16LE) -> i16 {
-        LittleEndian::read_i16(&u.0)
+        i16::from_le_bytes(u.0)
     }
 }
 
