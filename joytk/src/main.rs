@@ -369,6 +369,7 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
     let mut now = Instant::now();
     loop {
         let report = joycon.tick()?;
+        let mut last_acc = Vector3::unit_x();
         for frame in &report.imu.unwrap() {
             orientation = orientation
                 * Quaternion::from(Euler::new(
@@ -376,6 +377,7 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
                     Deg(frame.gyro.z * 0.005),
                     Deg(frame.gyro.x * 0.005),
                 ));
+            last_acc = frame.accel;
         }
         if now.elapsed() > Duration::from_millis(500) {
             now = Instant::now();
@@ -389,6 +391,7 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
                 "Rotation: pitch {:?}, yaw {:?}, roll {:?}",
                 pitch, yaw, roll
             );
+            println!("Acceleration: {:?}", last_acc);
         }
     }
 }
