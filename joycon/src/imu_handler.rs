@@ -103,6 +103,6 @@ impl Handler {
 
     pub fn reset_calibration(&mut self) {
         self.calib_gyro.reset();
-        self.calib_nb = 200;
+        self.calib_nb = 0;
     }
 }
