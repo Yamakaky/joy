@@ -144,8 +144,8 @@ struct GUI {
     iced_renderer: Renderer,
     interface: program::State<controls::Controls>,
     iced_debug: Debug,
-    staging_depth_buffer_send: async_channel::Sender<wgpu::Buffer>,
-    staging_depth_buffer_recv: async_channel::Receiver<wgpu::Buffer>,
+    staging_depth_buffer_send: smol::channel::Sender<wgpu::Buffer>,
+    staging_depth_buffer_recv: smol::channel::Receiver<wgpu::Buffer>,
     staging_belt: wgpu::util::StagingBelt,
 }
 
@@ -256,7 +256,7 @@ impl GUI {
             &mut iced_debug,
         );
 
-        let (staging_depth_buffer_send, staging_depth_buffer_recv) = async_channel::unbounded();
+        let (staging_depth_buffer_send, staging_depth_buffer_recv) = smol::channel::unbounded();
         // TODO: multiple multi-use staging buffers
         for _ in 0..5 {
             staging_depth_buffer_send
