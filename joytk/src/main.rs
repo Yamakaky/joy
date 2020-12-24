@@ -379,7 +379,7 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
                 ));
             last_acc = frame.accel;
         }
-        if now.elapsed() > Duration::from_millis(500) {
+        if now.elapsed() > Duration::from_millis(100) {
             now = Instant::now();
             println!("Clicked: {}", report.buttons);
 

@@ -1,5 +1,5 @@
 use crate::common::*;
-use cgmath::Vector3;
+use cgmath::{Array, ElementWise, Vector3};
 use std::fmt;
 
 pub const IMU_SAMPLE_DURATION: f64 = 0.005;
@@ -22,8 +22,9 @@ impl Frame {
     }
 
     /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
-    pub fn accel_g(&self, offset: Vector3<f64>, sens: AccSens) -> Vector3<f64> {
-        (self.raw_accel() - offset) / (u16::MAX as f64 / sens.range_g() as f64)
+    pub fn accel_g(&self, offset: Vector3<f64>, _sens: AccSens) -> Vector3<f64> {
+        // TODO: handle sens
+        (self.raw_accel() * 4.).div_element_wise(Vector3::from_value(16383.) - offset)
     }
 
     /// The rotation described in this frame.

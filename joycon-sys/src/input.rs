@@ -546,8 +546,8 @@ impl fmt::Display for WhichController {
             f,
             "{}",
             match *self {
-                WhichController::LeftJoyCon => "Left JoyCon",
-                WhichController::RightJoyCon => "Right JoyCon",
+                WhichController::LeftJoyCon => "JoyCon (L)",
+                WhichController::RightJoyCon => "JoyCon (R)",
                 WhichController::ProController => "Pro Controller",
             }
         )

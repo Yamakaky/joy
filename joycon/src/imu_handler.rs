@@ -1,5 +1,6 @@
 use crate::calibration::Calibration;
 use cgmath::*;
+use input::WhichController;
 use joycon_sys::*;
 
 /// Acceleration and gyroscope data for the controller.
@@ -21,6 +22,7 @@ impl IMU {
 }
 
 pub struct Handler {
+    device_type: WhichController,
     calib_gyro: Calibration,
     gyro_sens: imu::GyroSens,
     accel_sens: imu::AccSens,
@@ -30,8 +32,13 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub fn new(gyro_sens: imu::GyroSens, accel_sens: imu::AccSens) -> Self {
+    pub fn new(
+        device_type: WhichController,
+        gyro_sens: imu::GyroSens,
+        accel_sens: imu::AccSens,
+    ) -> Self {
         Handler {
+            device_type,
             calib_gyro: Calibration::with_capacity(200),
             gyro_sens,
             accel_sens,
@@ -79,9 +86,17 @@ impl Handler {
                 gyro: raw_rotation - self.calib_gyro.get_average(),
                 accel: raw_acc,
             };
-            // TODO: pro controller is inverted
-            out.gyro.y = -out.gyro.y;
-            out.gyro.z = -out.gyro.z;
+            // The devices don't have the same axis.
+            match self.device_type {
+                WhichController::LeftJoyCon | WhichController::ProController => {
+                    out.gyro.y = -out.gyro.y;
+                    out.gyro.z = -out.gyro.z;
+                    out.accel.x = -out.accel.x;
+                }
+                WhichController::RightJoyCon => {
+                    out.accel = -out.accel;
+                }
+            }
         }
         out
     }

@@ -35,19 +35,17 @@ pub struct JoyCon {
     image: Image,
     enable_ir_loop: bool,
     imu_handler: crate::imu_handler::Handler,
-    device_type: u16,
+    device_type: WhichController,
 }
 
 impl JoyCon {
     pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> Result<JoyCon> {
-        let device_type = info.product_id();
-        assert!([
-            JOYCON_L_BT,
-            JOYCON_R_BT,
-            PRO_CONTROLLER,
-            JOYCON_CHARGING_GRIP,
-        ]
-        .contains(&device_type));
+        let device_type = match info.product_id() {
+            JOYCON_L_BT => WhichController::LeftJoyCon,
+            JOYCON_R_BT => WhichController::RightJoyCon,
+            PRO_CONTROLLER => WhichController::ProController,
+            JOYCON_CHARGING_GRIP | _ => panic!("unknown controller type"),
+        };
         let mut joycon = JoyCon {
             device,
             info,
@@ -59,6 +57,7 @@ impl JoyCon {
             image: Image::new(),
             enable_ir_loop: false,
             imu_handler: crate::imu_handler::Handler::new(
+                device_type,
                 imu::GyroSens::default(),
                 imu::AccSens::default(),
             ),
@@ -70,7 +69,7 @@ impl JoyCon {
     }
 
     pub fn supports_ir(&self) -> bool {
-        self.device_type == JOYCON_R_BT
+        self.device_type == WhichController::RightJoyCon
     }
 
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
