@@ -20,40 +20,9 @@ impl IMU {
     pub const SAMPLE_PER_SECOND: u32 = imu::IMU_SAMPLES_PER_SECOND;
 }
 
-#[derive(Copy, Clone, Debug)]
-pub struct Position {
-    pub last_delta_rotation: Euler<Deg<f64>>,
-    pub rotation: Quaternion<f64>,
-    pub rotation_speed: Euler<Deg<f64>>,
-    pub accel: Vector3<f64>,
-    pub speed: Vector3<f64>,
-    pub position: Vector3<f64>,
-}
-
-impl Position {
-    pub fn new() -> Self {
-        let zero = Euler::new(Deg(0.), Deg(0.), Deg(0.));
-        Self {
-            last_delta_rotation: zero,
-            rotation: Quaternion::from(zero),
-            rotation_speed: zero,
-            accel: Vector3::zero(),
-            speed: Vector3::zero(),
-            position: Vector3::zero(),
-        }
-    }
-}
-
-impl Default for Position {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 pub struct Handler {
     calib_gyro: Calibration,
     gyro_sens: imu::GyroSens,
-    calib_accel: Calibration,
     accel_sens: imu::AccSens,
     factory_calibration: spi::SensorCalibration,
     user_calibration: spi::UserSensorCalibration,
@@ -65,7 +34,6 @@ impl Handler {
         Handler {
             calib_gyro: Calibration::with_capacity(200),
             gyro_sens,
-            calib_accel: Calibration::with_capacity(200),
             accel_sens,
             factory_calibration: spi::SensorCalibration::default(),
             user_calibration: spi::UserSensorCalibration::default(),
@@ -105,12 +73,11 @@ impl Handler {
             let raw_acc = frame.accel_g(acc_offset, self.accel_sens);
             if self.calib_nb > 0 {
                 self.calib_gyro.push(raw_rotation);
-                self.calib_accel.push(raw_acc);
                 self.calib_nb -= 1;
             }
             *out = IMU {
                 gyro: raw_rotation - self.calib_gyro.get_average(),
-                accel: raw_acc - self.calib_accel.get_average(),
+                accel: raw_acc,
             };
             // TODO: pro controller is inverted
             out.gyro.y = -out.gyro.y;
