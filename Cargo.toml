@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "dualshock-sys",
+    "dualshock",
     "joycon-sys",
     "joycon",
     "joy-infrared",
