@@ -171,8 +171,11 @@ pub struct Trackpad {
 }
 
 impl Trackpad {
-    pub fn packets(&self) -> &[TrackpadPacket] {
-        &self.packets[..self.len as usize]
+    pub fn packets(&self) -> impl Iterator<Item = &TrackpadPacket> {
+        self.packets
+            .iter()
+            .take(self.len as usize)
+            .filter(|p| p.fingers().any(|f| f.is_active()))
     }
 }
 
@@ -183,20 +186,15 @@ impl fmt::Debug for Trackpad {
 }
 
 #[repr(packed)]
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct TrackpadPacket {
+    counter: u8,
     fingers: [Finger; 2],
 }
 
 impl TrackpadPacket {
     pub fn fingers(&self) -> impl Iterator<Item = &Finger> {
         self.fingers.iter().filter(|f| f.is_active())
-    }
-}
-
-impl fmt::Debug for TrackpadPacket {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_list().entries(self.fingers()).finish()
     }
 }
 
@@ -209,7 +207,7 @@ pub struct Finger {
 
 impl Finger {
     pub fn is_active(&self) -> bool {
-        self.id & 0x80 != 0
+        self.id & 0x80 == 0
     }
 
     pub fn id(&self) -> u8 {
@@ -237,7 +235,7 @@ pub struct FingerCoord(u8, u8, u8);
 impl FingerCoord {
     pub fn val(&self) -> (u16, u16) {
         let (a, b, c) = (self.0 as u16, self.1 as u16, self.2 as u16);
-        (((b & 0xf) << 8) | a, ((b & 0xf0) << 4) | c)
+        (((b & 0xf) << 8) | a, (c << 4) | ((b & 0xf0) >> 4))
     }
 }
 
