@@ -22,7 +22,7 @@ impl InputReport {
         }
     }
 
-    pub fn simple(&self) -> Option<&SimpleReport> {
+    pub fn simple(&self) -> Option<&BTSimpleReport> {
         if self.id == InputReportId::Simple {
             Some(unsafe { &self.u.simple })
         } else {
@@ -30,9 +30,17 @@ impl InputReport {
         }
     }
 
-    pub fn complete(&self) -> Option<&CompleteReport> {
+    pub fn complete(&self) -> Option<&BTFullReport> {
         if self.id == InputReportId::Complete {
             Some(unsafe { &self.u.complete })
+        } else {
+            None
+        }
+    }
+
+    pub fn usb(&self) -> Option<&USBReport> {
+        if self.id == InputReportId::Simple {
+            Some(unsafe { &self.u.usb })
         } else {
             None
         }
@@ -59,24 +67,35 @@ pub enum InputReportId {
 #[repr(packed)]
 #[derive(Clone, Copy)]
 union InputReportData {
-    simple: SimpleReport,
-    complete: CompleteReport,
+    simple: BTSimpleReport,
+    complete: BTFullReport,
+    usb: USBReport,
 }
 
 #[repr(packed)]
 #[derive(Debug, Clone, Copy)]
-pub struct SimpleReport {}
+pub struct USBReport {
+    pub full: FullReport,
+}
 
 #[repr(packed)]
 #[derive(Debug, Clone, Copy)]
-pub struct CompleteReport {
+pub struct BTSimpleReport {
+    pub base: SimpleReport,
+}
+
+#[repr(packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct BTFullReport {
     _unknown1: u8,
     report_id: u8,
-    pub left_stick: Stick,
-    pub right_stick: Stick,
-    pub buttons: [u8; 3],
-    pub left_trigger: u8,
-    pub right_trigger: u8,
+    pub full: FullReport,
+}
+
+#[repr(packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct FullReport {
+    pub base: SimpleReport,
     _unknown_timestamp: [u8; 2],
     battery_level: u8,
     pub gyro: Gyro,
@@ -85,6 +104,16 @@ pub struct CompleteReport {
     type_: u8,
     unknown_0x00_2: [u8; 2],
     pub trackpad: Trackpad,
+}
+
+#[repr(packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct SimpleReport {
+    pub left_stick: Stick,
+    pub right_stick: Stick,
+    pub buttons: [u8; 3],
+    pub left_trigger: u8,
+    pub right_trigger: u8,
 }
 
 #[repr(packed)]
@@ -175,7 +204,7 @@ impl fmt::Debug for TrackpadPacket {
 #[derive(Clone, Copy)]
 pub struct Finger {
     id: u8,
-    coordinate: [u8; 3],
+    coordinate: FingerCoord,
 }
 
 impl Finger {
@@ -198,5 +227,26 @@ impl fmt::Debug for Finger {
         } else {
             f.debug_struct("Finger (none)").finish()
         }
+    }
+}
+
+#[repr(packed)]
+#[derive(Clone, Copy)]
+pub struct FingerCoord(u8, u8, u8);
+
+impl FingerCoord {
+    pub fn val(&self) -> (u16, u16) {
+        let (a, b, c) = (self.0 as u16, self.1 as u16, self.2 as u16);
+        (((b & 0xf) << 8) | a, ((b & 0xf0) << 4) | c)
+    }
+}
+
+impl fmt::Debug for FingerCoord {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let val = self.val();
+        f.debug_tuple("FingerCoord")
+            .field(&val.0)
+            .field(&val.1)
+            .finish()
     }
 }

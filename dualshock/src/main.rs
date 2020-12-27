@@ -5,7 +5,7 @@ use dualshock_sys::{input::InputReport, HID_PRODUCT_ID_BT, HID_PRODUCT_ID_USB, H
 
 fn main() -> anyhow::Result<()> {
     let hidapi = hidapi::HidApi::new()?;
-    let device = hidapi
+    let device_info = hidapi
         .device_list()
         .filter(|d| {
             dbg!(d);
@@ -14,15 +14,16 @@ fn main() -> anyhow::Result<()> {
         })
         .next()
         .unwrap();
-    let device = device.open_device(&hidapi)?;
+    let device = device_info.open_device(&hidapi)?;
     let mut now = Instant::now();
     let mut orientation = Quaternion::one();
     loop {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
         let _nb_read = device.read(buffer)?;
-        if let Some(report) = report.complete() {
-            let gyro = report.gyro.val();
+        if device_info.product_id() == HID_PRODUCT_ID_BT {
+            let report = report.complete().unwrap();
+            let gyro = report.full.gyro.val();
             let dt = 1. / 250.;
             orientation = orientation
                 * Quaternion::from(Euler::new(
@@ -36,8 +37,9 @@ fn main() -> anyhow::Result<()> {
                 now = Instant::now();
             }
         } else {
+            let report = report.usb().unwrap();
             if now.elapsed() > Duration::from_millis(500) {
-                //dbg!(report.as_bytes_mut());
+                dbg!(report);
                 now = Instant::now();
             }
         }
