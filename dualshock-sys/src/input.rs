@@ -23,7 +23,7 @@ impl InputReport {
         }
     }
 
-    pub fn simple(&self) -> Option<&BTSimpleReport> {
+    pub fn bt_simple(&self) -> Option<&BTSimpleReport> {
         if self.id == InputReportId::Simple {
             Some(unsafe { &self.u.simple })
         } else {
@@ -31,15 +31,16 @@ impl InputReport {
         }
     }
 
-    pub fn complete(&self) -> Option<&BTFullReport> {
-        if self.id == InputReportId::Complete {
+    pub fn bt_full(&self) -> Option<&BTFullReport> {
+        if self.id == InputReportId::Full {
             Some(unsafe { &self.u.complete })
         } else {
             None
         }
     }
 
-    pub fn usb(&self) -> Option<&USBReport> {
+    pub fn usb_full(&self) -> Option<&USBReport> {
+        // USB uses different ids smh...
         if self.id == InputReportId::Simple {
             Some(unsafe { &self.u.usb })
         } else {
@@ -51,8 +52,8 @@ impl InputReport {
 impl fmt::Debug for InputReport {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.id.try_into() {
-            Some(InputReportId::Simple) => self.simple().fmt(f),
-            Some(InputReportId::Complete) => self.complete().fmt(f),
+            Some(InputReportId::Simple) => self.bt_simple().fmt(f),
+            Some(InputReportId::Full) => self.bt_full().fmt(f),
             None => unimplemented!(),
         }
     }
@@ -62,7 +63,7 @@ impl fmt::Debug for InputReport {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 pub enum InputReportId {
     Simple = 0x01,
-    Complete = 0x11,
+    Full = 0x11,
 }
 
 #[repr(packed)]
