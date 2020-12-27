@@ -1,6 +1,6 @@
 use std::fmt;
 
-use cgmath::{vec3, Deg, Euler, Vector3};
+use cgmath::{vec2, vec3, Deg, Euler, Vector2, Vector3};
 
 use crate::{RawId, DS4_REPORT_DT, I16LE};
 
@@ -150,7 +150,7 @@ impl Accel {
 }
 
 #[repr(packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Stick {
     x: u8,
     y: u8,
@@ -159,6 +159,19 @@ pub struct Stick {
 impl Stick {
     pub fn val(&self) -> (u8, u8) {
         (self.x, 255 - self.y)
+    }
+
+    pub fn normalize(&self) -> Vector2<f64> {
+        let x = self.x as f64 - 128.;
+        let y = self.y as f64 - 128.;
+        vec2(x, -y) / 128.
+    }
+}
+
+impl fmt::Debug for Stick {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = self.normalize();
+        f.debug_tuple("Stick").field(&s.x).field(&s.y).finish()
     }
 }
 
