@@ -1,8 +1,8 @@
 use std::fmt;
 
-use cgmath::{vec3, Vector3};
+use cgmath::{vec3, Deg, Euler, Vector3};
 
-use crate::{RawId, I16LE};
+use crate::{RawId, DS4_REPORT_DT, I16LE};
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
@@ -125,13 +125,12 @@ pub struct Gyro {
 }
 
 impl Gyro {
-    /// Yaw, pitch, roll in this order. Unit in degree per second (dps).
-    pub fn val(&self) -> Vector3<i16> {
-        vec3(
-            -i16::from(self.yaw),
-            self.pitch.into(),
-            -i16::from(self.roll),
-        )
+    pub fn delta(&self) -> Euler<Deg<f64>> {
+        let factor = 2000. / (2.0_f64.powi(15));
+        let pitch = Deg(i16::from(self.pitch) as f64 * DS4_REPORT_DT * factor);
+        let yaw = Deg(-i16::from(self.yaw) as f64 * DS4_REPORT_DT * factor);
+        let roll = Deg(-i16::from(self.roll) as f64 * DS4_REPORT_DT * factor);
+        Euler::new(pitch, yaw, roll)
     }
 }
 

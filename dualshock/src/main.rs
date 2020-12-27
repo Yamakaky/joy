@@ -23,14 +23,7 @@ fn main() -> anyhow::Result<()> {
         let _nb_read = device.read(buffer)?;
         if device_info.product_id() == HID_PRODUCT_ID_BT {
             let report = report.complete().unwrap();
-            let gyro = report.full.gyro.val();
-            let dt = 1. / 250.;
-            orientation = orientation
-                * Quaternion::from(Euler::new(
-                    Deg(gyro.y as f64 * dt * (2000.0 / 32767.0)),
-                    Deg(gyro.z as f64 * dt * (2000.0 / 32767.0)),
-                    Deg(gyro.x as f64 * dt * (2000.0 / 32767.0)),
-                ));
+            orientation = orientation * Quaternion::from(report.full.gyro.delta());
             if now.elapsed() > Duration::from_millis(500) {
                 let rot = Euler::from(orientation);
                 dbg!(Deg::from(rot.x));
@@ -38,8 +31,10 @@ fn main() -> anyhow::Result<()> {
             }
         } else {
             let report = report.usb().unwrap();
+            orientation = orientation * Quaternion::from(report.full.gyro.delta());
             if now.elapsed() > Duration::from_millis(500) {
-                dbg!(report);
+                let rot = Euler::from(orientation);
+                dbg!(Deg::from(rot.y));
                 now = Instant::now();
             }
         }
