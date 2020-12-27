@@ -184,9 +184,13 @@ pub struct Accel {
 }
 
 impl Accel {
-    /// Yaw, pitch, roll in this order. Unit in degree per second (dps).
-    pub fn val(&self) -> Vector3<i16> {
+    pub fn raw(&self) -> Vector3<i16> {
         vec3(i16::from(self.x), -i16::from(self.y), i16::from(self.z))
+    }
+
+    /// Convert to SI units, in G across each axis.
+    pub fn normalize(&self) -> Vector3<f64> {
+        self.raw().cast::<f64>().unwrap() / 2.0_f64.powi(15) * 4.
     }
 }
 
