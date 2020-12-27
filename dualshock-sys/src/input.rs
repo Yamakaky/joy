@@ -1,15 +1,17 @@
-use std::fmt;
+use std::{fmt, mem::size_of};
 
 use bitfield::bitfield;
 use cgmath::{vec2, vec3, Deg, Euler, Vector2, Vector3};
 
-use crate::{RawId, DS4_REPORT_DT, I16LE};
+use crate::{ConnectionType, RawId, DS4_REPORT_DT, I16LE};
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
 pub struct InputReport {
     id: RawId<InputReportId>,
     u: InputReportData,
+    // allows detection of larger reads in conn_type
+    _padding: u8,
 }
 
 impl InputReport {
@@ -47,10 +49,26 @@ impl InputReport {
             None
         }
     }
+
+    pub fn conn_type(mut nb_read: usize) -> ConnectionType {
+        // Remove report id
+        nb_read -= 1;
+        // TODO: better detection, what about other reports?
+        if nb_read == size_of::<USBReport>() {
+            ConnectionType::USB
+        } else if [size_of::<BTSimpleReport>(), size_of::<BTFullReport>()].contains(&nb_read) {
+            ConnectionType::Bluetooth
+        } else {
+            dbg!(size_of::<USBReport>());
+            dbg!(nb_read);
+            unreachable!()
+        }
+    }
 }
 
 impl fmt::Debug for InputReport {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: handle bluetooth
         match self.id.try_into() {
             Some(InputReportId::Simple) => self.bt_simple().fmt(f),
             Some(InputReportId::Full) => self.bt_full().fmt(f),
@@ -92,6 +110,8 @@ pub struct BTFullReport {
     _unknown1: u8,
     report_id: u8,
     pub full: FullReport,
+    _unknown2: [u8; 2],
+    crc32: [u8; 4],
 }
 
 #[repr(packed)]
@@ -103,7 +123,7 @@ pub struct FullReport {
     pub gyro: Gyro,
     pub accel: Accel,
     _unknown_0x00: [u8; 5],
-    type_: u8,
+    pub type_: Type,
     unknown_0x00_2: [u8; 2],
     pub trackpad: Trackpad,
 }
@@ -117,6 +137,19 @@ pub struct SimpleReport {
     pub left_trigger: Trigger,
     pub right_trigger: Trigger,
 }
+
+bitfield! {
+    #[repr(transparent)]
+    #[derive(Copy, Clone, Default)]
+    pub struct Type(u8);
+    impl Debug;
+    u8;
+    pub battery, _: 3, 0;
+    pub usb, _: 4;
+    pub mic, _: 5;
+    pub phone, _: 6;
+}
+
 #[repr(transparent)]
 #[derive(Clone, Copy)]
 pub struct Trigger(u8);

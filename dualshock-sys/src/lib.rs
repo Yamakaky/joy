@@ -9,11 +9,17 @@ pub mod input;
 pub mod output;
 
 pub const HID_VENDOR_ID: u16 = 0x54c;
-pub const HID_PRODUCT_ID_USB: u16 = 0x9cc;
-pub const HID_PRODUCT_ID_BT: u16 = 0x5c4;
+pub const HID_PRODUCT_ID_NEW: u16 = 0x9cc;
+pub const HID_PRODUCT_ID_OLD: u16 = 0x5c4;
 
 pub const DS4_REPORT_RATE: u32 = 250;
 pub const DS4_REPORT_DT: f64 = 1. / DS4_REPORT_RATE as f64;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum ConnectionType {
+    Bluetooth,
+    USB,
+}
 
 #[repr(transparent)]
 #[derive(Copy, Clone)]
