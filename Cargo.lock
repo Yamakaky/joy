@@ -746,6 +746,7 @@ dependencies = [
 name = "dualshock-sys"
 version = "0.1.0"
 dependencies = [
+ "bitfield",
  "cgmath",
  "num",
  "num-derive",

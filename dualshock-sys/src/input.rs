@@ -1,5 +1,6 @@
 use std::fmt;
 
+use bitfield::bitfield;
 use cgmath::{vec2, vec3, Deg, Euler, Vector2, Vector3};
 
 use crate::{RawId, DS4_REPORT_DT, I16LE};
@@ -111,9 +112,34 @@ pub struct FullReport {
 pub struct SimpleReport {
     pub left_stick: Stick,
     pub right_stick: Stick,
-    pub buttons: [u8; 3],
+    pub buttons: Buttons<[u8; 3]>,
     pub left_trigger: u8,
     pub right_trigger: u8,
+}
+
+bitfield! {
+    #[repr(transparent)]
+    #[derive(Copy, Clone, Default)]
+    pub struct Buttons([u8]);
+    impl Debug;
+    u8;
+    pub dpad, _: 2, 0;
+    pub dpad_pressed, _: 3;
+    pub square, _: 4;
+    pub cross, _: 5;
+    pub circle, _: 6;
+    pub triangle, _: 7;
+    pub l1, _: 8;
+    pub r1, _: 9;
+    pub l2, _: 10;
+    pub r2, _: 11;
+    pub share, _: 12;
+    pub options, _: 13;
+    pub l3, _: 14;
+    pub r3, _: 15;
+    pub ps, _: 16;
+    pub tpad, _: 17;
+    pub counter, _: 23, 18;
 }
 
 #[repr(packed)]
