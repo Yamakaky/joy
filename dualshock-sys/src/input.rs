@@ -113,8 +113,23 @@ pub struct SimpleReport {
     pub left_stick: Stick,
     pub right_stick: Stick,
     pub buttons: Buttons<[u8; 3]>,
-    pub left_trigger: u8,
-    pub right_trigger: u8,
+    pub left_trigger: Trigger,
+    pub right_trigger: Trigger,
+}
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct Trigger(u8);
+
+impl Trigger {
+    pub fn normalize(&self) -> f64 {
+        self.0 as f64 / 255.
+    }
+}
+
+impl fmt::Debug for Trigger {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("Trigger").field(&self.normalize()).finish()
+    }
 }
 
 bitfield! {
