@@ -2,7 +2,8 @@ use std::time::{Duration, Instant};
 
 use cgmath::{Deg, Euler, One, Quaternion};
 use dualshock_sys::{
-    input::InputReport, ConnectionType, HID_PRODUCT_ID_NEW, HID_PRODUCT_ID_OLD, HID_VENDOR_ID,
+    input::InputReport, ConnectionType, DS4_REPORT_DT, HID_PRODUCT_ID_NEW, HID_PRODUCT_ID_OLD,
+    HID_VENDOR_ID,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -28,25 +29,28 @@ fn main() -> anyhow::Result<()> {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
         let _nb_read = device.read(buffer)?;
-        match conn_type {
+        let gyro_speed = match conn_type {
             ConnectionType::Bluetooth => {
                 let report = report.bt_full().unwrap();
-                orientation = orientation * Quaternion::from(report.full.gyro.delta());
-                if now.elapsed() > Duration::from_millis(500) {
-                    let rot = Euler::from(orientation);
-                    dbg!(Deg::from(rot.x));
-                    now = Instant::now();
-                }
+                report.full.gyro.normalize()
             }
             ConnectionType::USB => {
                 let report = report.usb_full().unwrap();
-                orientation = orientation * Quaternion::from(report.full.gyro.delta());
-                if now.elapsed() > Duration::from_millis(500) {
-                    let rot = Euler::from(orientation);
-                    dbg!(Deg::from(rot.x));
-                    now = Instant::now();
-                }
+                report.full.gyro.normalize()
             }
+        };
+
+        let delta = Euler::new(
+            gyro_speed.x * DS4_REPORT_DT,
+            gyro_speed.y * DS4_REPORT_DT,
+            gyro_speed.z * DS4_REPORT_DT,
+        );
+
+        orientation = orientation * Quaternion::from(delta);
+        if now.elapsed() > Duration::from_millis(500) {
+            let rot = Euler::from(orientation);
+            dbg!(Deg::from(rot.x));
+            now = Instant::now();
         }
     }
 }

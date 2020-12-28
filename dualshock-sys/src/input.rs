@@ -96,6 +96,8 @@ union InputReportData {
 #[derive(Debug, Clone, Copy)]
 pub struct USBReport {
     pub full: FullReport,
+    pub trackpad: USBTrackpad,
+    _unknown: [u8; 12],
 }
 
 #[repr(packed)]
@@ -110,6 +112,7 @@ pub struct BTFullReport {
     _unknown1: u8,
     report_id: u8,
     pub full: FullReport,
+    pub trackpad: BTTrackpad,
     _unknown2: [u8; 2],
     crc32: [u8; 4],
 }
@@ -125,7 +128,6 @@ pub struct FullReport {
     _unknown_0x00: [u8; 5],
     pub type_: Type,
     unknown_0x00_2: [u8; 2],
-    pub trackpad: Trackpad,
 }
 
 #[repr(packed)]
@@ -256,12 +258,12 @@ impl fmt::Debug for Stick {
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
-pub struct Trackpad {
+pub struct BTTrackpad {
     len: u8,
     packets: [TrackpadPacket; 4],
 }
 
-impl Trackpad {
+impl BTTrackpad {
     pub fn packets(&self) -> impl Iterator<Item = &TrackpadPacket> {
         self.packets
             .iter()
@@ -270,7 +272,28 @@ impl Trackpad {
     }
 }
 
-impl fmt::Debug for Trackpad {
+impl fmt::Debug for BTTrackpad {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_list().entries(self.packets()).finish()
+    }
+}
+
+#[repr(packed)]
+#[derive(Clone, Copy)]
+pub struct USBTrackpad {
+    _unknown: u8,
+    packets: [TrackpadPacket; 2],
+}
+
+impl USBTrackpad {
+    pub fn packets(&self) -> impl Iterator<Item = &TrackpadPacket> {
+        self.packets
+            .iter()
+            .filter(|p| p.fingers().any(|f| f.is_active()))
+    }
+}
+
+impl fmt::Debug for USBTrackpad {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list().entries(self.packets()).finish()
     }
@@ -304,6 +327,10 @@ impl Finger {
     pub fn id(&self) -> u8 {
         self.id & 0x7F
     }
+
+    pub fn coord(&self) -> Vector2<f64> {
+        self.coordinate.normalize()
+    }
 }
 
 impl fmt::Debug for Finger {
@@ -324,15 +351,20 @@ impl fmt::Debug for Finger {
 pub struct FingerCoord(u8, u8, u8);
 
 impl FingerCoord {
-    pub fn val(&self) -> (u16, u16) {
+    pub fn raw(&self) -> (u16, u16) {
         let (a, b, c) = (self.0 as u16, self.1 as u16, self.2 as u16);
         (((b & 0xf) << 8) | a, (c << 4) | ((b & 0xf0) >> 4))
+    }
+
+    pub fn normalize(&self) -> Vector2<f64> {
+        let (x, y) = self.raw();
+        vec2(x as f64 / 1919., y as f64 / 942.)
     }
 }
 
 impl fmt::Debug for FingerCoord {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let val = self.val();
+        let val = self.raw();
         f.debug_tuple("FingerCoord")
             .field(&val.0)
             .field(&val.1)
