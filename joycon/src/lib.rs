@@ -6,8 +6,9 @@ mod imu_handler;
 pub use crate::image::*;
 use anyhow::Result;
 pub use calibration::*;
+use cgmath::{Deg, Euler};
 pub use hid::*;
-use hid_gamepad_sys::{GamepadDevice, GamepadDriver};
+use hid_gamepad_sys::{GamepadDevice, GamepadDriver, Motion};
 use hidapi::HidApi;
 pub use imu_handler::IMU;
 pub use joycon_sys;
@@ -49,6 +50,15 @@ impl From<Report> for hid_gamepad_sys::Report {
         let mut out = Self::new(IMU_SAMPLES_PER_SECOND);
         out.left_joystick = report.left_stick;
         out.right_joystick = report.right_stick;
+        out.motion = report
+            .imu
+            .unwrap()
+            .iter()
+            .map(|x| Motion {
+                acceleration: x.accel,
+                rotation_speed: Euler::new(Deg(x.gyro.y), Deg(x.gyro.z), Deg(x.gyro.x)),
+            })
+            .collect();
         out
     }
 }
