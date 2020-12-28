@@ -134,7 +134,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
             let dt = 1. / report.frequency as f64;
             for (i, frame) in report.motion.iter().enumerate() {
                 let offset =
-                    gyromouse.process(vec2(frame.rotation_speed.z.0, frame.rotation_speed.y.0), dt);
+                    gyromouse.process(vec2(frame.rotation_speed.y.0, frame.rotation_speed.x.0), dt);
                 delta_position += offset;
                 if !SMOOTH_RATE {
                     if i > 0 {
@@ -155,7 +155,9 @@ fn mouse_move(enigo: &mut Enigo, offset: Vector2<f64>, error_accumulator: &mut V
     let sum = offset + *error_accumulator;
     let rounded = vec2(sum.x.round(), sum.y.round());
     *error_accumulator = sum - rounded;
-    enigo.mouse_move_relative(rounded.x as i32, -rounded.y as i32);
+    if rounded != Vector2::zero() {
+        enigo.mouse_move_relative(rounded.x as i32, -rounded.y as i32);
+    }
 }
 
 macro_rules! diff {
