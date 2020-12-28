@@ -3,7 +3,7 @@ use std::{fmt, mem::size_of};
 use bitfield::bitfield;
 use cgmath::{vec2, vec3, Deg, Euler, Vector2, Vector3};
 
-use crate::{ConnectionType, RawId, DS4_REPORT_DT, I16LE};
+use crate::{ConnectionType, RawId, I16LE};
 
 #[repr(packed)]
 #[derive(Clone, Copy)]
@@ -200,11 +200,11 @@ pub struct Gyro {
 }
 
 impl Gyro {
-    pub fn delta(&self) -> Euler<Deg<f64>> {
+    pub fn normalize(&self) -> Euler<Deg<f64>> {
         let factor = 2000. / (2.0_f64.powi(15));
-        let pitch = Deg(i16::from(self.pitch) as f64 * DS4_REPORT_DT * factor);
-        let yaw = Deg(-i16::from(self.yaw) as f64 * DS4_REPORT_DT * factor);
-        let roll = Deg(-i16::from(self.roll) as f64 * DS4_REPORT_DT * factor);
+        let pitch = Deg(i16::from(self.pitch) as f64 * factor);
+        let yaw = Deg(-i16::from(self.yaw) as f64 * factor);
+        let roll = Deg(-i16::from(self.roll) as f64 * factor);
         Euler::new(pitch, yaw, roll)
     }
 }

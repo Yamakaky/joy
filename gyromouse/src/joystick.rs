@@ -1,9 +1,7 @@
 use cgmath::{AbsDiffEq, Deg, InnerSpace, Rad, Vector2};
+use hid_gamepad::sys::JoyKey;
 
-use crate::{
-    mapping::{Buttons, JoyKey},
-    ExtAction,
-};
+use crate::{mapping::Buttons, ExtAction};
 
 pub struct CameraStick {
     deadzone: f64,

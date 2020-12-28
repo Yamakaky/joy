@@ -26,6 +26,7 @@ impl GamepadDriver for JoyconDriver {
         if device_info.vendor_id() == NINTENDO_VENDOR_ID {
             let mut joycon = JoyCon::new(device_info.open_device(&api)?, device_info.clone())?;
             joycon.enable_imu()?;
+            joycon.load_calibration()?;
             Ok(Some(Box::new(joycon)))
         } else {
             Ok(None)
@@ -36,6 +37,10 @@ impl GamepadDriver for JoyconDriver {
 impl GamepadDevice for JoyCon {
     fn recv(&mut self) -> Result<hid_gamepad_sys::Report> {
         Ok(self.tick()?.into())
+    }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }
 

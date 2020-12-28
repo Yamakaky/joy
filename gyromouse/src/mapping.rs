@@ -1,82 +1,12 @@
 use enum_map::{Enum, EnumMap};
+use hid_gamepad::sys::JoyKey;
+use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
-use std::{str::FromStr, time::Instant};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Action<ExtAction> {
     Layer(u8, bool),
     Ext(ExtAction),
-}
-
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum JoyKey {
-    Up,
-    Down,
-    Left,
-    Right,
-    LUp,
-    LDown,
-    LLeft,
-    LRight,
-    RUp,
-    RDown,
-    RLeft,
-    RRight,
-    N,
-    S,
-    E,
-    W,
-    L,
-    R,
-    ZL,
-    ZR,
-    SL,
-    SR,
-    L3,
-    R3,
-    Minus,
-    Plus,
-    Capture,
-    Home,
-}
-
-impl FromStr for JoyKey {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use JoyKey::*;
-        Ok(match s {
-            "Up" => Up,
-            "Down" => Down,
-            "Left" => Left,
-            "Right" => Right,
-            "LUp" => LUp,
-            "LDown" => LDown,
-            "LLeft" => LLeft,
-            "LRight" => LRight,
-            "RUp" => RUp,
-            "RDown" => RDown,
-            "RLeft" => RLeft,
-            "RRight" => RRight,
-            "N" => N,
-            "S" => S,
-            "E" => E,
-            "W" => W,
-            "L" => L,
-            "R" => R,
-            "ZL" => ZL,
-            "ZR" => ZR,
-            "SL" => SL,
-            "SR" => SR,
-            "L3" => L3,
-            "R3" => R3,
-            "Minus" => Minus,
-            "Plus" => Plus,
-            "Capture" => Capture,
-            "Home" => Home,
-            _ => unreachable!(),
-        })
-    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]

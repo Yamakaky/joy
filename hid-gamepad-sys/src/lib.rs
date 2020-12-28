@@ -1,10 +1,12 @@
+use std::any::Any;
+
 use anyhow::Result;
-use cgmath::{Vector2, Zero};
+use cgmath::{Deg, Euler, Vector2, Vector3, Zero};
 use enum_map::{Enum, EnumMap};
 use hidapi::{DeviceInfo, HidApi};
 
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum Key {
+pub enum JoyKey {
     Up,
     Down,
     Left,
@@ -49,9 +51,11 @@ impl Default for KeyStatus {
 
 #[derive(Debug, Clone)]
 pub struct Report {
-    pub keys: EnumMap<Key, KeyStatus>,
+    pub keys: EnumMap<JoyKey, KeyStatus>,
     pub left_joystick: Vector2<f64>,
     pub right_joystick: Vector2<f64>,
+    pub motion: Vec<Motion>,
+    pub frequency: u32,
 }
 
 impl Report {
@@ -60,8 +64,16 @@ impl Report {
             keys: EnumMap::default(),
             left_joystick: Vector2::zero(),
             right_joystick: Vector2::zero(),
+            motion: Vec::new(),
+            frequency: 0,
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct Motion {
+    pub rotation_speed: Euler<Deg<f64>>,
+    pub acceleration: Vector3<f64>,
 }
 
 pub trait GamepadDriver {
@@ -74,4 +86,5 @@ pub trait GamepadDriver {
 
 pub trait GamepadDevice {
     fn recv(&mut self) -> Result<Report>;
+    fn as_any(&mut self) -> &mut dyn Any;
 }

@@ -1,8 +1,9 @@
 use anyhow::Result;
 use dualshock_sys::{
-    input::InputReport, ConnectionType, HID_PRODUCT_ID_NEW, HID_PRODUCT_ID_OLD, HID_VENDOR_ID,
+    input::InputReport, ConnectionType, DS4_REPORT_RATE, HID_PRODUCT_ID_NEW, HID_PRODUCT_ID_OLD,
+    HID_VENDOR_ID,
 };
-use hid_gamepad_sys::{GamepadDevice, GamepadDriver, Report};
+use hid_gamepad_sys::{GamepadDevice, GamepadDriver, Motion, Report};
 use hidapi::{HidApi, HidDevice};
 
 pub struct DS4Driver;
@@ -41,6 +42,15 @@ impl GamepadDevice for DS4 {
         let mut out = Report::new();
         out.left_joystick = full.base.left_stick.normalize();
         out.right_joystick = full.base.right_stick.normalize();
+        out.frequency = DS4_REPORT_RATE;
+        out.motion = vec![Motion {
+            acceleration: full.accel.normalize(),
+            rotation_speed: full.gyro.normalize(),
+        }];
         Ok(out)
+    }
+
+    fn as_any(&mut self) -> &mut dyn std::any::Any {
+        self
     }
 }

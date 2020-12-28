@@ -11,5 +11,6 @@ anyhow = "1.0"
 cgmath = "0.17.0"
 enigo = "0.0.14"
 enum-map = "0.6.4"
+hid-gamepad = { path = "../hid-gamepad" }
 joycon = { path = "../joycon" }
 nom = "6.0.1"

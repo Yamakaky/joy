@@ -1234,6 +1234,7 @@ dependencies = [
  "cgmath",
  "enigo",
  "enum-map",
+ "hid-gamepad",
  "joycon",
  "nom",
 ]

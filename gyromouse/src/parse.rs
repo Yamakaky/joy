@@ -1,3 +1,4 @@
+use hid_gamepad::sys::JoyKey;
 use nom::{
     branch::alt,
     bytes::complete::{tag, tag_no_case},
@@ -12,7 +13,7 @@ use nom::{
 };
 
 use crate::{
-    mapping::{Action, Buttons, JoyKey, Layer},
+    mapping::{Action, Buttons, Layer},
     ClickType, ExtAction,
 };
 
