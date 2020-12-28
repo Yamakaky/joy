@@ -2,6 +2,8 @@
 members = [
     "dualshock-sys",
     "dualshock",
+    "hid-gamepad",
+    "hid-gamepad-sys",
     "joycon-sys",
     "joycon",
     "joy-infrared",

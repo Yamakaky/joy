@@ -12,3 +12,4 @@ cgmath = { version = "0.17", optional = false, default-features = false }
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 image = { version = "0.23", optional = false, default-features = false }
 joycon-sys = { path = "../joycon-sys" }
+hid-gamepad-sys = { path = "../hid-gamepad-sys/" }

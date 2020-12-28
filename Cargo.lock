@@ -739,6 +739,7 @@ dependencies = [
  "anyhow",
  "cgmath",
  "dualshock-sys",
+ "hid-gamepad-sys",
  "hidapi",
 ]
 
@@ -1262,6 +1263,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "hid-gamepad"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cgmath",
+ "dualshock",
+ "enum-map",
+ "hid-gamepad-sys",
+ "hidapi",
+ "joycon",
+ "thiserror",
+]
+
+[[package]]
+name = "hid-gamepad-sys"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cgmath",
+ "enum-map",
+ "hidapi",
+]
+
+[[package]]
 name = "hidapi"
 version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1466,6 +1491,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cgmath",
+ "hid-gamepad-sys",
  "hidapi",
  "image",
  "joycon-sys",

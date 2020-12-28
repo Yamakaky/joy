@@ -1,5 +1,5 @@
 [package]
-name = "dualshock"
+name = "hid-gamepad"
 version = "0.1.0"
 authors = ["Yamakaky <yamakaky@yamaworld.fr>"]
 edition = "2018"
@@ -9,6 +9,9 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.36"
 cgmath = "0.17.0"
-dualshock-sys = { path = "../dualshock-sys/" }
-hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
+dualshock = { path = "../dualshock/" }
+enum-map = "0.6.4"
 hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
+hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
+joycon = { path = "../joycon/" }
+thiserror = "1.0.22"
