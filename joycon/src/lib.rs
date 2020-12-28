@@ -13,7 +13,7 @@ pub use imu_handler::IMU;
 pub use joycon_sys;
 
 pub use hidapi;
-use joycon_sys::NINTENDO_VENDOR_ID;
+use joycon_sys::{imu::IMU_SAMPLES_PER_SECOND, NINTENDO_VENDOR_ID};
 
 pub struct JoyconDriver;
 
@@ -46,7 +46,7 @@ impl GamepadDevice for JoyCon {
 
 impl From<Report> for hid_gamepad_sys::Report {
     fn from(report: Report) -> Self {
-        let mut out = Self::new();
+        let mut out = Self::new(IMU_SAMPLES_PER_SECOND);
         out.left_joystick = report.left_stick;
         out.right_joystick = report.right_stick;
         out

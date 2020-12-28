@@ -39,10 +39,9 @@ impl GamepadDevice for DS4 {
             ConnectionType::Bluetooth => &report.bt_full().unwrap().full,
             ConnectionType::USB => &report.usb_full().unwrap().full,
         };
-        let mut out = Report::new();
+        let mut out = Report::new(DS4_REPORT_RATE);
         out.left_joystick = full.base.left_stick.normalize();
         out.right_joystick = full.base.right_stick.normalize();
-        out.frequency = DS4_REPORT_RATE;
         out.motion = vec![Motion {
             acceleration: full.accel.normalize(),
             rotation_speed: full.gyro.normalize(),

@@ -59,13 +59,13 @@ pub struct Report {
 }
 
 impl Report {
-    pub fn new() -> Report {
+    pub fn new(frequency: u32) -> Report {
         Report {
             keys: EnumMap::default(),
             left_joystick: Vector2::zero(),
             right_joystick: Vector2::zero(),
             motion: Vec::new(),
-            frequency: 0,
+            frequency,
         }
     }
 }
