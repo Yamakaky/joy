@@ -223,6 +223,7 @@ fn comment(input: &str) -> IResult<&str, ()> {
 }
 
 fn line(input: &str) -> IResult<&str, Option<Cmd>> {
+    let (input, _) = space0(input)?;
     let (input, cmd) = opt(cmd)(input)?;
     let (input, _) = space0(input)?;
     let (input, _) = opt(comment)(input)?;
@@ -293,7 +294,7 @@ fn keyboardkey(input: &str) -> IResult<&str, enigo::Key> {
             key_parse(CapsLock, "capslock"),
             key_parse(Control, "Control"),
             key_parse(Delete, "Delete"),
-            key_parse(DownArrow, "up"),
+            key_parse(DownArrow, "down"),
             key_parse(End, "End"),
             key_parse(Escape, "Escape"),
             key_parse(F1, "F1"),
@@ -317,7 +318,7 @@ fn keyboardkey(input: &str) -> IResult<&str, enigo::Key> {
             key_parse(PageDown, "PageDown"),
             key_parse(PageUp, "PageUp"),
             key_parse(Return, "Return"),
-            key_parse(RightArrow, "roght"),
+            key_parse(RightArrow, "right"),
             key_parse(Shift, "Shift"),
             key_parse(Space, "Space"),
             key_parse(Tab, "Tab"),
