@@ -69,12 +69,12 @@ impl GyroMouse {
             tightening_threshold: 5.,
 
             apply_acceleration: true,
-            acceleration_slow_sens: 8.,
+            acceleration_slow_sens: 16.,
             acceleration_slow_threshold: 5.,
-            acceleration_fast_sens: 16.,
+            acceleration_fast_sens: 32.,
             acceleration_fast_threshold: 75.,
 
-            sensitivity: 16.,
+            sensitivity: 32.,
         }
     }
 
