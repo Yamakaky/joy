@@ -85,15 +85,23 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     let mut mapping = Buttons::new();
     parse_file(
-        "LLeft = a\nLRight = d\nLUp = w\nLDown  =s\nR =x\nR,E= y\nS =a\nE = none gyro_off\\",
+        "RLeft = left
+        RRight = right
+        RUp = up 
+        RDown = down
+        W = lmouse
+        E = rmouse
+        N = escape
+        S = none gyro_on\\",
         &mut mapping,
     )?;
     let mut last_buttons = EnumMap::new();
 
     let mut lstick = ButtonStick::left(0.4);
-    let mut rstick = CameraStick::default();
+    let mut _rstick = CameraStick::default();
+    let mut rstick = ButtonStick::right(0.4);
 
-    let mut gyro_enabled = true;
+    let mut gyro_enabled = false;
 
     loop {
         let report = gamepad.recv()?;
@@ -122,11 +130,11 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
         }
 
         lstick.handle(report.left_joystick, &mut mapping);
-        let offset = rstick.handle(report.right_joystick);
-        if offset.magnitude() != 0. {
-            dbg!(offset);
-            mouse_move(&mut enigo, offset, &mut error_accumulator);
-        }
+        let _offset = rstick.handle(report.right_joystick, &mut mapping);
+        //if offset.magnitude() != 0. {
+        //    dbg!(offset);
+        //    mouse_move(&mut enigo, offset, &mut error_accumulator);
+        //}
 
         if gyro_enabled {
             let mut delta_position = Vector2::zero();
