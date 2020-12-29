@@ -1,7 +1,9 @@
 use cgmath::{AbsDiffEq, Deg, InnerSpace, Rad, Vector2};
-use hid_gamepad::sys::JoyKey;
 
-use crate::{mapping::Buttons, ExtAction};
+use crate::{
+    mapping::{Buttons, VirtualKey},
+    ExtAction,
+};
 
 pub struct CameraStick {
     deadzone: f64,
@@ -82,46 +84,50 @@ impl ButtonStick {
         if amp_clamped > 0. {
             bindings.key(
                 if self.left {
-                    JoyKey::LRight
+                    VirtualKey::LRight
                 } else {
-                    JoyKey::RRight
+                    VirtualKey::RRight
                 },
                 angle_r.abs_diff_eq(&Rad(0.), epsilon),
                 now,
             );
             bindings.key(
                 if self.left {
-                    JoyKey::LLeft
+                    VirtualKey::LLeft
                 } else {
-                    JoyKey::RLeft
+                    VirtualKey::RLeft
                 },
                 angle_l.abs_diff_eq(&Rad(0.), epsilon),
                 now,
             );
             bindings.key(
-                if self.left { JoyKey::LUp } else { JoyKey::RUp },
+                if self.left {
+                    VirtualKey::LUp
+                } else {
+                    VirtualKey::RUp
+                },
                 angle_u.abs_diff_eq(&Rad(0.), epsilon),
                 now,
             );
             bindings.key(
                 if self.left {
-                    JoyKey::LDown
+                    VirtualKey::LDown
                 } else {
-                    JoyKey::RDown
+                    VirtualKey::RDown
                 },
                 angle_d.abs_diff_eq(&Rad(0.), epsilon),
                 now,
             );
         } else if self.left {
-            bindings.key_up(JoyKey::LLeft, now);
-            bindings.key_up(JoyKey::LRight, now);
-            bindings.key_up(JoyKey::LUp, now);
-            bindings.key_up(JoyKey::LDown, now);
+            bindings.key_up(VirtualKey::LLeft, now);
+            bindings.key_up(VirtualKey::LRight, now);
+            bindings.key_up(VirtualKey::LUp, now);
+            bindings.key_up(VirtualKey::LDown, now);
         } else {
-            bindings.key_up(JoyKey::RLeft, now);
-            bindings.key_up(JoyKey::RRight, now);
-            bindings.key_up(JoyKey::RUp, now);
-            bindings.key_up(JoyKey::RDown, now);
+            bindings.key_up(VirtualKey::RLeft, now);
+            bindings.key_up(VirtualKey::RRight, now);
+            bindings.key_up(VirtualKey::RUp, now);
+            bindings.key_up(VirtualKey::RDown, now);
         }
     }
 }

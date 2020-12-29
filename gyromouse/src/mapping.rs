@@ -1,7 +1,7 @@
 use enum_map::{Enum, EnumMap};
 use hid_gamepad::sys::JoyKey;
-use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
+use std::{time::Instant};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Action<ExtAction> {
@@ -81,10 +81,84 @@ impl Default for KeyState {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Enum)]
+pub enum VirtualKey {
+    LUp,
+    LDown,
+    LLeft,
+    LRight,
+    RUp,
+    RDown,
+    RLeft,
+    RRight,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MapKey {
+    Physical(JoyKey),
+    Virtual(VirtualKey),
+}
+
+impl MapKey {
+    pub fn to_layer(self) -> u8 {
+        assert!(<Self as Enum<()>>::POSSIBLE_VALUES < 255);
+        <Self as Enum<()>>::to_usize(self) as u8
+    }
+}
+
+const JOYKEY_SIZE: usize = <JoyKey as Enum<()>>::POSSIBLE_VALUES;
+const VIRTKEY_SIZE: usize = <VirtualKey as Enum<()>>::POSSIBLE_VALUES;
+const MAP_KEY_SIZE: usize = JOYKEY_SIZE + VIRTKEY_SIZE;
+
+impl<V> Enum<V> for MapKey {
+    type Array = [V; MAP_KEY_SIZE];
+
+    const POSSIBLE_VALUES: usize = MAP_KEY_SIZE;
+
+    fn slice(array: &Self::Array) -> &[V] {
+        array
+    }
+
+    fn slice_mut(array: &mut Self::Array) -> &mut [V] {
+        array
+    }
+
+    fn from_usize(value: usize) -> Self {
+        if value < JOYKEY_SIZE {
+            <JoyKey as Enum<()>>::from_usize(value).into()
+        } else {
+            <VirtualKey as Enum<()>>::from_usize(value - JOYKEY_SIZE).into()
+        }
+    }
+
+    fn to_usize(self) -> usize {
+        match self {
+            MapKey::Physical(p) => <JoyKey as Enum<()>>::to_usize(p),
+            MapKey::Virtual(v) => <VirtualKey as Enum<()>>::to_usize(v) + JOYKEY_SIZE,
+        }
+    }
+
+    fn from_function<F: FnMut(Self) -> V>(_f: F) -> Self::Array {
+        unimplemented!()
+    }
+}
+
+impl From<JoyKey> for MapKey {
+    fn from(k: JoyKey) -> Self {
+        MapKey::Physical(k)
+    }
+}
+
+impl From<VirtualKey> for MapKey {
+    fn from(k: VirtualKey) -> Self {
+        MapKey::Virtual(k)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Buttons<ExtAction> {
-    bindings: EnumMap<JoyKey, HashMap<u8, Layer<ExtAction>>>,
-    state: EnumMap<JoyKey, KeyState>,
+    bindings: EnumMap<MapKey, HashMap<u8, Layer<ExtAction>>>,
+    state: EnumMap<MapKey, KeyState>,
     current_layers: Vec<u8>,
 
     ext_actions: Vec<ExtAction>,
@@ -105,13 +179,13 @@ impl<Ext: Copy> Buttons<Ext> {
         }
     }
 
-    pub fn get(&mut self, key: JoyKey, layer: u8) -> &mut Layer<Ext> {
+    pub fn get(&mut self, key: MapKey, layer: u8) -> &mut Layer<Ext> {
         self.bindings[key].entry(layer).or_default()
     }
 
     pub fn tick(&mut self, now: Instant) -> &mut Vec<Ext> {
-        for key in (0..<JoyKey as Enum<KeyStatus>>::POSSIBLE_VALUES)
-            .map(<JoyKey as Enum<KeyStatus>>::from_usize)
+        for key in (0..<MapKey as Enum<KeyStatus>>::POSSIBLE_VALUES)
+            .map(<MapKey as Enum<KeyStatus>>::from_usize)
         {
             let binding = self.find_binding(key);
             match self.state[key].status {
@@ -144,7 +218,8 @@ impl<Ext: Copy> Buttons<Ext> {
         &mut self.ext_actions
     }
 
-    pub fn key_down(&mut self, key: JoyKey, now: Instant) {
+    pub fn key_down<K: Into<MapKey>>(&mut self, key: K, now: Instant) {
+        let key = key.into();
         if self.state[key].status.is_down() {
             return;
         }
@@ -167,7 +242,8 @@ impl<Ext: Copy> Buttons<Ext> {
         self.state[key].last_update = now;
     }
 
-    pub fn key_up(&mut self, key: JoyKey, now: Instant) {
+    pub fn key_up<K: Into<MapKey>>(&mut self, key: K, now: Instant) {
+        let key = key.into();
         if !self.state[key].status.is_down() {
             return;
         }
@@ -202,7 +278,8 @@ impl<Ext: Copy> Buttons<Ext> {
         self.state[key].last_update = now;
     }
 
-    pub fn key(&mut self, key: JoyKey, pressed: bool, now: Instant) {
+    pub fn key<K: Into<MapKey>>(&mut self, key: K, pressed: bool, now: Instant) {
+        let key = key.into();
         if pressed {
             self.key_down(key, now);
         } else {
@@ -216,7 +293,7 @@ impl<Ext: Copy> Buttons<Ext> {
         }
     }
 
-    fn find_binding(&self, key: JoyKey) -> Layer<Ext> {
+    fn find_binding(&self, key: MapKey) -> Layer<Ext> {
         let layers = &self.bindings[key];
         for i in self.current_layers.iter().rev() {
             if let Some(layer) = layers.get(&i) {

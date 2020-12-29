@@ -13,7 +13,7 @@ use nom::{
 };
 
 use crate::{
-    mapping::{Action, Buttons, Layer},
+    mapping::{Action, Buttons, Layer, MapKey, VirtualKey},
     ClickType, ExtAction,
 };
 
@@ -72,9 +72,9 @@ pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons<ExtAction>) -> IRe
             Cmd::Map(Key::Simple(key), ref actions) => map_key(mapping.get(key, 0), actions),
 
             Cmd::Map(Key::Chorded(k1, k2), ref actions) => {
-                mapping.get(k1, 0).on_down = Some(Action::Layer(k1 as u8, true));
-                mapping.get(k1, 0).on_up = Some(Action::Layer(k1 as u8, false));
-                map_key(mapping.get(k2, k1 as u8), actions);
+                mapping.get(k1, 0).on_down = Some(Action::Layer(k1.to_layer(), true));
+                mapping.get(k1, 0).on_up = Some(Action::Layer(k1.to_layer(), false));
+                map_key(mapping.get(k2, k1.to_layer()), actions);
             }
             Cmd::Map(Key::Simul(_k1, _k2), ref _actions) => unimplemented!(),
             _ => unimplemented!(),
@@ -124,9 +124,9 @@ impl From<(ActionType, ClickType)> for ExtAction {
 
 #[derive(Debug, Clone)]
 pub enum Key {
-    Simple(JoyKey),
-    Simul(JoyKey, JoyKey),
-    Chorded(JoyKey, JoyKey),
+    Simple(MapKey),
+    Simul(MapKey, MapKey),
+    Chorded(MapKey, MapKey),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -145,23 +145,23 @@ pub enum Cmd {
 
 fn keys(input: &str) -> IResult<&str, Key> {
     fn simple(input: &str) -> IResult<&str, Key> {
-        joykey(input).map(|(i, k)| (i, Key::Simple(k)))
+        mapkey(input).map(|(i, k)| (i, Key::Simple(k.into())))
     }
     fn simul(input: &str) -> IResult<&str, Key> {
-        let (input, k1) = joykey(input)?;
+        let (input, k1) = mapkey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag("+")(input)?;
         let (input, _) = space0(input)?;
-        let (input, k2) = joykey(input)?;
-        Ok((input, Key::Simul(k1, k2)))
+        let (input, k2) = mapkey(input)?;
+        Ok((input, Key::Simul(k1.into(), k2.into())))
     }
     fn chorded(input: &str) -> IResult<&str, Key> {
-        let (input, k1) = joykey(input)?;
+        let (input, k1) = mapkey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag(",")(input)?;
         let (input, _) = space0(input)?;
-        let (input, k2) = joykey(input)?;
-        Ok((input, Key::Chorded(k1, k2)))
+        let (input, k2) = mapkey(input)?;
+        Ok((input, Key::Chorded(k1.into(), k2.into())))
     }
     alt((simul, chorded, simple))(input)
 }
@@ -225,6 +225,10 @@ pub fn jsm_parse(input: &str) -> IResult<&str, Vec<Cmd>> {
     Ok((input, cmds.into_iter().flat_map(|x| x).collect()))
 }
 
+fn mapkey(input: &str) -> IResult<&str, MapKey> {
+    alt((map(joykey, MapKey::from), map(virtkey, MapKey::from)))(input)
+}
+
 fn joykey(input: &str) -> IResult<&str, JoyKey> {
     alt((
         alt((
@@ -232,14 +236,6 @@ fn joykey(input: &str) -> IResult<&str, JoyKey> {
             value(JoyKey::Down, tag_no_case("Down")),
             value(JoyKey::Left, tag_no_case("Left")),
             value(JoyKey::Right, tag_no_case("Right")),
-            value(JoyKey::LUp, tag_no_case("LUp")),
-            value(JoyKey::LDown, tag_no_case("LDown")),
-            value(JoyKey::LLeft, tag_no_case("LLeft")),
-            value(JoyKey::LRight, tag_no_case("LRight")),
-            value(JoyKey::RUp, tag_no_case("RUp")),
-            value(JoyKey::RDown, tag_no_case("RDown")),
-            value(JoyKey::RLeft, tag_no_case("RLeft")),
-            value(JoyKey::RRight, tag_no_case("RRight")),
             value(JoyKey::N, tag_no_case("N")),
             value(JoyKey::S, tag_no_case("S")),
             value(JoyKey::E, tag_no_case("E")),
@@ -259,6 +255,19 @@ fn joykey(input: &str) -> IResult<&str, JoyKey> {
             value(JoyKey::Capture, tag_no_case("Capture")),
             value(JoyKey::Home, tag_no_case("Home")),
         )),
+    ))(input)
+}
+
+fn virtkey(input: &str) -> IResult<&str, VirtualKey> {
+    alt((
+        value(VirtualKey::LUp, tag_no_case("LUp")),
+        value(VirtualKey::LDown, tag_no_case("LDown")),
+        value(VirtualKey::LLeft, tag_no_case("LLeft")),
+        value(VirtualKey::LRight, tag_no_case("LRight")),
+        value(VirtualKey::RUp, tag_no_case("RUp")),
+        value(VirtualKey::RDown, tag_no_case("RDown")),
+        value(VirtualKey::RLeft, tag_no_case("RLeft")),
+        value(VirtualKey::RRight, tag_no_case("RRight")),
     ))(input)
 }
 
