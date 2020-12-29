@@ -41,6 +41,16 @@ impl Default for KeyStatus {
     }
 }
 
+impl From<bool> for KeyStatus {
+    fn from(b: bool) -> Self {
+        if b {
+            KeyStatus::Pressed
+        } else {
+            KeyStatus::Released
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Report {
     pub keys: EnumMap<JoyKey, KeyStatus>,

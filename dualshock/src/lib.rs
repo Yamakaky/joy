@@ -3,7 +3,7 @@ use dualshock_sys::{
     input::InputReport, ConnectionType, DS4_REPORT_RATE, HID_PRODUCT_ID_NEW, HID_PRODUCT_ID_OLD,
     HID_VENDOR_ID,
 };
-use hid_gamepad_sys::{GamepadDevice, GamepadDriver, Motion, Report};
+use hid_gamepad_sys::{GamepadDevice, GamepadDriver, JoyKey, KeyStatus, Motion, Report};
 use hidapi::{HidApi, HidDevice};
 
 pub struct DS4Driver;
@@ -46,6 +46,29 @@ impl GamepadDevice for DS4 {
             acceleration: full.accel.normalize(),
             rotation_speed: full.gyro.normalize(),
         }];
+        let b = &full.base.buttons;
+        out.keys = enum_map::enum_map! {
+            JoyKey::Up => b.dpad().up().into(),
+            JoyKey::Down => b.dpad().down().into(),
+            JoyKey::Left => b.dpad().left().into(),
+            JoyKey::Right=> b.dpad().right().into(),
+            JoyKey::N => b.triangle().into(),
+            JoyKey::S => b.cross().into(),
+            JoyKey::E => b.circle().into(),
+            JoyKey::W => b.square().into(),
+            JoyKey::L=> b.l1().into(),
+            JoyKey::R=> b.r1().into(),
+            JoyKey::ZL => b.l2().into(),
+            JoyKey::ZR => b.r2().into(),
+            JoyKey::SL => KeyStatus::Released,
+            JoyKey::SR => KeyStatus::Released,
+            JoyKey::L3 => b.l3().into(),
+            JoyKey::R3 => b.r3().into(),
+            JoyKey::Minus => b.tpad().into(),
+            JoyKey::Plus => b.options().into(),
+            JoyKey::Capture => b.share().into(),
+            JoyKey::Home => b.ps().into(),
+        };
         Ok(out)
     }
 

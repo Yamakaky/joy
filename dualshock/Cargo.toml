@@ -12,3 +12,4 @@ cgmath = "0.17.0"
 dualshock-sys = { path = "../dualshock-sys/" }
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
+enum-map = "0.6.4"

@@ -145,7 +145,7 @@ pub enum Cmd {
 
 fn keys(input: &str) -> IResult<&str, Key> {
     fn simple(input: &str) -> IResult<&str, Key> {
-        mapkey(input).map(|(i, k)| (i, Key::Simple(k.into())))
+        mapkey(input).map(|(i, k)| (i, Key::Simple(k)))
     }
     fn simul(input: &str) -> IResult<&str, Key> {
         let (input, k1) = mapkey(input)?;
@@ -153,7 +153,7 @@ fn keys(input: &str) -> IResult<&str, Key> {
         let (input, _) = tag("+")(input)?;
         let (input, _) = space0(input)?;
         let (input, k2) = mapkey(input)?;
-        Ok((input, Key::Simul(k1.into(), k2.into())))
+        Ok((input, Key::Simul(k1, k2)))
     }
     fn chorded(input: &str) -> IResult<&str, Key> {
         let (input, k1) = mapkey(input)?;
@@ -161,7 +161,7 @@ fn keys(input: &str) -> IResult<&str, Key> {
         let (input, _) = tag(",")(input)?;
         let (input, _) = space0(input)?;
         let (input, k2) = mapkey(input)?;
-        Ok((input, Key::Chorded(k1.into(), k2.into())))
+        Ok((input, Key::Chorded(k1, k2)))
     }
     alt((simul, chorded, simple))(input)
 }
@@ -226,7 +226,7 @@ pub fn jsm_parse(input: &str) -> IResult<&str, Vec<Cmd>> {
 }
 
 fn mapkey(input: &str) -> IResult<&str, MapKey> {
-    alt((map(joykey, MapKey::from), map(virtkey, MapKey::from)))(input)
+    alt((map(virtkey, MapKey::from), map(joykey, MapKey::from)))(input)
 }
 
 fn joykey(input: &str) -> IResult<&str, JoyKey> {

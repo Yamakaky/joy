@@ -174,7 +174,7 @@ bitfield! {
     pub struct Buttons([u8]);
     impl Debug;
     u8;
-    pub dpad, _: 2, 0;
+    pub into Dpad, dpad, _: 2, 0;
     pub dpad_pressed, _: 3;
     pub square, _: 4;
     pub cross, _: 5;
@@ -191,6 +191,33 @@ bitfield! {
     pub ps, _: 16;
     pub tpad, _: 17;
     pub counter, _: 23, 18;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Dpad(u8);
+
+impl Dpad {
+    pub fn up(&self) -> bool {
+        self.0 <= 1 || self.0 == 7
+    }
+
+    pub fn right(&self) -> bool {
+        1 <= self.0 && self.0 <= 3
+    }
+
+    pub fn down(&self) -> bool {
+        3 <= self.0 && self.0 <= 5
+    }
+
+    pub fn left(&self) -> bool {
+        5 <= self.0 && self.0 <= 7
+    }
+}
+
+impl From<u8> for Dpad {
+    fn from(u: u8) -> Self {
+        Dpad(u)
+    }
 }
 
 #[repr(packed)]

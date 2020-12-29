@@ -1,7 +1,7 @@
 use enum_map::{Enum, EnumMap};
 use hid_gamepad::sys::JoyKey;
+use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
-use std::{time::Instant};
 
 #[derive(Debug, Copy, Clone)]
 pub enum Action<ExtAction> {
@@ -24,6 +24,12 @@ impl KeyStatus {
             KeyStatus::Down | KeyStatus::DoubleDown | KeyStatus::Hold => true,
             KeyStatus::Up | KeyStatus::DoubleUp => false,
         }
+    }
+}
+
+impl Default for KeyStatus {
+    fn default() -> Self {
+        KeyStatus::Up
     }
 }
 
@@ -110,7 +116,7 @@ const JOYKEY_SIZE: usize = <JoyKey as Enum<()>>::POSSIBLE_VALUES;
 const VIRTKEY_SIZE: usize = <VirtualKey as Enum<()>>::POSSIBLE_VALUES;
 const MAP_KEY_SIZE: usize = JOYKEY_SIZE + VIRTKEY_SIZE;
 
-impl<V> Enum<V> for MapKey {
+impl<V: Default> Enum<V> for MapKey {
     type Array = [V; MAP_KEY_SIZE];
 
     const POSSIBLE_VALUES: usize = MAP_KEY_SIZE;
@@ -126,8 +132,10 @@ impl<V> Enum<V> for MapKey {
     fn from_usize(value: usize) -> Self {
         if value < JOYKEY_SIZE {
             <JoyKey as Enum<()>>::from_usize(value).into()
-        } else {
+        } else if value < MAP_KEY_SIZE {
             <VirtualKey as Enum<()>>::from_usize(value - JOYKEY_SIZE).into()
+        } else {
+            unimplemented!()
         }
     }
 
@@ -138,8 +146,12 @@ impl<V> Enum<V> for MapKey {
         }
     }
 
-    fn from_function<F: FnMut(Self) -> V>(_f: F) -> Self::Array {
-        unimplemented!()
+    fn from_function<F: FnMut(Self) -> V>(mut f: F) -> Self::Array {
+        let mut out = Self::Array::default();
+        for (i, out) in out.iter_mut().enumerate() {
+            *out = f(<Self as Enum<V>>::from_usize(i));
+        }
+        out
     }
 }
 

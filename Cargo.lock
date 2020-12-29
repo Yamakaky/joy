@@ -739,6 +739,7 @@ dependencies = [
  "anyhow",
  "cgmath",
  "dualshock-sys",
+ "enum-map",
  "hid-gamepad-sys",
  "hidapi",
 ]
