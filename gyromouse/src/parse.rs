@@ -122,7 +122,8 @@ impl From<(ActionType, ClickType)> for ExtAction {
         match a {
             ActionType::Key(k) => ExtAction::KeyPress(k, b),
             ActionType::Mouse(k) => ExtAction::MousePress(k, b),
-            ActionType::Special(SpecialKey::Gyro) => ExtAction::ToggleGyro(b),
+            ActionType::Special(SpecialKey::GyroOn) => ExtAction::GyroOn(b),
+            ActionType::Special(SpecialKey::GyroOff) => ExtAction::GyroOff(b),
             ActionType::Special(SpecialKey::None) => unimplemented!(),
             _ => unimplemented!(),
         }
@@ -139,7 +140,8 @@ pub enum Key {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SpecialKey {
     None,
-    Gyro,
+    GyroOn,
+    GyroOff,
     GyroInvertX(bool),
     GyroInvertY(bool),
     GyroTrackBall(bool),
@@ -184,7 +186,6 @@ fn action(input: &str) -> IResult<&str, JSMAction> {
         map(mousekey, ActionType::Mouse),
         map(keyboardkey, ActionType::Key),
     ))(input)?;
-    dbg!(input);
     let (input, event_mod) = opt(alt((
         value(EventModifier::Tap, tag("'")),
         value(EventModifier::Hold, tag("_")),
@@ -192,9 +193,6 @@ fn action(input: &str) -> IResult<&str, JSMAction> {
         value(EventModifier::Release, tag("/")),
         value(EventModifier::Turbo, tag("+")),
     )))(input)?;
-    dbg!(input);
-    dbg!(action_mod);
-    dbg!(event_mod);
     Ok((
         input,
         JSMAction {
@@ -211,7 +209,6 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
     let (input, _) = tag("=")(input)?;
     let (input, _) = space0(input)?;
     let (input, actions) = separated_list1(space1, action)(input)?;
-    dbg!(&actions);
     Ok((input, Cmd::Map(key, actions)))
 }
 
@@ -349,7 +346,8 @@ fn special(input: &str) -> IResult<&str, SpecialKey> {
     let parse = |key, tag| value(key, tag_no_case(tag));
     alt((
         parse(None, "none"),
-        parse(Gyro, "gyro"),
+        parse(GyroOn, "gyro_on"),
+        parse(GyroOff, "gyro_off"),
         parse(GyroInvertX(true), "gyro_inv_x"),
         parse(GyroInvertY(true), "gyro_inv_y"),
         parse(GyroTrackBall(true), "gyro_trackball"),

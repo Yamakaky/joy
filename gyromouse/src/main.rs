@@ -85,7 +85,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     let mut mapping = Buttons::new();
     parse_file(
-        "LLeft = a\nLRight = d\nLUp = w\nLDown  =s\nR =x\nR,E= y\nS =a\nE = none gyro\\",
+        "LLeft = a\nLRight = d\nLUp = w\nLDown  =s\nR =x\nR,E= y\nS =a\nE = none gyro_off\\",
         &mut mapping,
     )?;
     let mut last_buttons = EnumMap::new();
@@ -103,7 +103,13 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
         for action in mapping.tick(Instant::now()).drain(..) {
             match action {
-                ExtAction::ToggleGyro(gyro) => gyro_enabled = gyro.apply(gyro_enabled),
+                ExtAction::GyroOn(ClickType::Press) | ExtAction::GyroOff(ClickType::Release) => {
+                    gyro_enabled = true
+                }
+                ExtAction::GyroOn(ClickType::Release) | ExtAction::GyroOff(ClickType::Press) => {
+                    gyro_enabled = false
+                }
+                ExtAction::GyroOn(_) | ExtAction::GyroOff(_) => unimplemented!(),
                 ExtAction::KeyPress(c, ClickType::Click) => enigo.key_click(c),
                 ExtAction::KeyPress(c, ClickType::Press) => enigo.key_down(c),
                 ExtAction::KeyPress(c, ClickType::Release) => enigo.key_up(c),

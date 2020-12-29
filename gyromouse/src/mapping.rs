@@ -16,7 +16,8 @@ pub enum Action {
 pub enum ExtAction {
     KeyPress(Key, ClickType),
     MousePress(MouseButton, ClickType),
-    ToggleGyro(ClickType),
+    GyroOn(ClickType),
+    GyroOff(ClickType),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
