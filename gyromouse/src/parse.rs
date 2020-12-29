@@ -13,15 +13,20 @@ use nom::{
 };
 
 use crate::{
-    mapping::{Action, Buttons, Layer, MapKey, VirtualKey},
-    ClickType, ExtAction,
+    mapping::{Action, Buttons, ExtAction, Layer, MapKey, VirtualKey},
+    ClickType,
 };
 
 fn convert_action_mod(
     action: &JSMAction,
     action_mod: Option<ActionModifier>,
     default: ClickType,
-) -> Option<Action<ExtAction>> {
+) -> Option<Action> {
+    if let ActionType::Special(s) = action.action {
+        if s == SpecialKey::None {
+            return None;
+        }
+    }
     let action_type = match action_mod {
         None => default,
         Some(ActionModifier::Toggle) => ClickType::Toggle,
@@ -30,7 +35,7 @@ fn convert_action_mod(
     Some(Action::Ext((action.action, action_type).into()))
 }
 
-fn map_key(layer: &mut Layer<ExtAction>, actions: &Vec<JSMAction>) {
+fn map_key(layer: &mut Layer, actions: &Vec<JSMAction>) {
     use EventModifier::*;
 
     let mut first = true;
@@ -47,13 +52,13 @@ fn map_key(layer: &mut Layer<ExtAction>, actions: &Vec<JSMAction>) {
             (Hold, modifier) => {
                 layer.on_hold_down = convert_action_mod(action, modifier, ClickType::Press);
                 if modifier.is_none() {
-                    layer.on_hold_down = convert_action_mod(action, modifier, ClickType::Release);
+                    layer.on_hold_up = convert_action_mod(action, modifier, ClickType::Release);
                 }
             }
             (Start, modifier) => {
                 layer.on_down = convert_action_mod(action, modifier, ClickType::Press);
                 if modifier.is_none() {
-                    layer.on_down = convert_action_mod(action, modifier, ClickType::Release);
+                    layer.on_up = convert_action_mod(action, modifier, ClickType::Release);
                 }
             }
             (Release, None) => unreachable!(),
@@ -66,7 +71,7 @@ fn map_key(layer: &mut Layer<ExtAction>, actions: &Vec<JSMAction>) {
     }
 }
 
-pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons<ExtAction>) -> IResult<&'a str, ()> {
+pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons) -> IResult<&'a str, ()> {
     for cmd in jsm_parse(content)?.1 {
         match cmd {
             Cmd::Map(Key::Simple(key), ref actions) => map_key(mapping.get(key, 0), actions),
@@ -117,6 +122,8 @@ impl From<(ActionType, ClickType)> for ExtAction {
         match a {
             ActionType::Key(k) => ExtAction::KeyPress(k, b),
             ActionType::Mouse(k) => ExtAction::MousePress(k, b),
+            ActionType::Special(SpecialKey::Gyro) => ExtAction::ToggleGyro(b),
+            ActionType::Special(SpecialKey::None) => unimplemented!(),
             _ => unimplemented!(),
         }
     }
@@ -129,9 +136,10 @@ pub enum Key {
     Chorded(MapKey, MapKey),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum SpecialKey {
-    GyroEnable(ClickType),
+    None,
+    Gyro,
     GyroInvertX(bool),
     GyroInvertY(bool),
     GyroTrackBall(bool),
@@ -168,21 +176,25 @@ fn keys(input: &str) -> IResult<&str, Key> {
 
 fn action(input: &str) -> IResult<&str, JSMAction> {
     let (input, action_mod) = opt(alt((
-        value(ActionModifier::Toggle, tag_no_case("^")),
-        value(ActionModifier::Instant, tag_no_case("!")),
+        value(ActionModifier::Toggle, tag("^")),
+        value(ActionModifier::Instant, tag("!")),
     )))(input)?;
     let (input, action) = alt((
-        map(keyboardkey, ActionType::Key),
-        map(mousekey, ActionType::Mouse),
         map(special, ActionType::Special),
+        map(mousekey, ActionType::Mouse),
+        map(keyboardkey, ActionType::Key),
     ))(input)?;
+    dbg!(input);
     let (input, event_mod) = opt(alt((
-        value(EventModifier::Tap, tag_no_case("'")),
-        value(EventModifier::Hold, tag_no_case("_")),
-        value(EventModifier::Start, tag_no_case("\\")),
-        value(EventModifier::Release, tag_no_case("/")),
-        value(EventModifier::Turbo, tag_no_case("+")),
+        value(EventModifier::Tap, tag("'")),
+        value(EventModifier::Hold, tag("_")),
+        value(EventModifier::Start, tag("\\")),
+        value(EventModifier::Release, tag("/")),
+        value(EventModifier::Turbo, tag("+")),
     )))(input)?;
+    dbg!(input);
+    dbg!(action_mod);
+    dbg!(event_mod);
     Ok((
         input,
         JSMAction {
@@ -199,6 +211,7 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
     let (input, _) = tag("=")(input)?;
     let (input, _) = space0(input)?;
     let (input, actions) = separated_list1(space1, action)(input)?;
+    dbg!(&actions);
     Ok((input, Cmd::Map(key, actions)))
 }
 
@@ -335,9 +348,8 @@ fn special(input: &str) -> IResult<&str, SpecialKey> {
     use SpecialKey::*;
     let parse = |key, tag| value(key, tag_no_case(tag));
     alt((
-        parse(GyroEnable(ClickType::Click), "gyro_on"),
-        parse(GyroEnable(ClickType::Release), "gyro_off"),
-        parse(GyroEnable(ClickType::Toggle), "gyro_toggle"),
+        parse(None, "none"),
+        parse(Gyro, "gyro"),
         parse(GyroInvertX(true), "gyro_inv_x"),
         parse(GyroInvertY(true), "gyro_inv_y"),
         parse(GyroTrackBall(true), "gyro_trackball"),

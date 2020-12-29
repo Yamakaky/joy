@@ -1,12 +1,22 @@
+use enigo::{Key, MouseButton};
 use enum_map::{Enum, EnumMap};
 use hid_gamepad::sys::JoyKey;
 use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
 
+use crate::ClickType;
+
 #[derive(Debug, Copy, Clone)]
-pub enum Action<ExtAction> {
+pub enum Action {
     Layer(u8, bool),
     Ext(ExtAction),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ExtAction {
+    KeyPress(Key, ClickType),
+    MousePress(MouseButton, ClickType),
+    ToggleGyro(ClickType),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -34,17 +44,17 @@ impl Default for KeyStatus {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Layer<Ext> {
-    pub on_down: Option<Action<Ext>>,
-    pub on_up: Option<Action<Ext>>,
+pub struct Layer {
+    pub on_down: Option<Action>,
+    pub on_up: Option<Action>,
 
-    pub on_click: Option<Action<Ext>>,
-    pub on_double_click: Option<Action<Ext>>,
-    pub on_hold_down: Option<Action<Ext>>,
-    pub on_hold_up: Option<Action<Ext>>,
+    pub on_click: Option<Action>,
+    pub on_double_click: Option<Action>,
+    pub on_hold_down: Option<Action>,
+    pub on_hold_up: Option<Action>,
 }
 
-impl<Ext> Layer<Ext> {
+impl Layer {
     fn is_good(&self) -> bool {
         self.on_down.is_some()
             || self.on_up.is_some()
@@ -59,7 +69,7 @@ impl<Ext> Layer<Ext> {
     }
 }
 
-impl<Ext> Default for Layer<Ext> {
+impl Default for Layer {
     fn default() -> Self {
         Layer {
             on_click: None,
@@ -168,8 +178,8 @@ impl From<VirtualKey> for MapKey {
 }
 
 #[derive(Debug, Clone)]
-pub struct Buttons<ExtAction> {
-    bindings: EnumMap<MapKey, HashMap<u8, Layer<ExtAction>>>,
+pub struct Buttons {
+    bindings: EnumMap<MapKey, HashMap<u8, Layer>>,
     state: EnumMap<MapKey, KeyState>,
     current_layers: Vec<u8>,
 
@@ -179,7 +189,7 @@ pub struct Buttons<ExtAction> {
     pub double_click_interval: Duration,
 }
 
-impl<Ext: Copy> Buttons<Ext> {
+impl Buttons {
     pub fn new() -> Self {
         Buttons {
             bindings: EnumMap::new(),
@@ -191,11 +201,11 @@ impl<Ext: Copy> Buttons<Ext> {
         }
     }
 
-    pub fn get(&mut self, key: MapKey, layer: u8) -> &mut Layer<Ext> {
+    pub fn get(&mut self, key: MapKey, layer: u8) -> &mut Layer {
         self.bindings[key].entry(layer).or_default()
     }
 
-    pub fn tick(&mut self, now: Instant) -> &mut Vec<Ext> {
+    pub fn tick(&mut self, now: Instant) -> &mut Vec<ExtAction> {
         for key in (0..<MapKey as Enum<KeyStatus>>::POSSIBLE_VALUES)
             .map(<MapKey as Enum<KeyStatus>>::from_usize)
         {
@@ -299,13 +309,17 @@ impl<Ext: Copy> Buttons<Ext> {
         }
     }
 
-    fn maybe_click(binding: &Layer<Ext>, current_layers: &mut Vec<u8>, ext_actions: &mut Vec<Ext>) {
+    fn maybe_click(
+        binding: &Layer,
+        current_layers: &mut Vec<u8>,
+        ext_actions: &mut Vec<ExtAction>,
+    ) {
         if let Some(ref click) = binding.on_click {
             Self::action(click, current_layers, ext_actions);
         }
     }
 
-    fn find_binding(&self, key: MapKey) -> Layer<Ext> {
+    fn find_binding(&self, key: MapKey) -> Layer {
         let layers = &self.bindings[key];
         for i in self.current_layers.iter().rev() {
             if let Some(layer) = layers.get(&i) {
@@ -317,7 +331,7 @@ impl<Ext: Copy> Buttons<Ext> {
         Layer::default()
     }
 
-    fn action(action: &Action<Ext>, current_layers: &mut Vec<u8>, ext_actions: &mut Vec<Ext>) {
+    fn action(action: &Action, current_layers: &mut Vec<u8>, ext_actions: &mut Vec<ExtAction>) {
         match *action {
             Action::Layer(l, true) => {
                 if current_layers.contains(&l) {

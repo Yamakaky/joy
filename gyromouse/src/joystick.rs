@@ -1,9 +1,6 @@
 use cgmath::{AbsDiffEq, Deg, InnerSpace, Rad, Vector2};
 
-use crate::{
-    mapping::{Buttons, VirtualKey},
-    ExtAction,
-};
+use crate::mapping::{Buttons, VirtualKey};
 
 pub struct CameraStick {
     deadzone: f64,
@@ -67,7 +64,7 @@ impl ButtonStick {
         }
     }
 
-    pub fn handle(&mut self, stick: Vector2<f64>, bindings: &mut Buttons<ExtAction>) {
+    pub fn handle(&mut self, stick: Vector2<f64>, bindings: &mut Buttons) {
         let amp = stick.magnitude();
         let amp_zones = (amp - self.deadzone) / (1. - self.deadzone);
         let amp_clamped = amp_zones.max(0.).min(1.);

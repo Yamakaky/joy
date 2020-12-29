@@ -6,7 +6,7 @@ mod parse;
 use std::time::{Duration, Instant};
 
 use cgmath::{vec2, InnerSpace, Vector2, Zero};
-use enigo::{Enigo, Key, KeyboardControllable, MouseButton, MouseControllable};
+use enigo::{Enigo, KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
 use hid_gamepad::sys::{GamepadDevice, JoyKey, KeyStatus};
@@ -19,15 +19,8 @@ use joycon::{
     JoyCon,
 };
 use joystick::{ButtonStick, CameraStick};
-use mapping::Buttons;
+use mapping::{Buttons, ExtAction};
 use parse::parse_file;
-
-#[derive(Debug, Copy, Clone)]
-pub enum ExtAction {
-    KeyPress(Key, ClickType),
-    MousePress(MouseButton, ClickType),
-    ToggleGyro(ClickType),
-}
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -40,8 +33,8 @@ pub enum ClickType {
 impl ClickType {
     pub fn apply(self, val: bool) -> bool {
         match self {
-            ClickType::Press => true,
-            ClickType::Release => false,
+            ClickType::Press => false,
+            ClickType::Release => true,
             ClickType::Click => unimplemented!(),
             ClickType::Toggle => !val,
         }
@@ -92,7 +85,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     let mut mapping = Buttons::new();
     parse_file(
-        "LLeft = a\nLRight = d\nLUp = w\nLDown  =s\nR =x\nR,E= y\nS =a",
+        "LLeft = a\nLRight = d\nLUp = w\nLDown  =s\nR =x\nR,E= y\nS =a\nE = none gyro\\",
         &mut mapping,
     )?;
     let mut last_buttons = EnumMap::new();
@@ -170,11 +163,7 @@ macro_rules! diff {
     };
 }
 
-fn diff(
-    mapping: &mut Buttons<ExtAction>,
-    old: &EnumMap<JoyKey, KeyStatus>,
-    new: &EnumMap<JoyKey, KeyStatus>,
-) {
+fn diff(mapping: &mut Buttons, old: &EnumMap<JoyKey, KeyStatus>, new: &EnumMap<JoyKey, KeyStatus>) {
     use JoyKey::*;
 
     let now = Instant::now();
