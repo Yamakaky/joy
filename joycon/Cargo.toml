@@ -13,3 +13,4 @@ hidapi = { version = "1.2", default-features = false, features = ["linux-static-
 image = { version = "0.23", optional = false, default-features = false }
 joycon-sys = { path = "../joycon-sys" }
 hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
+enum-map = "0.6.4"

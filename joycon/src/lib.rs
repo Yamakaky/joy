@@ -8,7 +8,7 @@ use anyhow::Result;
 pub use calibration::*;
 use cgmath::{Deg, Euler};
 pub use hid::*;
-use hid_gamepad_sys::{GamepadDevice, GamepadDriver, Motion};
+use hid_gamepad_sys::{GamepadDevice, GamepadDriver, JoyKey, Motion};
 use hidapi::HidApi;
 pub use imu_handler::IMU;
 pub use joycon_sys;
@@ -47,18 +47,42 @@ impl GamepadDevice for JoyCon {
 
 impl From<Report> for hid_gamepad_sys::Report {
     fn from(report: Report) -> Self {
-        let mut out = Self::new(IMU_SAMPLES_PER_SECOND);
-        out.left_joystick = report.left_stick;
-        out.right_joystick = report.right_stick;
-        out.motion = report
-            .imu
-            .unwrap()
-            .iter()
-            .map(|x| Motion {
-                acceleration: x.accel,
-                rotation_speed: Euler::new(Deg(x.gyro.y), Deg(x.gyro.z), Deg(x.gyro.x)),
-            })
-            .collect();
-        out
+        let b = &report.buttons;
+        Self {
+            left_joystick: report.left_stick,
+            right_joystick: report.right_stick,
+            motion: report
+                .imu
+                .unwrap()
+                .iter()
+                .map(|x| Motion {
+                    acceleration: x.accel,
+                    rotation_speed: Euler::new(Deg(x.gyro.y), Deg(x.gyro.z), Deg(x.gyro.x)),
+                })
+                .collect(),
+            keys: enum_map::enum_map! {
+                JoyKey::Up => b.left.up().into(),
+                JoyKey::Down => b.left.down().into(),
+                JoyKey::Left => b.left.left().into(),
+                JoyKey::Right=> b.left.right().into(),
+                JoyKey::N => b.right.x().into(),
+                JoyKey::S => b.right.b().into(),
+                JoyKey::E => b.right.a().into(),
+                JoyKey::W => b.right.y().into(),
+                JoyKey::L=> b.left.l().into(),
+                JoyKey::R=> b.right.r().into(),
+                JoyKey::ZL => b.left.zl().into(),
+                JoyKey::ZR => b.right.zr().into(),
+                JoyKey::SL => (b.left.sl() | b.right.sl()).into(),
+                JoyKey::SR => (b.left.sr() | b.right.sr()).into(),
+                JoyKey::L3 => b.middle.lstick().into(),
+                JoyKey::R3 => b.middle.rstick().into(),
+                JoyKey::Minus => b.middle.minus().into(),
+                JoyKey::Plus => b.middle.plus().into(),
+                JoyKey::Capture => b.middle.capture().into(),
+                JoyKey::Home => b.middle.home().into(),
+            },
+            frequency: IMU_SAMPLES_PER_SECOND,
+        }
     }
 }

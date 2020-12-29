@@ -39,37 +39,38 @@ impl GamepadDevice for DS4 {
             ConnectionType::Bluetooth => &report.bt_full().unwrap().full,
             ConnectionType::USB => &report.usb_full().unwrap().full,
         };
-        let mut out = Report::new(DS4_REPORT_RATE);
-        out.left_joystick = full.base.left_stick.normalize();
-        out.right_joystick = full.base.right_stick.normalize();
-        out.motion = vec![Motion {
-            acceleration: full.accel.normalize(),
-            rotation_speed: full.gyro.normalize(),
-        }];
         let b = &full.base.buttons;
-        out.keys = enum_map::enum_map! {
-            JoyKey::Up => b.dpad().up().into(),
-            JoyKey::Down => b.dpad().down().into(),
-            JoyKey::Left => b.dpad().left().into(),
-            JoyKey::Right=> b.dpad().right().into(),
-            JoyKey::N => b.triangle().into(),
-            JoyKey::S => b.cross().into(),
-            JoyKey::E => b.circle().into(),
-            JoyKey::W => b.square().into(),
-            JoyKey::L=> b.l1().into(),
-            JoyKey::R=> b.r1().into(),
-            JoyKey::ZL => b.l2().into(),
-            JoyKey::ZR => b.r2().into(),
-            JoyKey::SL => KeyStatus::Released,
-            JoyKey::SR => KeyStatus::Released,
-            JoyKey::L3 => b.l3().into(),
-            JoyKey::R3 => b.r3().into(),
-            JoyKey::Minus => b.tpad().into(),
-            JoyKey::Plus => b.options().into(),
-            JoyKey::Capture => b.share().into(),
-            JoyKey::Home => b.ps().into(),
-        };
-        Ok(out)
+        Ok(Report {
+            left_joystick: full.base.left_stick.normalize(),
+            right_joystick: full.base.right_stick.normalize(),
+            motion: vec![Motion {
+                acceleration: full.accel.normalize(),
+                rotation_speed: full.gyro.normalize(),
+            }],
+            keys: enum_map::enum_map! {
+                JoyKey::Up => b.dpad().up().into(),
+                JoyKey::Down => b.dpad().down().into(),
+                JoyKey::Left => b.dpad().left().into(),
+                JoyKey::Right=> b.dpad().right().into(),
+                JoyKey::N => b.triangle().into(),
+                JoyKey::S => b.cross().into(),
+                JoyKey::E => b.circle().into(),
+                JoyKey::W => b.square().into(),
+                JoyKey::L=> b.l1().into(),
+                JoyKey::R=> b.r1().into(),
+                JoyKey::ZL => b.l2().into(),
+                JoyKey::ZR => b.r2().into(),
+                JoyKey::SL => KeyStatus::Released,
+                JoyKey::SR => KeyStatus::Released,
+                JoyKey::L3 => b.l3().into(),
+                JoyKey::R3 => b.r3().into(),
+                JoyKey::Minus => b.tpad().into(),
+                JoyKey::Plus => b.options().into(),
+                JoyKey::Capture => b.share().into(),
+                JoyKey::Home => b.ps().into(),
+            },
+            frequency: DS4_REPORT_RATE,
+        })
     }
 
     fn as_any(&mut self) -> &mut dyn std::any::Any {

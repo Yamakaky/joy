@@ -1,7 +1,7 @@
 use std::any::Any;
 
 use anyhow::Result;
-use cgmath::{Deg, Euler, Vector2, Vector3, Zero};
+use cgmath::{Deg, Euler, Vector2, Vector3};
 use enum_map::{Enum, EnumMap};
 use hidapi::{DeviceInfo, HidApi};
 
@@ -58,18 +58,6 @@ pub struct Report {
     pub right_joystick: Vector2<f64>,
     pub motion: Vec<Motion>,
     pub frequency: u32,
-}
-
-impl Report {
-    pub fn new(frequency: u32) -> Report {
-        Report {
-            keys: EnumMap::default(),
-            left_joystick: Vector2::zero(),
-            right_joystick: Vector2::zero(),
-            motion: Vec::new(),
-            frequency,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
