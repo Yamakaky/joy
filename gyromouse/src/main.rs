@@ -5,7 +5,7 @@ mod parse;
 
 use std::time::{Duration, Instant};
 
-use cgmath::{vec2, InnerSpace, Vector2, Zero};
+use cgmath::{vec2, Deg, Vector2, Zero};
 use enigo::{Enigo, KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
@@ -18,7 +18,7 @@ use joycon::{
     },
     JoyCon,
 };
-use joystick::{ButtonStick, CameraStick};
+use joystick::{ButtonStick, CameraStick, FlickStick};
 use mapping::{Buttons, ExtAction};
 use parse::parse_file;
 
@@ -97,7 +97,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
     )?;
     let mut last_buttons = EnumMap::new();
 
-    let mut lstick = ButtonStick::left(0.4);
+    let mut lstick = FlickStick::default();
     let mut _rstick = CameraStick::default();
     let mut rstick = ButtonStick::right(0.4);
 
@@ -105,11 +105,12 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     loop {
         let report = gamepad.recv()?;
+        let now = Instant::now();
 
         diff(&mut mapping, &last_buttons, &report.keys);
         last_buttons = report.keys;
 
-        for action in mapping.tick(Instant::now()).drain(..) {
+        for action in mapping.tick(now).drain(..) {
             match action {
                 ExtAction::GyroOn(ClickType::Press) | ExtAction::GyroOff(ClickType::Release) => {
                     gyro_enabled = true
@@ -129,7 +130,11 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
             }
         }
 
-        lstick.handle(report.left_joystick, &mut mapping);
+        let flick_angle = lstick.handle(report.left_joystick, now);
+        if flick_angle != Deg(0.) {
+            mouse_move(&mut enigo, vec2(flick_angle.0, 0.), &mut error_accumulator)
+        }
+
         let _offset = rstick.handle(report.right_joystick, &mut mapping);
         //if offset.magnitude() != 0. {
         //    dbg!(offset);

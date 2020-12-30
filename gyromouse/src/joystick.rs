@@ -1,4 +1,8 @@
-use cgmath::{AbsDiffEq, Deg, InnerSpace, Rad, Vector2};
+#![allow(dead_code)]
+
+use std::time::{Duration, Instant};
+
+use cgmath::{AbsDiffEq, Angle, Deg, InnerSpace, Rad, Vector2};
 
 use crate::mapping::{Buttons, VirtualKey};
 
@@ -38,6 +42,89 @@ impl CameraStick {
         let amp_clamped = amp_zones.max(0.).min(1.);
         let amp_exp = amp_clamped.powf(self.exp);
         self.sens_pps / 66. * (1. + self.current_speed) * stick.normalize_to(amp_exp)
+    }
+}
+
+#[derive(Debug)]
+enum FlickStickState {
+    Center,
+    Flicking {
+        flick_start: Instant,
+        last: Deg<f64>,
+        target: Deg<f64>,
+    },
+    Rotating {
+        old_rotation: Deg<f64>,
+    },
+}
+
+#[derive(Debug)]
+pub struct FlickStick {
+    flick_time: Duration,
+    threshold: f64,
+    state: FlickStickState,
+    do_rotate: bool,
+}
+
+impl Default for FlickStick {
+    fn default() -> Self {
+        FlickStick {
+            flick_time: Duration::from_millis(100),
+            threshold: 0.6,
+            state: FlickStickState::Center,
+            do_rotate: true,
+        }
+    }
+}
+
+impl FlickStick {
+    pub fn handle(&mut self, stick: Vector2<f64>, now: Instant) -> Deg<f64> {
+        match self.state {
+            _ if stick.magnitude() < self.threshold => {
+                self.state = FlickStickState::Center;
+                Deg(0.)
+            }
+            FlickStickState::Center => {
+                let target = stick.angle(Vector2::unit_y()).into();
+                self.state = FlickStickState::Flicking {
+                    flick_start: now,
+                    last: Deg(0.),
+                    target,
+                };
+                Deg(0.)
+            }
+            FlickStickState::Flicking {
+                flick_start,
+                ref mut last,
+                target,
+            } => {
+                let elapsed = now.duration_since(flick_start).as_secs_f64();
+                let max = self.flick_time.as_secs_f64() * target.0.abs() / 180.;
+                let dt_factor = elapsed / max;
+                let current_angle = target * dt_factor.min(1.);
+                let delta = current_angle - *last;
+                if dt_factor > 1. {
+                    self.state = FlickStickState::Rotating {
+                        old_rotation: current_angle,
+                    };
+                } else {
+                    *last = current_angle;
+                }
+                delta.normalize_signed()
+            }
+            FlickStickState::Rotating {
+                ref mut old_rotation,
+            } => {
+                if self.do_rotate {
+                    let angle = stick.angle(Vector2::unit_y()).into();
+                    let delta = angle - *old_rotation;
+                    *old_rotation = angle;
+                    delta.normalize_signed()
+                } else {
+                    Deg(0.)
+                }
+            }
+        }
     }
 }
 
