@@ -1,12 +1,13 @@
 mod gyromouse;
 mod joystick;
 mod mapping;
+mod mouse;
 mod parse;
 
 use std::time::{Duration, Instant};
 
-use cgmath::{vec2, Deg, Vector2, Zero};
-use enigo::{Enigo, KeyboardControllable, MouseControllable};
+use cgmath::{vec2, Vector2, Zero};
+use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
 use hid_gamepad::sys::{GamepadDevice, JoyKey, KeyStatus};
@@ -20,6 +21,7 @@ use joycon::{
 };
 use joystick::{ButtonStick, CameraStick, FlickStick};
 use mapping::{Buttons, ExtAction};
+use mouse::Mouse;
 use parse::parse_file;
 
 #[derive(Debug, Copy, Clone)]
@@ -78,10 +80,9 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
     }
 
     let mut gyromouse = GyroMouse::d2();
-    let mut enigo = Enigo::new();
+    let mut mouse = Mouse::new();
 
     const SMOOTH_RATE: bool = false;
-    let mut error_accumulator = Vector2::zero();
 
     let mut mapping = Buttons::new();
     parse_file(
@@ -99,7 +100,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     let mut lstick = FlickStick::default();
     let mut _rstick = CameraStick::default();
-    let mut rstick = ButtonStick::right(0.4);
+    let mut rstick = ButtonStick::right(true);
 
     let mut gyro_enabled = false;
 
@@ -119,21 +120,19 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
                     gyro_enabled = false
                 }
                 ExtAction::GyroOn(_) | ExtAction::GyroOff(_) => unimplemented!(),
-                ExtAction::KeyPress(c, ClickType::Click) => enigo.key_click(c),
-                ExtAction::KeyPress(c, ClickType::Press) => enigo.key_down(c),
-                ExtAction::KeyPress(c, ClickType::Release) => enigo.key_up(c),
+                ExtAction::KeyPress(c, ClickType::Click) => mouse.enigo().key_click(c),
+                ExtAction::KeyPress(c, ClickType::Press) => mouse.enigo().key_down(c),
+                ExtAction::KeyPress(c, ClickType::Release) => mouse.enigo().key_up(c),
                 ExtAction::KeyPress(_, ClickType::Toggle) => unimplemented!(),
-                ExtAction::MousePress(c, ClickType::Click) => enigo.mouse_click(c),
-                ExtAction::MousePress(c, ClickType::Press) => enigo.mouse_down(c),
-                ExtAction::MousePress(c, ClickType::Release) => enigo.mouse_up(c),
+                ExtAction::MousePress(c, ClickType::Click) => mouse.enigo().mouse_click(c),
+                ExtAction::MousePress(c, ClickType::Press) => mouse.enigo().mouse_down(c),
+                ExtAction::MousePress(c, ClickType::Release) => mouse.enigo().mouse_up(c),
                 ExtAction::MousePress(_, ClickType::Toggle) => unimplemented!(),
             }
         }
 
         let flick_angle = lstick.handle(report.left_joystick, now);
-        if flick_angle != Deg(0.) {
-            mouse_move(&mut enigo, vec2(flick_angle.0, 0.), &mut error_accumulator)
-        }
+        mouse.mouse_move_relative(vec2(flick_angle.0, 0.));
 
         let _offset = rstick.handle(report.right_joystick, &mut mapping);
         //if offset.magnitude() != 0. {
@@ -152,23 +151,13 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
                     if i > 0 {
                         std::thread::sleep(Duration::from_secs_f64(dt));
                     }
-                    mouse_move(&mut enigo, offset, &mut error_accumulator);
+                    mouse.mouse_move_relative(offset);
                 }
             }
             if SMOOTH_RATE {
-                mouse_move(&mut enigo, delta_position, &mut error_accumulator);
+                mouse.mouse_move_relative(delta_position);
             }
         }
-    }
-}
-
-// mouse movement is pixel perfect, so we keep track of the error.
-fn mouse_move(enigo: &mut Enigo, offset: Vector2<f64>, error_accumulator: &mut Vector2<f64>) {
-    let sum = offset + *error_accumulator;
-    let rounded = vec2(sum.x.round(), sum.y.round());
-    *error_accumulator = sum - rounded;
-    if rounded != Vector2::zero() {
-        enigo.mouse_move_relative(rounded.x as i32, -rounded.y as i32);
     }
 }
 
