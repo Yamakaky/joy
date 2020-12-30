@@ -19,7 +19,7 @@ use joycon::{
     },
     JoyCon,
 };
-use joystick::{ButtonStick, CameraStick, FlickStick};
+use joystick::*;
 use mapping::{Buttons, ExtAction};
 use mouse::Mouse;
 use parse::parse_file;
@@ -84,7 +84,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     const SMOOTH_RATE: bool = false;
 
-    let mut mapping = Buttons::new();
+    let mut bindings = Buttons::new();
     parse_file(
         "RLeft = left
         RRight = right
@@ -94,12 +94,11 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
         E = rmouse
         N = escape
         S = none gyro_on\\",
-        &mut mapping,
+        &mut bindings,
     )?;
     let mut last_buttons = EnumMap::new();
 
     let mut lstick = FlickStick::default();
-    let mut _rstick = CameraStick::default();
     let mut rstick = ButtonStick::right(true);
 
     let mut gyro_enabled = false;
@@ -108,10 +107,10 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
         let report = gamepad.recv()?;
         let now = Instant::now();
 
-        diff(&mut mapping, &last_buttons, &report.keys);
+        diff(&mut bindings, &last_buttons, &report.keys);
         last_buttons = report.keys;
 
-        for action in mapping.tick(now).drain(..) {
+        for action in bindings.tick(now).drain(..) {
             match action {
                 ExtAction::GyroOn(ClickType::Press) | ExtAction::GyroOff(ClickType::Release) => {
                     gyro_enabled = true
@@ -131,14 +130,8 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
             }
         }
 
-        let flick_angle = lstick.handle(report.left_joystick, now);
-        mouse.mouse_move_relative(vec2(flick_angle.0, 0.));
-
-        let _offset = rstick.handle(report.right_joystick, &mut mapping);
-        //if offset.magnitude() != 0. {
-        //    dbg!(offset);
-        //    mouse_move(&mut enigo, offset, &mut error_accumulator);
-        //}
+        lstick.handle(report.left_joystick, &mut bindings, &mut mouse, now);
+        rstick.handle(report.right_joystick, &mut bindings, &mut mouse, now);
 
         if gyro_enabled {
             let mut delta_position = Vector2::zero();

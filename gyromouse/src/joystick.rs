@@ -2,9 +2,22 @@
 
 use std::time::{Duration, Instant};
 
-use cgmath::{AbsDiffEq, Angle, Deg, InnerSpace, Rad, Vector2};
+use cgmath::{vec2, AbsDiffEq, Angle, Deg, InnerSpace, Rad, Vector2};
 
-use crate::mapping::{Buttons, VirtualKey};
+use crate::{
+    mapping::{Buttons, VirtualKey},
+    mouse::Mouse,
+};
+
+pub trait Stick {
+    fn handle(
+        &mut self,
+        stick: Vector2<f64>,
+        bindings: &mut Buttons,
+        mouse: &mut Mouse,
+        now: Instant,
+    );
+}
 
 pub struct CameraStick {
     deadzone: f64,
@@ -30,8 +43,14 @@ impl Default for CameraStick {
     }
 }
 
-impl CameraStick {
-    pub fn handle(&mut self, stick: Vector2<f64>) -> Vector2<f64> {
+impl Stick for CameraStick {
+    fn handle(
+        &mut self,
+        stick: Vector2<f64>,
+        _bindings: &mut Buttons,
+        mouse: &mut Mouse,
+        _now: Instant,
+    ) {
         let amp = stick.magnitude();
         let amp_zones = (amp - self.deadzone) / (self.fullzone - self.deadzone);
         if amp_zones >= 1. {
@@ -41,7 +60,9 @@ impl CameraStick {
         }
         let amp_clamped = amp_zones.max(0.).min(1.);
         let amp_exp = amp_clamped.powf(self.exp);
-        self.sens_pps / 66. * (1. + self.current_speed) * stick.normalize_to(amp_exp)
+        mouse.mouse_move_relative(
+            self.sens_pps / 66. * (1. + self.current_speed) * stick.normalize_to(amp_exp),
+        );
     }
 }
 
@@ -77,9 +98,15 @@ impl Default for FlickStick {
     }
 }
 
-impl FlickStick {
-    pub fn handle(&mut self, stick: Vector2<f64>, now: Instant) -> Deg<f64> {
-        match self.state {
+impl Stick for FlickStick {
+    fn handle(
+        &mut self,
+        stick: Vector2<f64>,
+        _bindings: &mut Buttons,
+        mouse: &mut Mouse,
+        now: Instant,
+    ) {
+        let offset = match self.state {
             _ if stick.magnitude() < self.threshold => {
                 self.state = FlickStickState::Center;
                 Deg(0.)
@@ -124,7 +151,8 @@ impl FlickStick {
                     Deg(0.)
                 }
             }
-        }
+        };
+        mouse.mouse_move_relative(vec2(offset.0, 0.));
     }
 }
 
@@ -156,8 +184,16 @@ impl ButtonStick {
             inner_ring,
         }
     }
+}
 
-    pub fn handle(&mut self, stick: Vector2<f64>, bindings: &mut Buttons) {
+impl Stick for ButtonStick {
+    fn handle(
+        &mut self,
+        stick: Vector2<f64>,
+        bindings: &mut Buttons,
+        _mouse: &mut Mouse,
+        _now: Instant,
+    ) {
         let amp = stick.magnitude();
         let amp_zones = (amp - self.deadzone) / (self.fullzone - self.deadzone);
         let amp_clamped = amp_zones.max(0.).min(1.);
