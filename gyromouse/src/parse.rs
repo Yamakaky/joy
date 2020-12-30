@@ -275,10 +275,12 @@ fn virtkey(input: &str) -> IResult<&str, VirtualKey> {
         value(VirtualKey::LDown, tag_no_case("LDown")),
         value(VirtualKey::LLeft, tag_no_case("LLeft")),
         value(VirtualKey::LRight, tag_no_case("LRight")),
+        value(VirtualKey::LRing, tag_no_case("LRing")),
         value(VirtualKey::RUp, tag_no_case("RUp")),
         value(VirtualKey::RDown, tag_no_case("RDown")),
         value(VirtualKey::RLeft, tag_no_case("RLeft")),
         value(VirtualKey::RRight, tag_no_case("RRight")),
+        value(VirtualKey::RRing, tag_no_case("RRing")),
     ))(input)
 }
 

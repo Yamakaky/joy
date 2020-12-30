@@ -36,6 +36,10 @@ impl KeyStatus {
             KeyStatus::Up | KeyStatus::DoubleUp => false,
         }
     }
+
+    pub fn is_up(self) -> bool {
+        !self.is_down()
+    }
 }
 
 impl Default for KeyStatus {
@@ -104,10 +108,12 @@ pub enum VirtualKey {
     LDown,
     LLeft,
     LRight,
+    LRing,
     RUp,
     RDown,
     RLeft,
     RRight,
+    RRing,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -267,7 +273,7 @@ impl Buttons {
 
     pub fn key_up<K: Into<MapKey>>(&mut self, key: K, now: Instant) {
         let key = key.into();
-        if !self.state[key].status.is_down() {
+        if self.state[key].status.is_up() {
             return;
         }
         let binding = self.find_binding(key);

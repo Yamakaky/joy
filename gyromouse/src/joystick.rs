@@ -19,7 +19,7 @@ pub struct CameraStick {
 impl Default for CameraStick {
     fn default() -> Self {
         CameraStick {
-            deadzone: 0.1,
+            deadzone: 0.15,
             fullzone: 0.9,
             sens_pps: 1000.,
             exp: 2.,
@@ -130,30 +130,36 @@ impl FlickStick {
 
 pub struct ButtonStick {
     deadzone: f64,
+    fullzone: f64,
     left: bool,
     angle: Deg<f64>,
+    inner_ring: bool,
 }
 
 impl ButtonStick {
-    pub fn left(deadzone: f64) -> Self {
+    pub fn left(inner_ring: bool) -> Self {
         Self {
-            deadzone,
+            deadzone: 0.15,
+            fullzone: 0.9,
             left: true,
             angle: Deg(30.),
+            inner_ring,
         }
     }
 
-    pub fn right(deadzone: f64) -> Self {
+    pub fn right(inner_ring: bool) -> Self {
         Self {
-            deadzone,
+            deadzone: 0.15,
+            fullzone: 0.9,
             left: false,
             angle: Deg(30.),
+            inner_ring,
         }
     }
 
     pub fn handle(&mut self, stick: Vector2<f64>, bindings: &mut Buttons) {
         let amp = stick.magnitude();
-        let amp_zones = (amp - self.deadzone) / (1. - self.deadzone);
+        let amp_zones = (amp - self.deadzone) / (self.fullzone - self.deadzone);
         let amp_clamped = amp_zones.max(0.).min(1.);
         let stick = stick.normalize_to(amp_clamped);
         let now = std::time::Instant::now();
@@ -166,6 +172,19 @@ impl ButtonStick {
         let angle_d = stick.angle(-Vector2::unit_y());
 
         if amp_clamped > 0. {
+            bindings.key(
+                if self.left {
+                    VirtualKey::LRing
+                } else {
+                    VirtualKey::RRing
+                },
+                if self.inner_ring {
+                    amp_clamped < 1.
+                } else {
+                    amp_clamped >= 1.
+                },
+                now,
+            );
             bindings.key(
                 if self.left {
                     VirtualKey::LRight
