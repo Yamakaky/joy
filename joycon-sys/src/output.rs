@@ -49,7 +49,7 @@ impl OutputReport {
         });
         (
             SubcommandRequest {
-                subcommand_id: SubcommandId::SetMCUConf,
+                subcommand_id: SubcommandId::SetMCUConf.into(),
                 u: SubcommandRequestUnion { mcu_cmd },
             }
             .into(),
@@ -93,6 +93,12 @@ impl OutputReport {
         }
     }
 
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        unsafe {
+            std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, std::mem::size_of_val(self))
+        }
+    }
+
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_request(&self) -> &MCURequest {
         &self.u.mcu_request
@@ -107,7 +113,7 @@ impl OutputReport {
 impl Default for OutputReport {
     fn default() -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::RequestDeviceInfo,
+            subcommand_id: SubcommandId::RequestDeviceInfo.into(),
             u: SubcommandRequestUnion { nothing: () },
         }
         .into()
@@ -164,38 +170,38 @@ union OutputReportUnion {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct SubcommandRequest {
-    subcommand_id: SubcommandId,
+    subcommand_id: RawId<SubcommandId>,
     u: SubcommandRequestUnion,
 }
 
 impl SubcommandRequest {
     pub fn id(&self) -> SubcommandId {
-        self.subcommand_id
+        self.subcommand_id.try_into().unwrap()
     }
     pub fn set_imu_enabled(imu_enabled: bool) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::EnableIMU,
+            subcommand_id: SubcommandId::EnableIMU.into(),
             u: SubcommandRequestUnion { imu_enabled },
         }
     }
 
     pub fn set_input_report_mode(input_report_mode: InputReportId) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SetInputReportMode,
+            subcommand_id: SubcommandId::SetInputReportMode.into(),
             u: SubcommandRequestUnion { input_report_mode },
         }
     }
 
     pub fn request_device_info() -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::RequestDeviceInfo,
+            subcommand_id: SubcommandId::RequestDeviceInfo.into(),
             u: SubcommandRequestUnion { nothing: () },
         }
     }
 
     pub fn set_mcu_mode(mcu_mode: MCUMode) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SetMCUState,
+            subcommand_id: SubcommandId::SetMCUState.into(),
             u: SubcommandRequestUnion { mcu_mode },
         }
     }
@@ -204,7 +210,7 @@ impl SubcommandRequest {
 impl From<MCUCommand> for SubcommandRequest {
     fn from(mcu_cmd: MCUCommand) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SetMCUConf,
+            subcommand_id: SubcommandId::SetMCUConf.into(),
             u: SubcommandRequestUnion { mcu_cmd },
         }
     }
@@ -213,12 +219,20 @@ impl From<MCUCommand> for SubcommandRequest {
 impl fmt::Debug for SubcommandRequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("SubcommandRequest");
-        match self.subcommand_id {
-            SubcommandId::SetInputReportMode => {
-                out.field("subcommand", unsafe { &self.u.input_report_mode })
+        match self.subcommand_id.try_into() {
+            Some(SubcommandId::SetInputReportMode) => {
+                out.field("report_mode", unsafe { &self.u.input_report_mode })
             }
-            SubcommandId::SetMCUConf => out.field("subcommand", unsafe { &self.u.mcu_cmd }),
-            subcmd => out.field("subcommand", &subcmd),
+            Some(SubcommandId::SetMCUConf) => out.field("subcommand", unsafe { &self.u.mcu_cmd }),
+            Some(SubcommandId::SPIRead) => out.field("subcommand", unsafe { &self.u.spi_read }),
+            Some(SubcommandId::EnableIMU) => {
+                out.field("enable_imu", unsafe { &self.u.imu_enabled })
+            }
+            Some(SubcommandId::SetMCUState) => out.field("mcu_state", unsafe { &self.u.mcu_mode }),
+            Some(subcmd) => out.field("subcommand", &subcmd),
+            None => out
+                .field("id", &self.subcommand_id)
+                .field("raw", unsafe { &self.u.raw }),
         };
         out.finish()
     }
@@ -324,12 +338,13 @@ union SubcommandRequestUnion {
     spi_read: SPIReadRequest,
     spi_write: SPIWriteRequest,
     imu_sensitivity: crate::imu::Sensitivity,
+    raw: [u8; 0x30],
 }
 
 impl From<crate::imu::Sensitivity> for SubcommandRequest {
     fn from(imu_sensitivity: crate::imu::Sensitivity) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SetIMUSens,
+            subcommand_id: SubcommandId::SetIMUSens.into(),
             u: SubcommandRequestUnion { imu_sensitivity },
         }
     }
@@ -338,7 +353,7 @@ impl From<crate::imu::Sensitivity> for SubcommandRequest {
 impl From<SPIReadRequest> for SubcommandRequest {
     fn from(spi_read: SPIReadRequest) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SPIRead,
+            subcommand_id: SubcommandId::SPIRead.into(),
             u: SubcommandRequestUnion { spi_read },
         }
     }
@@ -347,7 +362,7 @@ impl From<SPIReadRequest> for SubcommandRequest {
 impl From<SPIWriteRequest> for SubcommandRequest {
     fn from(spi_write: SPIWriteRequest) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SPIWrite,
+            subcommand_id: SubcommandId::SPIWrite.into(),
             u: SubcommandRequestUnion { spi_write },
         }
     }
@@ -356,7 +371,7 @@ impl From<SPIWriteRequest> for SubcommandRequest {
 impl From<light::PlayerLights> for SubcommandRequest {
     fn from(player_lights: light::PlayerLights) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SetPlayerLights,
+            subcommand_id: SubcommandId::SetPlayerLights.into(),
             u: SubcommandRequestUnion { player_lights },
         }
     }
@@ -365,7 +380,7 @@ impl From<light::PlayerLights> for SubcommandRequest {
 impl From<light::HomeLight> for SubcommandRequest {
     fn from(home_light: light::HomeLight) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::SetHomeLight,
+            subcommand_id: SubcommandId::SetHomeLight.into(),
             u: SubcommandRequestUnion { home_light },
         }
     }
