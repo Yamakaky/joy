@@ -30,6 +30,8 @@ pub enum SubcommandId {
     BluetoothManualPairing = 0x01,
     RequestDeviceInfo = 0x02,
     SetInputReportMode = 0x03,
+    _TriggerButtonsElapsedTime = 0x04,
+    _SetShipmentLowPowerState = 0x08,
     SPIRead = 0x10,
     SPIWrite = 0x11,
     SetMCUConf = 0x21,
@@ -38,6 +40,7 @@ pub enum SubcommandId {
     SetHomeLight = 0x38,
     EnableIMU = 0x40,
     SetIMUSens = 0x41,
+    _EnableVibration = 0x48,
 }
 
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
