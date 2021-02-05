@@ -10,11 +10,15 @@ use joycon::{
             ControllerColor, SPIRange, SensorCalibration, SticksCalibration, UserSensorCalibration,
             UserSticksCalibration,
         },
-        NINTENDO_VENDOR_ID,
+        InputReport, OutputReport, NINTENDO_VENDOR_ID,
     },
     JoyCon,
 };
-use std::{fs::OpenOptions, io::Write, time::Duration};
+use std::{
+    fs::OpenOptions,
+    io::{BufRead, Write},
+    time::Duration,
+};
 use std::{thread::sleep, time::Instant};
 
 #[derive(Clap)]
@@ -31,6 +35,7 @@ enum SubCommand {
     Monitor,
     Dump,
     Restore,
+    Decode,
 }
 
 #[derive(Clap)]
@@ -67,6 +72,10 @@ struct SetColor {
 
 fn main() -> Result<()> {
     let opts = Opts::parse();
+
+    if let SubCommand::Decode = opts.subcmd {
+        return decode();
+    }
 
     let api = HidApi::new()?;
     if let Some(device_info) = api
@@ -109,6 +118,7 @@ fn main() -> Result<()> {
             SubCommand::Monitor => monitor(&mut joycon)?,
             SubCommand::Dump => dump(&mut joycon)?,
             SubCommand::Restore => restore(&mut joycon)?,
+            SubCommand::Decode => unreachable!(),
         }
     } else {
         eprintln!("No device found");
@@ -397,4 +407,25 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
             println!("Acceleration: {:?}", last_acc);
         }
     }
+}
+
+fn decode() -> anyhow::Result<()> {
+    let stdin = std::io::stdin();
+    for line in stdin.lock().lines() {
+        let mut line = line?;
+        let hex = line.split_off(4);
+        let header = line;
+        let hex = hex::decode(&hex)?;
+        if header.chars().next().unwrap() == '>' {
+            let mut report = InputReport::new();
+            report.as_bytes_mut()[..hex.len()].copy_from_slice(&hex);
+            println!("{:?}", report);
+        } else {
+            let mut report = OutputReport::default();
+            report.as_bytes_mut()[..hex.len()].copy_from_slice(&hex);
+            println!("{:?}", report);
+        }
+    }
+
+    Ok(())
 }
