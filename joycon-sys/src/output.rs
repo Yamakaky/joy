@@ -202,7 +202,9 @@ impl SubcommandRequest {
     pub fn set_mcu_mode(mcu_mode: MCUMode) -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUState.into(),
-            u: SubcommandRequestUnion { mcu_mode },
+            u: SubcommandRequestUnion {
+                mcu_mode: mcu_mode.into(),
+            },
         }
     }
 }
@@ -333,7 +335,7 @@ union SubcommandRequestUnion {
     input_report_mode: InputReportId,
     player_lights: light::PlayerLights,
     home_light: light::HomeLight,
-    mcu_mode: MCUMode,
+    mcu_mode: RawId<MCUMode>,
     mcu_cmd: MCUCommand,
     spi_read: SPIReadRequest,
     spi_write: SPIWriteRequest,

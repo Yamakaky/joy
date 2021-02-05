@@ -137,7 +137,7 @@ pub struct MCUCommand {
 impl MCUCommand {
     pub fn set_mcu_mode(mode: MCUMode) -> Self {
         let mut u = MCUCommandUnion::new();
-        u.mcu_mode = mode;
+        u.mcu_mode = mode.into();
         MCUCommand {
             cmd_id: MCUCommandId::ConfigureMCU,
             subcmd_id: MCUSubCommandId::SetMCUMode,
@@ -196,7 +196,7 @@ impl fmt::Debug for MCUCommand {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 union MCUCommandUnion {
-    mcu_mode: MCUMode,
+    mcu_mode: RawId<MCUMode>,
     regs: MCURegisters,
     crc: MCUCommandCRC,
     ir_mode: MCUIRModeData,
@@ -238,6 +238,7 @@ impl MCUCommandCRC {
 pub enum MCUMode {
     Suspend = 0,
     Standby = 1,
+    MaybeRingcon = 3,
     NFC = 4,
     IR = 5,
     MaybeFWUpdate = 6,
@@ -254,20 +255,20 @@ pub enum MCURequestId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCURequest {
-    id: MCURequestId,
+    id: RawId<MCURequestId>,
     u: MCURequestUnion,
 }
 
 impl MCURequest {
     pub fn id(&self) -> MCURequestId {
-        self.id
+        self.id.try_into().unwrap()
     }
     pub fn get_mcu_status() -> Self {
         let mut u = MCURequestUnion::new();
         u.nothing = ();
         // no crc with u.nothing
         MCURequest {
-            id: MCURequestId::GetMCUStatus,
+            id: MCURequestId::GetMCUStatus.into(),
             u,
         }
     }
@@ -286,7 +287,7 @@ impl From<IRRequest> for MCURequest {
         u.ir_request = ir_request;
         // no crc with u.nothing
         MCURequest {
-            id: MCURequestId::GetIRData,
+            id: MCURequestId::GetIRData.into(),
             u,
         }
         .compute_crc(ir_request.id())

@@ -145,7 +145,7 @@ pub struct MCURegisters {
 pub struct MCUSetReg {
     pub cmd_id: MCUCommandId,
     pub subcmd_id: MCUSubCommandId,
-    pub mode: MCUMode,
+    pub mode: RawId<MCUMode>,
 }
 
 #[cfg(test)]
