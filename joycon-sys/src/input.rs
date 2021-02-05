@@ -455,8 +455,12 @@ impl fmt::Debug for SubcommandReply {
             Some(SubcommandId::RequestDeviceInfo) => {
                 out.field("device_info", unsafe { &self.u.device_info })
             }
-            Some(subcmd) => out.field("subcommand", &subcmd),
-            None => out.field("subcommand_id", &self.subcommand_id),
+            Some(subcmd) => out
+                .field("subcommand", &subcmd)
+                .field("raw", unsafe { &self.u.raw }),
+            None => out
+                .field("subcommand_id", &self.subcommand_id)
+                .field("raw", unsafe { &self.u.raw }),
         };
         out.finish()
     }
@@ -495,6 +499,7 @@ union SubcommandReplyUnion {
     spi_read: SPIReadResult,
     spi_write: SPIWriteResult,
     ir_status: (RawId<MCUReportId>, IRStatus),
+    raw: [u8; 8],
 }
 
 #[repr(packed)]

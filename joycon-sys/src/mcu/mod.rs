@@ -184,6 +184,9 @@ impl fmt::Debug for MCUCommand {
             (MCUCommandId::ConfigureIR, MCUSubCommandId::WriteIRRegisters) => {
                 out.field("cmd", unsafe { &self.u.regs })
             }
+            (MCUCommandId::ConfigureMCU, MCUSubCommandId::SetMCUMode) => {
+                out.field("set_mcu_mode", unsafe { &self.u.mcu_mode })
+            }
             ids => out.field("subcommand", &ids),
         };
         out.finish()
