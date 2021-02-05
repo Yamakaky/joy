@@ -197,12 +197,17 @@ bitfield::bitfield! {
 #[derive(Debug, Copy, Clone, FromPrimitive)]
 pub enum DeviceType {
     ProController = 0,
+    // TODO: present when using the joycon
+    Unknown = 1,
     Joycon = 3,
 }
 
 impl From<u8> for DeviceType {
     fn from(v: u8) -> Self {
-        DeviceType::from_u8(v).expect("unexpected device type")
+        match DeviceType::from_u8(v) {
+            Some(t) => t,
+            None => panic!("unknown device type 0x{:x}", v),
+        }
     }
 }
 
