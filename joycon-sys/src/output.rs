@@ -234,6 +234,9 @@ impl fmt::Debug for SubcommandRequest {
                 out.field("enable_imu", unsafe { &self.u.imu_enabled })
             }
             Some(SubcommandId::SetMCUState) => out.field("mcu_state", unsafe { &self.u.mcu_mode }),
+            Some(SubcommandId::SetShipmentMode) => {
+                out.field("set_shipment_mode", unsafe { &self.u.shipment_mode })
+            }
             Some(subcmd) => out.field("subcommand", &subcmd),
             None => out.field("id", &self.subcommand_id),
         };
@@ -342,6 +345,7 @@ union SubcommandRequestUnion {
     spi_read: SPIReadRequest,
     spi_write: SPIWriteRequest,
     imu_sensitivity: crate::imu::Sensitivity,
+    shipment_mode: RawId<Bool>,
     raw: [u8; 0x30],
 }
 
