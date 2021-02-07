@@ -4,19 +4,19 @@ pub use ir_register::*;
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct IRRequest {
-    id: IRRequestId,
+    id: RawId<IRRequestId>,
     #[allow(dead_code)]
     u: IRRequestUnion,
 }
 
 impl IRRequest {
     pub fn id(&self) -> IRRequestId {
-        self.id
+        self.id.try_into().unwrap()
     }
 
     pub fn get_state() -> IRRequest {
         IRRequest {
-            id: IRRequestId::GetState,
+            id: IRRequestId::GetState.into(),
             u: IRRequestUnion { nothing: () },
         }
     }
@@ -25,7 +25,7 @@ impl IRRequest {
 impl From<IRAckRequestPacket> for IRRequest {
     fn from(ack_request_packet: IRAckRequestPacket) -> Self {
         IRRequest {
-            id: IRRequestId::GetSensorData,
+            id: IRRequestId::GetSensorData.into(),
             u: IRRequestUnion { ack_request_packet },
         }
     }
@@ -34,7 +34,7 @@ impl From<IRAckRequestPacket> for IRRequest {
 impl From<IRReadRegisters> for IRRequest {
     fn from(read_registers: IRReadRegisters) -> Self {
         IRRequest {
-            id: IRRequestId::ReadRegister,
+            id: IRRequestId::ReadRegister.into(),
             u: IRRequestUnion { read_registers },
         }
     }
@@ -59,7 +59,7 @@ union IRRequestUnion {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct IRAckRequestPacket {
-    pub packet_missing: bool,
+    pub packet_missing: RawId<Bool>,
     pub missed_packet_id: u8,
     pub ack_packet_id: u8,
 }
@@ -94,7 +94,7 @@ pub enum MCUIRMode {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUIRModeData {
-    pub ir_mode: MCUIRMode,
+    pub ir_mode: RawId<MCUIRMode>,
     /// Set number of packets to output per buffer
     pub no_of_frags: u8,
     /// Get it from MCUStatus

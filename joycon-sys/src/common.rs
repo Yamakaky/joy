@@ -107,7 +107,7 @@ pub fn raw_from_vector(v: Vector3<f64>) -> [I16LE; 3] {
 }
 
 #[repr(transparent)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct RawId<Id>(u8, PhantomData<Id>);
 
 impl<Id: FromPrimitive> RawId<Id> {
@@ -149,5 +149,20 @@ impl<Id: fmt::Display + FromPrimitive + Copy> fmt::Display for RawId<Id> {
 impl<Id: FromPrimitive + PartialEq + Copy> PartialEq<Id> for RawId<Id> {
     fn eq(&self, other: &Id) -> bool {
         self.try_into().map(|x| x == *other).unwrap_or(false)
+    }
+}
+
+#[derive(Debug, Clone, Copy, FromPrimitive, ToPrimitive)]
+pub enum Bool {
+    False = 0,
+    True = 1,
+}
+
+impl From<bool> for Bool {
+    fn from(b: bool) -> Self {
+        match b {
+            false => Bool::False,
+            true => Bool::True,
+        }
     }
 }

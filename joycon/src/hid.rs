@@ -274,7 +274,7 @@ impl JoyCon {
             }
         })?;
         let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
-            ir_mode,
+            ir_mode: ir_mode.into(),
             no_of_frags: frags,
             mcu_fw_version,
         });
@@ -361,7 +361,7 @@ impl JoyCon {
             }
         })?;
         let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
-            ir_mode: MCUIRMode::IRSensorReset,
+            ir_mode: MCUIRMode::IRSensorReset.into(),
             no_of_frags: 0,
             mcu_fw_version,
         });
@@ -425,8 +425,8 @@ impl JoyCon {
         let gyro_sens = imu::GyroSens::DPS2000;
         let accel_sens = imu::AccSens::G8;
         self.send_subcmd_wait(imu::Sensitivity {
-            gyro_sens,
-            acc_sens: accel_sens,
+            gyro_sens: gyro_sens.into(),
+            acc_sens: accel_sens.into(),
             ..imu::Sensitivity::default()
         })?;
         // TODO

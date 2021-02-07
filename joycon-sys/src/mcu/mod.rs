@@ -129,8 +129,8 @@ pub enum MCUSubCommandId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct MCUCommand {
-    cmd_id: MCUCommandId,
-    subcmd_id: MCUSubCommandId,
+    cmd_id: RawId<MCUCommandId>,
+    subcmd_id: RawId<MCUSubCommandId>,
     u: MCUCommandUnion,
 }
 
@@ -139,8 +139,8 @@ impl MCUCommand {
         let mut u = MCUCommandUnion::new();
         u.mcu_mode = mode.into();
         MCUCommand {
-            cmd_id: MCUCommandId::ConfigureMCU,
-            subcmd_id: MCUSubCommandId::SetMCUMode,
+            cmd_id: MCUCommandId::ConfigureMCU.into(),
+            subcmd_id: MCUSubCommandId::SetMCUMode.into(),
             u,
         }
         .compute_crc()
@@ -150,8 +150,8 @@ impl MCUCommand {
         let mut u = MCUCommandUnion::new();
         u.ir_mode = conf;
         MCUCommand {
-            cmd_id: MCUCommandId::ConfigureIR,
-            subcmd_id: MCUSubCommandId::SetIRMode,
+            cmd_id: MCUCommandId::ConfigureIR.into(),
+            subcmd_id: MCUSubCommandId::SetIRMode.into(),
             u,
         }
         .compute_crc()
@@ -161,8 +161,8 @@ impl MCUCommand {
         let mut u = MCUCommandUnion::new();
         u.regs = regs;
         MCUCommand {
-            cmd_id: MCUCommandId::ConfigureIR,
-            subcmd_id: MCUSubCommandId::WriteIRRegisters,
+            cmd_id: MCUCommandId::ConfigureIR.into(),
+            subcmd_id: MCUSubCommandId::WriteIRRegisters.into(),
             u,
         }
         .compute_crc()
@@ -170,7 +170,7 @@ impl MCUCommand {
 
     fn compute_crc(mut self) -> MCUCommand {
         unsafe {
-            self.u.crc.compute_crc8(self.subcmd_id);
+            self.u.crc.compute_crc8(self.subcmd_id.try_into().unwrap());
         }
         self
     }
@@ -180,14 +180,14 @@ impl fmt::Debug for MCUCommand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("MCUCommand");
         out.field("crc", unsafe { &self.u.crc });
-        match (self.cmd_id, self.subcmd_id) {
-            (MCUCommandId::ConfigureIR, MCUSubCommandId::WriteIRRegisters) => {
+        match (self.cmd_id.try_into(), self.subcmd_id.try_into()) {
+            (Some(MCUCommandId::ConfigureIR), Some(MCUSubCommandId::WriteIRRegisters)) => {
                 out.field("cmd", unsafe { &self.u.regs })
             }
-            (MCUCommandId::ConfigureMCU, MCUSubCommandId::SetMCUMode) => {
+            (Some(MCUCommandId::ConfigureMCU), Some(MCUSubCommandId::SetMCUMode)) => {
                 out.field("set_mcu_mode", unsafe { &self.u.mcu_mode })
             }
-            ids => out.field("subcommand", &ids),
+            _ => out.field("subcommand", &(self.cmd_id, self.subcmd_id)),
         };
         out.finish()
     }

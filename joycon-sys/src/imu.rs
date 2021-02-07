@@ -46,10 +46,10 @@ impl fmt::Debug for Frame {
 #[repr(packed)]
 #[derive(Copy, Clone, Default)]
 pub struct Sensitivity {
-    pub gyro_sens: GyroSens,
-    pub acc_sens: AccSens,
-    pub gyro_perf_rate: GyroPerfRate,
-    pub acc_anti_aliasing: AccAntiAliasing,
+    pub gyro_sens: RawId<GyroSens>,
+    pub acc_sens: RawId<AccSens>,
+    pub gyro_perf_rate: RawId<GyroPerfRate>,
+    pub acc_anti_aliasing: RawId<AccAntiAliasing>,
 }
 
 /// Sensitivity range of the gyroscope.
@@ -58,7 +58,7 @@ pub struct Sensitivity {
 /// up to +-2000 degree per second for a total range of 4000 DPS over
 /// the 16 bit raw value.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 pub enum GyroSens {
     DPS250 = 0,
     DPS500 = 1,
@@ -93,7 +93,7 @@ impl Default for GyroSens {
 /// If using G4 for example, the accelerometer can measure values of
 /// up to +-4G for a total range of 8G over the 16 bit raw value.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 pub enum AccSens {
     G8 = 0,
     G4 = 1,
@@ -119,7 +119,7 @@ impl Default for AccSens {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 pub enum GyroPerfRate {
     Hz833 = 0,
     Hz208 = 1,
@@ -137,7 +137,7 @@ impl Default for GyroPerfRate {
 ///
 /// See https://blog.endaq.com/filter-selection-for-shock-and-vibration-applications.
 #[repr(u8)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 pub enum AccAntiAliasing {
     Hz200 = 0,
     Hz100 = 1,

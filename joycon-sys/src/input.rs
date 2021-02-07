@@ -25,7 +25,7 @@ pub struct InputReport {
 
 impl InputReport {
     pub fn new() -> InputReport {
-        InputReport::default()
+        unsafe { std::mem::zeroed() }
     }
 
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {

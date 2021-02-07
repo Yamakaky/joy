@@ -27,16 +27,15 @@ pub enum OutputReportId {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct OutputReport {
-    pub report_id: OutputReportId,
+    pub report_id: RawId<OutputReportId>,
     pub packet_counter: u8,
     pub rumble_data: RumbleData,
     u: OutputReportUnion,
 }
 
 impl OutputReport {
-    #[cfg(test)]
-    pub(crate) fn new() -> OutputReport {
-        OutputReport::default()
+    pub fn new() -> OutputReport {
+        unsafe { std::mem::zeroed() }
     }
 
     pub fn set_registers(regs: &[ir::Register]) -> (OutputReport, &[ir::Register]) {
@@ -64,7 +63,7 @@ impl OutputReport {
 
     pub fn ir_resend(packet_id: u8) -> OutputReport {
         OutputReport::ir_build(IRAckRequestPacket {
-            packet_missing: true,
+            packet_missing: Bool::True.into(),
             missed_packet_id: packet_id,
             ack_packet_id: 0,
         })
@@ -72,7 +71,7 @@ impl OutputReport {
 
     pub fn ir_ack(packet_id: u8) -> OutputReport {
         OutputReport::ir_build(IRAckRequestPacket {
-            packet_missing: false,
+            packet_missing: Bool::False.into(),
             missed_packet_id: 0,
             ack_packet_id: packet_id,
         })
@@ -80,7 +79,7 @@ impl OutputReport {
 
     pub fn set_rumble(rumble: RumbleData) -> OutputReport {
         OutputReport {
-            report_id: OutputReportId::RumbleOnly,
+            report_id: OutputReportId::RumbleOnly.into(),
             packet_counter: 0,
             rumble_data: rumble,
             u: OutputReportUnion { nothing: () },
@@ -123,7 +122,7 @@ impl Default for OutputReport {
 impl From<SubcommandRequest> for OutputReport {
     fn from(subcmd: SubcommandRequest) -> Self {
         OutputReport {
-            report_id: OutputReportId::RumbleAndSubcmd,
+            report_id: OutputReportId::RumbleAndSubcmd.into(),
             packet_counter: 0,
             rumble_data: RumbleData::default(),
             u: OutputReportUnion { subcmd },
@@ -134,7 +133,7 @@ impl From<SubcommandRequest> for OutputReport {
 impl From<MCURequest> for OutputReport {
     fn from(mcu_request: MCURequest) -> Self {
         OutputReport {
-            report_id: OutputReportId::RequestMCUData,
+            report_id: OutputReportId::RequestMCUData.into(),
             packet_counter: 0,
             rumble_data: RumbleData::default(),
             u: OutputReportUnion { mcu_request },
@@ -181,14 +180,18 @@ impl SubcommandRequest {
     pub fn set_imu_enabled(imu_enabled: bool) -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::EnableIMU.into(),
-            u: SubcommandRequestUnion { imu_enabled },
+            u: SubcommandRequestUnion {
+                imu_enabled: RawId::from(Bool::from(imu_enabled)),
+            },
         }
     }
 
     pub fn set_input_report_mode(input_report_mode: InputReportId) -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::SetInputReportMode.into(),
-            u: SubcommandRequestUnion { input_report_mode },
+            u: SubcommandRequestUnion {
+                input_report_mode: input_report_mode.into(),
+            },
         }
     }
 
@@ -331,8 +334,8 @@ impl Default for RumbleSide {
 #[derive(Copy, Clone)]
 union SubcommandRequestUnion {
     nothing: (),
-    imu_enabled: bool,
-    input_report_mode: InputReportId,
+    imu_enabled: RawId<Bool>,
+    input_report_mode: RawId<InputReportId>,
     player_lights: light::PlayerLights,
     home_light: light::HomeLight,
     mcu_mode: RawId<MCUMode>,

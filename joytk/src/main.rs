@@ -421,7 +421,7 @@ fn decode() -> anyhow::Result<()> {
             report.as_bytes_mut()[..hex.len()].copy_from_slice(&hex);
             println!("{:?}", report);
         } else {
-            let mut report = OutputReport::default();
+            let mut report = OutputReport::new();
             report.as_bytes_mut()[..hex.len()].copy_from_slice(&hex);
             println!("{:?}", report);
         }
