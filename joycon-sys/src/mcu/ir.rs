@@ -92,7 +92,7 @@ pub enum MCUIRMode {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct MCUIRModeData {
     pub ir_mode: RawId<MCUIRMode>,
     /// Set number of packets to output per buffer

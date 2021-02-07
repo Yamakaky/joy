@@ -5,6 +5,15 @@ use std::fmt;
 pub const IMU_SAMPLE_DURATION: f64 = 0.005;
 pub const IMU_SAMPLES_PER_SECOND: u32 = 200;
 
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
+pub enum IMUMode {
+    Disabled = 0,
+    GyroAccel = 1,
+    _Unknown0x02 = 2,
+    MaybeRingcon = 3,
+}
+
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct Frame {

@@ -187,6 +187,9 @@ impl fmt::Debug for MCUCommand {
             (Some(MCUCommandId::ConfigureMCU), Some(MCUSubCommandId::SetMCUMode)) => {
                 out.field("set_mcu_mode", unsafe { &self.u.mcu_mode })
             }
+            (Some(MCUCommandId::ConfigureMCU), Some(MCUSubCommandId::SetIRMode)) => {
+                out.field("set_ir_mode", unsafe { &self.u.ir_mode })
+            }
             _ => out.field("subcommand", &(self.cmd_id, self.subcmd_id)),
         };
         out.finish()

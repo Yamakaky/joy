@@ -2,11 +2,11 @@
 //!
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
-use crate::common::*;
 use crate::light;
 use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::spi::*;
+use crate::{common::*, imu::IMUMode};
 use std::fmt;
 
 #[repr(u8)]
@@ -179,9 +179,14 @@ impl SubcommandRequest {
     }
     pub fn set_imu_enabled(imu_enabled: bool) -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::EnableIMU.into(),
+            subcommand_id: SubcommandId::SetIMUMode.into(),
             u: SubcommandRequestUnion {
-                imu_enabled: RawId::from(Bool::from(imu_enabled)),
+                imu_mode: if imu_enabled {
+                    IMUMode::GyroAccel
+                } else {
+                    IMUMode::Disabled
+                }
+                .into(),
             },
         }
     }
@@ -230,8 +235,8 @@ impl fmt::Debug for SubcommandRequest {
             }
             Some(SubcommandId::SetMCUConf) => out.field("subcommand", unsafe { &self.u.mcu_cmd }),
             Some(SubcommandId::SPIRead) => out.field("subcommand", unsafe { &self.u.spi_read }),
-            Some(SubcommandId::EnableIMU) => {
-                out.field("enable_imu", unsafe { &self.u.imu_enabled })
+            Some(SubcommandId::SetIMUMode) => {
+                out.field("set_imu_mode", unsafe { &self.u.imu_mode })
             }
             Some(SubcommandId::SetMCUState) => out.field("mcu_state", unsafe { &self.u.mcu_mode }),
             Some(SubcommandId::SetShipmentMode) => {
@@ -352,7 +357,7 @@ impl Default for RumbleSide {
 union SubcommandRequestUnion {
     nothing: (),
     // TODO: can be 0x2 too
-    imu_enabled: RawId<Bool>,
+    imu_mode: RawId<IMUMode>,
     input_report_mode: RawId<InputReportId>,
     player_lights: light::PlayerLights,
     home_light: light::HomeLight,

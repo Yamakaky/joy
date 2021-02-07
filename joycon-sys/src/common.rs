@@ -38,7 +38,7 @@ pub enum SubcommandId {
     SetMCUState = 0x22,
     SetPlayerLights = 0x30,
     SetHomeLight = 0x38,
-    EnableIMU = 0x40,
+    SetIMUMode = 0x40,
     SetIMUSens = 0x41,
     EnableVibration = 0x48,
 }
