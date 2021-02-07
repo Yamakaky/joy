@@ -85,6 +85,27 @@ impl fmt::Debug for I16LE {
     }
 }
 
+#[derive(Copy, Clone, Default, Eq, PartialEq)]
+pub struct U32LE([u8; 4]);
+
+impl From<u32> for U32LE {
+    fn from(u: u32) -> Self {
+        U32LE(u.to_le_bytes())
+    }
+}
+
+impl From<U32LE> for u32 {
+    fn from(u: U32LE) -> u32 {
+        u32::from_le_bytes(u.0)
+    }
+}
+
+impl fmt::Debug for U32LE {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_fmt(format_args!("0x{:x}", u32::from(*self)))
+    }
+}
+
 #[cfg(test)]
 pub(crate) fn offset_of<A, B>(a: &A, b: &B) -> usize {
     b as *const _ as usize - a as *const _ as usize

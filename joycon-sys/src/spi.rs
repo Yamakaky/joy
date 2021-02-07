@@ -45,7 +45,7 @@ impl std::error::Error for WrongRangeError {}
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SPIReadRequest {
-    offset: [u8; 4],
+    offset: U32LE,
     size: u8,
 }
 
@@ -53,7 +53,7 @@ impl SPIReadRequest {
     pub fn new(range: SPIRange) -> SPIReadRequest {
         assert!(range.1 <= 0x1d);
         SPIReadRequest {
-            offset: range.0.to_le_bytes(),
+            offset: range.0.into(),
             size: range.1,
         }
     }
@@ -62,7 +62,7 @@ impl SPIReadRequest {
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct SPIWriteRequest {
-    address: [u8; 4],
+    address: U32LE,
     size: u8,
     data: SPIData,
 }
@@ -73,7 +73,7 @@ impl SPIWriteRequest {
         let mut raw = [0; 0x1D];
         raw[..range.1 as usize].copy_from_slice(data);
         SPIWriteRequest {
-            address: range.0.to_le_bytes(),
+            address: range.0.into(),
             size: range.1,
             data: SPIData { raw },
         }
@@ -85,7 +85,7 @@ impl From<ControllerColor> for SPIWriteRequest {
         let range = ControllerColor::range();
         assert!(range.1 <= 0x1d);
         SPIWriteRequest {
-            address: range.0.to_le_bytes(),
+            address: range.0.into(),
             size: range.1,
             data: SPIData { color },
         }
@@ -103,7 +103,7 @@ impl From<UseSPIColors> for SPIWriteRequest {
         let range = UseSPIColors::range();
         assert!(range.1 <= 0x1d);
         SPIWriteRequest {
-            address: range.0.to_le_bytes(),
+            address: range.0.into(),
             size: range.1,
             data: SPIData {
                 use_spi_colors: use_spi_colors.into(),
@@ -532,7 +532,7 @@ impl From<UserSensorCalibration> for SPIWriteRequest {
     fn from(calib: UserSensorCalibration) -> Self {
         let range = UserSensorCalibration::range();
         SPIWriteRequest {
-            address: range.0.to_le_bytes(),
+            address: range.0.into(),
             size: range.1,
             data: SPIData {
                 imu_user_calib: calib.into(),
