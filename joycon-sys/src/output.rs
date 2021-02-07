@@ -336,6 +336,7 @@ impl Default for RumbleSide {
 #[derive(Copy, Clone)]
 union SubcommandRequestUnion {
     nothing: (),
+    // TODO: can be 0x2 too
     imu_enabled: RawId<Bool>,
     input_report_mode: RawId<InputReportId>,
     player_lights: light::PlayerLights,
