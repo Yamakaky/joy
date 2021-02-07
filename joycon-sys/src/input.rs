@@ -168,12 +168,12 @@ impl fmt::Debug for InputReport {
             Some(InputReportId::MCUFwUpdate) => {
                 out.field("mcu_fw_update", &"[data]");
             }
-            // TODO: mask MCU
             Some(InputReportId::StandardFull) => {
-                out.field("subcommand_reply", unsafe { &self.u.standard.u.imu_mcu });
+                out.field("imu", unsafe { &self.u.standard.u.imu_mcu.imu_frames });
             }
             Some(InputReportId::StandardFullMCU) => {
-                out.field("subcommand_reply", unsafe { &self.u.standard.u.imu_mcu });
+                out.field("imu", unsafe { &self.u.standard.u.imu_mcu.imu_frames });
+                out.field("mcu", unsafe { &self.u.standard.u.imu_mcu.mcu_report });
             }
             None => {}
         };
