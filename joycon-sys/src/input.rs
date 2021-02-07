@@ -507,7 +507,7 @@ union SubcommandReplyUnion {
     spi_write: SPIWriteResult,
     mcu_report: MCUReport,
     trigger_buttons_elapsed_time: [U16LE; 7],
-    raw: [u8; 8],
+    raw: [u8; 39],
 }
 
 #[repr(packed)]

@@ -368,7 +368,7 @@ union SubcommandRequestUnion {
     imu_sensitivity: crate::imu::Sensitivity,
     shipment_mode: RawId<Bool>,
     enable_vibration: RawId<Bool>,
-    raw: [u8; 0x30],
+    raw: [u8; 38],
 }
 
 impl From<crate::imu::Sensitivity> for SubcommandRequest {
@@ -424,6 +424,6 @@ pub fn check_layout() {
         assert_eq!(2, offset_of(&report, &report.rumble_data));
         assert_eq!(10, offset_of(&report, &report.u.subcmd.subcommand_id));
         assert_eq!(11, offset_of(&report, &report.u.subcmd.u.mcu_cmd));
-        assert_eq!(59, std::mem::size_of_val(&report));
+        assert_eq!(49, std::mem::size_of_val(&report));
     }
 }
