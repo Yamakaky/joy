@@ -604,6 +604,5 @@ fn check_layout() {
             offset_of(&report, &report.u.standard.u.imu_mcu.mcu_report)
         );
         assert_eq!(362, std::mem::size_of_val(&report));
-        assert!(37 >= std::mem::size_of::<SubcommandReply>());
     }
 }
