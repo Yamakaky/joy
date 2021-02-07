@@ -237,10 +237,22 @@ impl fmt::Debug for SubcommandRequest {
             Some(SubcommandId::SetShipmentMode) => {
                 out.field("set_shipment_mode", unsafe { &self.u.shipment_mode })
             }
-            Some(subcmd) => out.field("subcommand", &subcmd),
-            None => out.field("id", &self.subcommand_id),
+            Some(SubcommandId::EnableVibration) => {
+                out.field("enable_vibration", unsafe { &self.u.enable_vibration })
+            }
+            subcmd @ Some(SubcommandId::GetOnlyControllerState)
+            | subcmd @ Some(SubcommandId::GetTriggerButtonsElapsedTime) => {
+                out.field("subcommand", &subcmd.expect("unreachable"))
+            }
+            Some(subcmd) => {
+                out.field("subcommand", &subcmd);
+                out.field("raw", unsafe { &&self.u.raw })
+            }
+            None => {
+                out.field("subcommand_id", &self.subcommand_id);
+                out.field("raw", unsafe { &&self.u.raw })
+            }
         };
-        out.field("raw", unsafe { &&self.u.raw[..10] });
         out.finish()
     }
 }
@@ -347,6 +359,7 @@ union SubcommandRequestUnion {
     spi_write: SPIWriteRequest,
     imu_sensitivity: crate::imu::Sensitivity,
     shipment_mode: RawId<Bool>,
+    enable_vibration: RawId<Bool>,
     raw: [u8; 0x30],
 }
 

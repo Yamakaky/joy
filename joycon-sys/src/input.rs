@@ -459,6 +459,10 @@ impl fmt::Debug for SubcommandReply {
                 .field("trigger_buttons_elapsed_time", unsafe {
                     &self.u.trigger_buttons_elapsed_time
                 }),
+            subcmd @ Some(SubcommandId::EnableIMU)
+            | subcmd @ Some(SubcommandId::EnableVibration) => {
+                out.field("subcommand", &subcmd.expect("unreachable"))
+            }
             Some(subcmd) => out
                 .field("subcommand", &subcmd)
                 .field("raw", unsafe { &self.u.raw }),

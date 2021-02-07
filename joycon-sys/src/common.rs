@@ -40,7 +40,7 @@ pub enum SubcommandId {
     SetHomeLight = 0x38,
     EnableIMU = 0x40,
     SetIMUSens = 0x41,
-    _EnableVibration = 0x48,
+    EnableVibration = 0x48,
 }
 
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
