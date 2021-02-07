@@ -240,6 +240,9 @@ impl fmt::Debug for SubcommandRequest {
             Some(SubcommandId::EnableVibration) => {
                 out.field("enable_vibration", unsafe { &self.u.enable_vibration })
             }
+            Some(SubcommandId::SetPlayerLights) => {
+                out.field("set_player_lights", unsafe { &self.u.player_lights })
+            }
             subcmd @ Some(SubcommandId::GetOnlyControllerState)
             | subcmd @ Some(SubcommandId::GetTriggerButtonsElapsedTime) => {
                 out.field("subcommand", &subcmd.expect("unreachable"))

@@ -460,6 +460,7 @@ impl fmt::Debug for SubcommandReply {
                     &self.u.trigger_buttons_elapsed_time
                 }),
             subcmd @ Some(SubcommandId::EnableIMU)
+            | subcmd @ Some(SubcommandId::SetPlayerLights)
             | subcmd @ Some(SubcommandId::EnableVibration) => {
                 out.field("subcommand", &subcmd.expect("unreachable"))
             }
