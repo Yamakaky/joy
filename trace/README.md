@@ -1,6 +1,6 @@
 ## How to capture
 
-Use this script https://github.com/Yamakaky/joycontrol/blob/master/scripts/relay_joycon.py.
+Use this script https://github.com/Yamakaky/joycontrol/blob/capture-text-file/scripts/relay_joycon.py.
 `python -m venv` is useful to not have to install everything on `/usr`.
 
 Example:
