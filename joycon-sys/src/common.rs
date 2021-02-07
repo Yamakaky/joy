@@ -60,7 +60,7 @@ impl From<U16LE> for u16 {
 
 impl fmt::Debug for U16LE {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        u16::from(*self).fmt(f)
+        f.write_fmt(format_args!("0x{:x}", u16::from(*self)))
     }
 }
 
@@ -81,7 +81,7 @@ impl From<I16LE> for i16 {
 
 impl fmt::Debug for I16LE {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        i16::from(*self).fmt(f)
+        f.write_fmt(format_args!("0x{:x}", i16::from(*self)))
     }
 }
 
