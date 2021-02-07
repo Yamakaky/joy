@@ -412,17 +412,22 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
 fn decode() -> anyhow::Result<()> {
     let stdin = std::io::stdin();
     for line in stdin.lock().lines() {
-        let mut line = line?;
-        let hex = line.split_off(4);
-        let header = line;
-        let hex = hex::decode(&hex)?;
-        if header.chars().next().unwrap() == '>' {
+        let line = line?;
+        let fragments: Vec<&str> = line.split(" ").collect();
+        let side = fragments[0];
+        let _time = fragments[1];
+        let hex = hex::decode(&fragments[2][2..])?;
+        if side == ">" {
             let mut report = InputReport::new();
-            report.as_bytes_mut()[..hex.len()].copy_from_slice(&hex);
+            let raw_report = report.as_bytes_mut();
+            let len = raw_report.len().min(hex.len());
+            raw_report[..len].copy_from_slice(&hex[..len]);
             println!("{:?}", report);
         } else {
             let mut report = OutputReport::new();
-            report.as_bytes_mut()[..hex.len()].copy_from_slice(&hex);
+            let raw_report = report.as_bytes_mut();
+            let len = raw_report.len().min(hex.len());
+            raw_report[..len].copy_from_slice(&hex[..len]);
             println!("{:?}", report);
         }
     }
