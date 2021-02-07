@@ -4,7 +4,6 @@
 
 use crate::common::*;
 use crate::imu;
-use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::spi::*;
 use num::FromPrimitive;
@@ -439,12 +438,6 @@ impl SubcommandReply {
             None
         }
     }
-
-    pub unsafe fn ir_status(&self) -> (RawId<MCUReportId>, IRStatus) {
-        // seems to be true
-        assert_eq!(self.subcommand_id, SubcommandId::SetMCUConf);
-        self.u.ir_status
-    }
 }
 
 impl fmt::Debug for SubcommandReply {
@@ -459,6 +452,9 @@ impl fmt::Debug for SubcommandReply {
                 .field("trigger_buttons_elapsed_time", unsafe {
                     &self.u.trigger_buttons_elapsed_time
                 }),
+            Some(SubcommandId::SetMCUConf) => {
+                out.field("mcu_report", unsafe { &self.u.mcu_report })
+            }
             subcmd @ Some(SubcommandId::EnableIMU)
             | subcmd @ Some(SubcommandId::SetPlayerLights)
             | subcmd @ Some(SubcommandId::EnableVibration) => {
@@ -507,7 +503,7 @@ union SubcommandReplyUnion {
     device_info: DeviceInfo,
     spi_read: SPIReadResult,
     spi_write: SPIWriteResult,
-    ir_status: (RawId<MCUReportId>, IRStatus),
+    mcu_report: MCUReport,
     trigger_buttons_elapsed_time: [U16LE; 7],
     raw: [u8; 8],
 }
