@@ -235,10 +235,9 @@ impl fmt::Debug for SubcommandRequest {
             }
             Some(SubcommandId::SetMCUState) => out.field("mcu_state", unsafe { &self.u.mcu_mode }),
             Some(subcmd) => out.field("subcommand", &subcmd),
-            None => out
-                .field("id", &self.subcommand_id)
-                .field("raw", unsafe { &self.u.raw }),
+            None => out.field("id", &self.subcommand_id),
         };
+        out.field("raw", unsafe { &&self.u.raw[..10] });
         out.finish()
     }
 }
