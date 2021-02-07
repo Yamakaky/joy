@@ -452,11 +452,13 @@ impl fmt::Debug for SubcommandReply {
                 .field("trigger_buttons_elapsed_time", unsafe {
                     &self.u.trigger_buttons_elapsed_time
                 }),
-            Some(SubcommandId::SetMCUConf) => {
+            Some(SubcommandId::SetMCUConf) | Some(SubcommandId::SetMCUState) => {
                 out.field("mcu_report", unsafe { &self.u.mcu_report })
             }
             subcmd @ Some(SubcommandId::EnableIMU)
             | subcmd @ Some(SubcommandId::SetPlayerLights)
+            | subcmd @ Some(SubcommandId::SetInputReportMode)
+            | subcmd @ Some(SubcommandId::SetShipmentMode)
             | subcmd @ Some(SubcommandId::EnableVibration) => {
                 out.field("subcommand", &subcmd.expect("unreachable"))
             }
