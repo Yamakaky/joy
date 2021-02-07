@@ -30,7 +30,7 @@ pub enum SubcommandId {
     BluetoothManualPairing = 0x01,
     RequestDeviceInfo = 0x02,
     SetInputReportMode = 0x03,
-    _TriggerButtonsElapsedTime = 0x04,
+    GetTriggerButtonsElapsedTime = 0x04,
     SetShipmentMode = 0x08,
     SPIRead = 0x10,
     SPIWrite = 0x11,

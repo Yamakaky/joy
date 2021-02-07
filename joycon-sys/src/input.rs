@@ -455,6 +455,10 @@ impl fmt::Debug for SubcommandReply {
             Some(SubcommandId::RequestDeviceInfo) => {
                 out.field("device_info", unsafe { &self.u.device_info })
             }
+            Some(SubcommandId::GetTriggerButtonsElapsedTime) => out
+                .field("trigger_buttons_elapsed_time", unsafe {
+                    &self.u.trigger_buttons_elapsed_time
+                }),
             Some(subcmd) => out
                 .field("subcommand", &subcmd)
                 .field("raw", unsafe { &self.u.raw }),
@@ -499,6 +503,7 @@ union SubcommandReplyUnion {
     spi_read: SPIReadResult,
     spi_write: SPIWriteResult,
     ir_status: (RawId<MCUReportId>, IRStatus),
+    trigger_buttons_elapsed_time: [U16LE; 7],
     raw: [u8; 8],
 }
 
