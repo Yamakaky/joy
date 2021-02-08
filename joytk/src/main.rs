@@ -440,9 +440,11 @@ fn decode() -> anyhow::Result<()> {
 fn ringcon(joycon: &mut JoyCon) -> anyhow::Result<()> {
     joycon.enable_ringcon()?;
     dbg!("end init");
-    loop {
-        let report = joycon.recv()?;
-        let frames = report.imu_frames().unwrap();
-        dbg!(frames[2].raw_ringcon());
+    for _ in 0..100 {
+        joycon.recv()?;
     }
+    let report = joycon.recv()?;
+    let frames = report.imu_frames().unwrap();
+    dbg!(frames[2].raw_ringcon());
+    Ok(())
 }
