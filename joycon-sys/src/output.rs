@@ -229,7 +229,7 @@ impl SubcommandRequest {
 
     pub fn subcmd_0x5a() -> Self {
         SubcommandRequest {
-            subcommand_id: SubcommandId::Unknown0x5c.into(),
+            subcommand_id: SubcommandId::Unknown0x5a.into(),
             u: SubcommandRequestUnion {
                 raw: [
                     4, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
