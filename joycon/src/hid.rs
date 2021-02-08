@@ -441,14 +441,6 @@ impl JoyCon {
 /// Ringcon handling
 impl JoyCon {
     pub fn enable_ringcon(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
-        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
-        loop {
-            let out = self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::Suspend))?;
-            if out.mcu_report().unwrap().as_status().unwrap().state == MCUMode::Standby {
-                break;
-            }
-        }
         self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
         loop {
             let out = self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::MaybeRingcon))?;
