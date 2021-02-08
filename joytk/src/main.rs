@@ -36,6 +36,7 @@ enum SubCommand {
     Dump,
     Restore,
     Decode,
+    Ringcon,
 }
 
 #[derive(Clap)]
@@ -119,6 +120,7 @@ fn main() -> Result<()> {
             SubCommand::Dump => dump(&mut joycon)?,
             SubCommand::Restore => restore(&mut joycon)?,
             SubCommand::Decode => unreachable!(),
+            SubCommand::Ringcon => ringcon(&mut joycon)?,
         }
     } else {
         eprintln!("No device found");
@@ -415,22 +417,32 @@ fn decode() -> anyhow::Result<()> {
         let line = line?;
         let fragments: Vec<&str> = line.split(" ").collect();
         let side = fragments[0];
-        let _time = fragments[1];
+        let time = fragments[1];
         let hex = hex::decode(&fragments[2][2..])?;
         if side == ">" {
             let mut report = InputReport::new();
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            println!("{:?}", report);
+            println!("{} {:?}", time, report);
         } else {
             let mut report = OutputReport::new();
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            println!("{:?}", report);
+            println!("{} {:?}", time, report);
         }
     }
 
     Ok(())
+}
+
+fn ringcon(joycon: &mut JoyCon) -> anyhow::Result<()> {
+    joycon.enable_ringcon()?;
+    dbg!("end init");
+    loop {
+        let report = joycon.recv()?;
+        let frames = report.imu_frames().unwrap();
+        dbg!(frames[2].raw_ringcon());
+    }
 }

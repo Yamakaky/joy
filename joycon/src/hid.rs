@@ -4,14 +4,14 @@ use crate::image::Image;
 use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};
 use cgmath::Vector2;
-use joycon_sys::mcu::ir::*;
 use joycon_sys::mcu::*;
 use joycon_sys::output::*;
 use joycon_sys::spi::*;
 use joycon_sys::*;
+use joycon_sys::{imu::IMUMode, mcu::ir::*};
 use joycon_sys::{input::*, light};
 
-const WAIT_TIMEOUT: u32 = 60;
+const WAIT_TIMEOUT: u32 = 200;
 
 #[derive(Debug, Clone)]
 pub struct Report {
@@ -273,7 +273,7 @@ impl JoyCon {
                 false
             }
         })?;
-        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
+        let mcu_cmd = MCUCommand::configure_ir_ir(MCUIRModeData {
             ir_mode: ir_mode.into(),
             no_of_frags: frags,
             mcu_fw_version,
@@ -360,7 +360,7 @@ impl JoyCon {
                 false
             }
         })?;
-        let mcu_cmd = MCUCommand::configure_ir(MCUIRModeData {
+        let mcu_cmd = MCUCommand::configure_ir_ir(MCUIRModeData {
             ir_mode: MCUIRMode::IRSensorReset.into(),
             no_of_frags: 0,
             mcu_fw_version,
@@ -407,7 +407,7 @@ impl JoyCon {
         self.wait_mcu_cond(MCURequest::get_mcu_status(), |report| {
             report
                 .as_status()
-                .map(|status| status.state == mode)
+                .map(|status| dbg!(status.state) == mode)
                 .unwrap_or(false)
         })
     }
@@ -416,7 +416,7 @@ impl JoyCon {
 /// IMU handling (gyroscope and accelerometer)
 impl JoyCon {
     pub fn enable_imu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_imu_enabled(true))?;
+        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::GyroAccel))?;
         Ok(())
     }
 
@@ -434,6 +434,49 @@ impl JoyCon {
         self.gyro_sens = gyro_sens;
         self.accel_sens = accel_sens;*/
         Ok(())
+    }
+}
+
+/// Ringcon handling
+impl JoyCon {
+    pub fn enable_ringcon(&mut self) -> Result<()> {
+        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
+        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        loop {
+            let out = self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::Suspend))?;
+            if out.mcu_report().unwrap().as_status().unwrap().state == MCUMode::Standby {
+                break;
+            }
+        }
+        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        loop {
+            let out = self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::MaybeRingcon))?;
+            if out.mcu_report().unwrap().as_status().unwrap().state == MCUMode::MaybeRingcon {
+                break;
+            }
+        }
+        self.send_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
+            ir_mode: MCUIRMode::IRSensorSleep.into(),
+            no_of_frags: 0,
+            mcu_fw_version: (0.into(), 0.into()),
+        }))?;
+        self.send_subcmd_wait(SubcommandRequest::subcmd_0x59())?;
+        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::MaybeRingcon))?;
+        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5c())?;
+        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5a())?;
+        Ok(())
+    }
+
+    pub fn mcu_wait_not_busy(&mut self) -> anyhow::Result<()> {
+        loop {
+            let report = self.recv()?;
+            if let Some(x) = report.mcu_report() {
+                dbg!(x.id);
+                if x.id != MCUReportId::BusyInitializing {
+                    return Ok(());
+                }
+            }
+        }
     }
 }
 

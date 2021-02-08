@@ -177,16 +177,11 @@ impl SubcommandRequest {
     pub fn id(&self) -> SubcommandId {
         self.subcommand_id.try_into().unwrap()
     }
-    pub fn set_imu_enabled(imu_enabled: bool) -> Self {
+    pub fn set_imu_mode(imu_mode: IMUMode) -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::SetIMUMode.into(),
             u: SubcommandRequestUnion {
-                imu_mode: if imu_enabled {
-                    IMUMode::GyroAccel
-                } else {
-                    IMUMode::Disabled
-                }
-                .into(),
+                imu_mode: imu_mode.into(),
             },
         }
     }
@@ -212,6 +207,37 @@ impl SubcommandRequest {
             subcommand_id: SubcommandId::SetMCUState.into(),
             u: SubcommandRequestUnion {
                 mcu_mode: mcu_mode.into(),
+            },
+        }
+    }
+
+    pub fn subcmd_0x59() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::Unknown0x59.into(),
+            u: SubcommandRequestUnion { raw: [0; 38] },
+        }
+    }
+
+    pub fn subcmd_0x5a() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::Unknown0x5c.into(),
+            u: SubcommandRequestUnion {
+                raw: [
+                    4, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                ],
+            },
+        }
+    }
+
+    pub fn subcmd_0x5c() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::Unknown0x5c.into(),
+            u: SubcommandRequestUnion {
+                raw: [
+                    6, 3, 37, 6, 0, 0, 0, 0, 236, 153, 172, 227, 28, 0, 0, 0, 105, 155, 22, 246,
+                    93, 86, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 144, 40, 161, 227, 28, 0,
+                ],
             },
         }
     }

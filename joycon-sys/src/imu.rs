@@ -22,6 +22,11 @@ pub struct Frame {
 }
 
 impl Frame {
+    pub fn raw_ringcon(&self) -> &[u8] {
+        unsafe {
+            std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))
+        }
+    }
     pub fn raw_accel(&self) -> Vector3<f64> {
         vector_from_raw(self.raw_accel)
     }

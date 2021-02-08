@@ -146,7 +146,18 @@ impl MCUCommand {
         .compute_crc()
     }
 
-    pub fn configure_ir(conf: MCUIRModeData) -> Self {
+    pub fn configure_mcu_ir(conf: MCUIRModeData) -> Self {
+        let mut u = MCUCommandUnion::new();
+        u.ir_mode = conf;
+        MCUCommand {
+            cmd_id: MCUCommandId::ConfigureMCU.into(),
+            subcmd_id: MCUSubCommandId::SetIRMode.into(),
+            u,
+        }
+        .compute_crc()
+    }
+
+    pub fn configure_ir_ir(conf: MCUIRModeData) -> Self {
         let mut u = MCUCommandUnion::new();
         u.ir_mode = conf;
         MCUCommand {

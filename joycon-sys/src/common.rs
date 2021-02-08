@@ -41,6 +41,9 @@ pub enum SubcommandId {
     SetIMUMode = 0x40,
     SetIMUSens = 0x41,
     EnableVibration = 0x48,
+    Unknown0x59 = 0x59,
+    Unknown0x5a = 0x5a,
+    Unknown0x5c = 0x5c,
 }
 
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
@@ -130,6 +133,12 @@ pub fn raw_from_vector(v: Vector3<f64>) -> [I16LE; 3] {
 #[repr(transparent)]
 #[derive(Copy, Clone, Default)]
 pub struct RawId<Id>(u8, PhantomData<Id>);
+
+impl<Id> RawId<Id> {
+    pub fn new(id: u8) -> Self {
+        RawId(id, PhantomData)
+    }
+}
 
 impl<Id: FromPrimitive> RawId<Id> {
     pub fn try_into(self) -> Option<Id> {
