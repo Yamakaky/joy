@@ -186,6 +186,15 @@ impl SubcommandRequest {
         }
     }
 
+    pub fn disable_shipment_mode() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::SetShipmentMode.into(),
+            u: SubcommandRequestUnion {
+                shipment_mode: Bool::False.into(),
+            },
+        }
+    }
+
     pub fn set_input_report_mode(input_report_mode: InputReportId) -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::SetInputReportMode.into(),

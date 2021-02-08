@@ -64,6 +64,7 @@ impl JoyCon {
             device_type,
         };
 
+        joycon.send_subcmd_wait(SubcommandRequest::disable_shipment_mode())?;
         joycon.set_report_mode_standard()?;
         Ok(joycon)
     }
