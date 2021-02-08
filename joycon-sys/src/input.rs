@@ -196,8 +196,10 @@ bitfield::bitfield! {
 #[derive(Debug, Copy, Clone, FromPrimitive)]
 pub enum DeviceType {
     ProController = 0,
-    // TODO: present when using the joycon
-    Unknown = 1,
+    // Used when the ringcon is plugged, maybe also for the pokeball?
+    MaybeAccessory = 1,
+    // Used in one InputReport when the ringcon is plugged, then switch to value 1.
+    MaybeInitializingAccessory = 2,
     Joycon = 3,
 }
 
