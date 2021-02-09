@@ -40,6 +40,23 @@ impl From<IRReadRegisters> for IRRequest {
     }
 }
 
+impl fmt::Debug for IRRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = f.debug_struct("IRRequest");
+        match self.id.try_into() {
+            id @ Some(IRRequestId::GetState) => out.field("id", &id),
+            Some(IRRequestId::GetSensorData) => {
+                out.field("ack", unsafe { &self.u.ack_request_packet })
+            }
+            Some(IRRequestId::ReadRegister) => {
+                out.field("read_register", unsafe { &self.u.read_registers })
+            }
+            None => out.field("id", &self.id),
+        };
+        out.finish()
+    }
+}
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum IRRequestId {
@@ -57,7 +74,7 @@ union IRRequestUnion {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct IRAckRequestPacket {
     pub packet_missing: RawId<Bool>,
     pub missed_packet_id: u8,
@@ -65,7 +82,7 @@ pub struct IRAckRequestPacket {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct IRReadRegisters {
     pub unknown_0x01: u8,
     pub page: u8,
@@ -131,6 +148,14 @@ pub struct IRData {
     pub white_pixel_count: U16LE,
     pub ambient_noise_count: U16LE,
     pub img_fragment: [u8; 300],
+}
+
+impl fmt::Debug for IRData {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("IRData")
+            .field("frag_number", &self.frag_number)
+            .finish()
+    }
 }
 
 #[repr(packed)]

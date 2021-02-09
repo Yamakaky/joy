@@ -106,6 +106,14 @@ impl OutputReport {
         }
     }
 
+    pub fn mcu_request(&self) -> Option<&MCURequest> {
+        if self.report_id == OutputReportId::RequestMCUData {
+            Some(unsafe { &self.u.mcu_request })
+        } else {
+            None
+        }
+    }
+
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_request(&self) -> &MCURequest {
         &self.u.mcu_request

@@ -85,7 +85,9 @@ impl fmt::Debug for MCUReport {
             x @ Some(MCUReportId::BusyInitializing) => out.field("type", &x),
             x @ Some(MCUReportId::Empty) => out.field("type", &x),
             x @ Some(MCUReportId::EmptyAwaitingCmd) => out.field("type", &x),
-            id => out.field("unknown_id", &id),
+            Some(MCUReportId::IRData) => out.field("ir_data", unsafe { &self.u.ir_data }),
+            x @ Some(_) => out.field("report", &x),
+            None => out.field("unknown_mcu_report_id", &self.id),
         }
         .finish()
     }
@@ -310,7 +312,14 @@ impl From<IRRequest> for MCURequest {
 
 impl fmt::Debug for MCURequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("MCURequest").finish()
+        let mut out = f.debug_struct("MCURequest");
+        match self.id.try_into() {
+            Some(MCURequestId::GetIRData) => out.field("ir_request", unsafe { &self.u.ir_request }),
+            Some(MCURequestId::GetNFCData) => unimplemented!(),
+            id @ Some(MCURequestId::GetMCUStatus) => out.field("id", &id),
+            None => out.field("id", &self.id),
+        };
+        out.finish()
     }
 }
 
