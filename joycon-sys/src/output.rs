@@ -311,7 +311,8 @@ impl fmt::Debug for SubcommandRequest {
                 out.field("set_player_lights", unsafe { &self.u.player_lights })
             }
             subcmd @ Some(SubcommandId::GetOnlyControllerState)
-            | subcmd @ Some(SubcommandId::GetTriggerButtonsElapsedTime) => {
+            | subcmd @ Some(SubcommandId::GetTriggerButtonsElapsedTime)
+            | subcmd @ Some(SubcommandId::RequestDeviceInfo) => {
                 out.field("subcommand", &subcmd.expect("unreachable"))
             }
             Some(subcmd) => {

@@ -465,6 +465,9 @@ impl fmt::Debug for SubcommandReply {
             Some(SubcommandId::SetMCUConf) | Some(SubcommandId::SetMCUState) => {
                 out.field("mcu_report", unsafe { &self.u.mcu_report })
             }
+            Some(SubcommandId::SPIRead) => {
+                out.field("spi_read_result", unsafe { &self.u.spi_read })
+            }
             subcmd @ Some(SubcommandId::SetIMUMode)
             | subcmd @ Some(SubcommandId::SetPlayerLights)
             | subcmd @ Some(SubcommandId::SetInputReportMode)

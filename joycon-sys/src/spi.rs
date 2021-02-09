@@ -60,7 +60,7 @@ impl SPIReadRequest {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct SPIWriteRequest {
     address: U32LE,
     size: u8,
@@ -127,21 +127,58 @@ impl TryFrom<SPIReadResult> for UseSPIColors {
     }
 }
 
+impl fmt::Debug for SPIWriteRequest {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = f.debug_struct("SPIWriteRequest");
+        dbg_spi_data(&mut out, self.address, self.size, &self.data);
+        out.finish()
+    }
+}
+
+fn dbg_spi_data(out: &mut fmt::DebugStruct, address: U32LE, size: u8, data: &SPIData) -> () {
+    unsafe {
+        let raw = &&data.raw[..size as usize];
+        match (u32::from(address), size) {
+            (0x6000, 16) => out.field("serial", raw),
+            (0x603d, 25) => out.field("stick_factory", &data.sticks_factory_calib),
+            (0x6050, 13) => out.field("color", &data.color),
+            (0x6080, 24) => out
+                .field("horizontal_offset", &&raw[..6])
+                .field("stick_parameter1", &&raw[6..]),
+            (0x6098, 18) => out.field("stick_parameter2", raw),
+            (0x8010, 24) => out.field("stick_user", &data.sticks_user_calib),
+            (0x8028, 24) => out.field("imu_user", &data.imu_factory_calib),
+            _ => out
+                .field("address", &address)
+                .field("size", &size)
+                .field("raw", raw),
+        };
+    }
+}
+
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct SPIReadResult {
-    address: [u8; 4],
+    address: U32LE,
     size: u8,
     data: SPIData,
 }
 
 impl SPIReadResult {
     pub fn range(&self) -> SPIRange {
-        SPIRange(u32::from_le_bytes(self.address), self.size)
+        SPIRange(self.address.into(), self.size)
     }
 
     pub fn raw(&self) -> [u8; 0x1D] {
         unsafe { self.data.raw }
+    }
+}
+
+impl fmt::Debug for SPIReadResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut out = f.debug_struct("SPIReadResult");
+        dbg_spi_data(&mut out, self.address, self.size, &self.data);
+        out.finish()
     }
 }
 
@@ -167,12 +204,6 @@ union SPIData {
     color: ControllerColor,
     use_spi_colors: RawId<UseSPIColors>,
     raw: [u8; 0x1D],
-}
-
-impl fmt::Debug for SPIData {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("SPIResultData").finish()
-    }
 }
 
 // TODO: clean
