@@ -98,6 +98,14 @@ impl OutputReport {
         }
     }
 
+    pub fn subcmd_request(&self) -> Option<&SubcommandRequest> {
+        if self.report_id == OutputReportId::RumbleAndSubcmd {
+            Some(unsafe { &self.u.subcmd })
+        } else {
+            None
+        }
+    }
+
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_request(&self) -> &MCURequest {
         &self.u.mcu_request

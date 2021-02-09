@@ -424,13 +424,17 @@ fn decode() -> anyhow::Result<()> {
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            println!("{} {:?}", time, report);
+            if let Some(subcmd) = report.subcmd_reply() {
+                println!("{} {:?}", time, subcmd);
+            }
         } else {
             let mut report = OutputReport::new();
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            println!("{} {:?}", time, report);
+            if let Some(subcmd) = report.subcmd_request() {
+                println!("{} {:?}", time, subcmd);
+            }
         }
     }
 
