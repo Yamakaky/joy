@@ -413,6 +413,8 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
 
 fn decode() -> anyhow::Result<()> {
     let stdin = std::io::stdin();
+    let mut image = joycon::Image::new();
+    image.change_resolution(joycon::joycon_sys::mcu::ir::Resolution::R320x240);
     for line in stdin.lock().lines() {
         let line = line?;
         let fragments: Vec<&str> = line.split(" ").collect();
@@ -426,6 +428,13 @@ fn decode() -> anyhow::Result<()> {
             raw_report[..len].copy_from_slice(&hex[..len]);
             if let Some(subcmd) = report.subcmd_reply() {
                 println!("{} {:?}", time, subcmd);
+            } else if let Some(mcu) = report.mcu_report() {
+                println!("{} {:?}", time, mcu);
+                image.handle(mcu);
+                if let Some(img) = image.last_image.take() {
+                    img.save("/tmp/out.png")?;
+                    dbg!("new image");
+                }
             }
         } else {
             let mut report = OutputReport::new();
@@ -434,6 +443,8 @@ fn decode() -> anyhow::Result<()> {
             raw_report[..len].copy_from_slice(&hex[..len]);
             if let Some(subcmd) = report.subcmd_request() {
                 println!("{} {:?}", time, subcmd);
+            } else if let Some(mcu) = report.mcu_request() {
+                println!("{} {:?}", time, mcu);
             }
         }
     }
