@@ -455,8 +455,20 @@ impl JoyCon {
         }))?;
         self.send_subcmd_wait(SubcommandRequest::subcmd_0x59())?;
         self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::MaybeRingcon))?;
-        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5c())?;
+        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5c_6())?;
         self.send_subcmd_wait(SubcommandRequest::subcmd_0x5a())?;
+        Ok(())
+    }
+
+    pub fn disable_ringcon(&mut self) -> Result<()> {
+        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5b())?;
+        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
+        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5c_0())?;
+        self.send_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
+            ir_mode: MCUIRMode::IRSensorReset.into(),
+            no_of_frags: 0,
+            mcu_fw_version: (0.into(), 0.into()),
+        }))?;
         Ok(())
     }
 

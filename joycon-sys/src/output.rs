@@ -247,7 +247,26 @@ impl SubcommandRequest {
         }
     }
 
-    pub fn subcmd_0x5c() -> Self {
+    pub fn subcmd_0x5b() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::Unknown0x5b.into(),
+            u: SubcommandRequestUnion { raw: [0; 38] },
+        }
+    }
+
+    pub fn subcmd_0x5c_0() -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::Unknown0x5c.into(),
+            u: SubcommandRequestUnion {
+                raw: [
+                    0, 0, 150, 227, 28, 0, 0, 0, 236, 153, 172, 227, 28, 0, 0, 0, 243, 130, 241,
+                    89, 46, 89, 0, 0, 224, 88, 179, 227, 28, 0, 0, 0, 0, 242, 5, 42, 1, 0,
+                ],
+            },
+        }
+    }
+
+    pub fn subcmd_0x5c_6() -> Self {
         SubcommandRequest {
             subcommand_id: SubcommandId::Unknown0x5c.into(),
             u: SubcommandRequestUnion {

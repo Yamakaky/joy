@@ -41,6 +41,7 @@ pub enum SubcommandId {
     SetIMUMode = 0x40,
     SetIMUSens = 0x41,
     EnableVibration = 0x48,
+    Unknown0x58 = 0x58,
     // Always [] arg, [0, 32] return
     Unknown0x59 = 0x59,
     // Always [4, 1, 1, 2] arg, [] return
