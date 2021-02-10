@@ -2,10 +2,10 @@
 //!
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
-use crate::light;
 use crate::mcu::ir::*;
 use crate::mcu::*;
 use crate::spi::*;
+use crate::{accessory::AccessoryCommand, light};
 use crate::{common::*, imu::IMUMode};
 use std::fmt;
 
@@ -300,6 +300,9 @@ impl fmt::Debug for SubcommandRequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("SubcommandRequest");
         match self.subcommand_id.try_into() {
+            Some(SubcommandId::MaybeAccessory) => {
+                out.field("accessory_cmd", unsafe { &self.u.accessory })
+            }
             Some(SubcommandId::SetInputReportMode) => {
                 out.field("report_mode", unsafe { &self.u.input_report_mode })
             }
@@ -439,6 +442,7 @@ union SubcommandRequestUnion {
     imu_sensitivity: crate::imu::Sensitivity,
     shipment_mode: RawId<Bool>,
     enable_vibration: RawId<Bool>,
+    accessory: AccessoryCommand,
     raw: [u8; 38],
 }
 

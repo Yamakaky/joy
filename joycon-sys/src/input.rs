@@ -2,10 +2,10 @@
 //!
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
-use crate::common::*;
 use crate::imu;
 use crate::mcu::*;
 use crate::spi::*;
+use crate::{accessory::AccessoryResponse, common::*};
 use num::FromPrimitive;
 use std::fmt;
 
@@ -468,6 +468,9 @@ impl fmt::Debug for SubcommandReply {
             Some(SubcommandId::SPIRead) => {
                 out.field("spi_read_result", unsafe { &self.u.spi_read })
             }
+            Some(SubcommandId::MaybeAccessory) => {
+                out.field("accessory_response", unsafe { &self.u.accessory })
+            }
             subcmd @ Some(SubcommandId::SetIMUMode)
             | subcmd @ Some(SubcommandId::SetPlayerLights)
             | subcmd @ Some(SubcommandId::SetInputReportMode)
@@ -520,6 +523,7 @@ union SubcommandReplyUnion {
     spi_write: SPIWriteResult,
     mcu_report: MCUReport,
     trigger_buttons_elapsed_time: [U16LE; 7],
+    accessory: AccessoryResponse,
     raw: [u8; 39],
 }
 

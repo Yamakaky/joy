@@ -12,6 +12,7 @@ pub mod input;
 pub mod light;
 pub mod mcu;
 pub mod output;
+pub mod accessory;
 pub mod spi;
 
 pub use common::*;

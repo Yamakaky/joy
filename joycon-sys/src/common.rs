@@ -52,7 +52,8 @@ pub enum SubcommandId {
     //                            ret [0, 4]
     // get number steps offline ringcon: arg [4,4,49,2], ret [0,8,0,0,0,0,nb_steps, 0,0, 127|143]
     // reset number steps offline ringcon: arg [8,4,49,1,4], ret [0,4]
-    Unknown0x58 = 0x58,
+    // Possibly accessory interaction like ringcon
+    MaybeAccessory = 0x58,
     // Always [] arg, [0, 32] return
     Unknown0x59 = 0x59,
     // Always [4, 1, 1, 2] arg, [] return
