@@ -60,14 +60,31 @@ impl AccessoryCommand {
         }
     }
 
-    pub fn write_offline_steps() -> Self {
+    // Known CRC values:
+    //    0 0
+    //    1 127
+    //    2 254
+    //    3 129
+    //    4 113
+    //    5 14
+    //    0x64 74
+    //    0xf0 173
+    //    0x100 200
+    //    0x101 183
+    //    0x103 73
+    //    0x104 185
+    //    0x1f4 20
+    pub fn write_offline_steps(steps: u16, sum: u8) -> Self {
+        let steps = steps.to_le_bytes();
         AccessoryCommand {
             id: AccessoryCommandId::Reset.into(),
             ty: AccessoryType::Ringcon.into(),
             item: RingconItemId::OfflineSteps.into(),
             maybe_includes_arg: 1,
             maybe_arg_size: 4,
-            raw: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            raw: [
+                steps[0], steps[1], 0, sum, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
         }
     }
 }
@@ -75,6 +92,7 @@ impl AccessoryCommand {
 #[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct AccessoryResponse {
+    //254: nothing connected
     maybe_error: u8,
     len: u8,
     unknown_0x00: [u8; 4],
@@ -82,7 +100,12 @@ pub struct AccessoryResponse {
 }
 
 impl AccessoryResponse {
+    pub fn check_error(&self) {
+        assert_eq!(self.maybe_error, 0);
+    }
+
     pub fn offline_steps(&self) -> &OfflineSteps {
+        self.check_error();
         unsafe { &self.u.offline_steps }
     }
 }
