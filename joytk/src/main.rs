@@ -4,6 +4,7 @@ use clap::Clap;
 use joycon::{
     hidapi::HidApi,
     joycon_sys::{
+        accessory::AccessoryCommand,
         input::{BatteryLevel, Stick, UseSPIColors, WhichController},
         light::{self, PlayerLight},
         spi::{
@@ -455,9 +456,21 @@ fn decode() -> anyhow::Result<()> {
 fn ringcon(joycon: &mut JoyCon) -> anyhow::Result<()> {
     joycon.enable_ringcon()?;
     dbg!("end init");
-    loop {
-        let report = joycon.recv()?;
-        let frames = report.imu_frames().unwrap();
-        dbg!(frames[2].raw_ringcon());
-    }
+    dbg!(joycon
+        .call_subcmd_wait(AccessoryCommand::get_offline_steps())?
+        .accessory_response()
+        .unwrap()
+        .offline_steps());
+    //dbg!(joycon.call_subcmd(AccessoryCommand::write_offline_steps(0xf0, 173))?);
+    //dbg!(joycon
+    //    .call_subcmd(AccessoryCommand::get_offline_steps())?
+    //    .accessory_response()
+    //    .unwrap()
+    //    .offline_steps());
+    Ok(())
+    //loop {
+    //    let report = joycon.recv()?;
+    //    let frames = report.imu_frames().unwrap();
+    //    dbg!(frames[2].raw_ringcon());
+    //}
 }
