@@ -27,6 +27,9 @@ use std::{thread::sleep, time::Instant};
 struct Opts {
     #[clap(subcommand)]
     subcmd: SubCommand,
+    /// Wait for a controller to connect
+    #[clap(short, long)]
+    wait: bool,
 }
 
 #[derive(Clap)]
@@ -105,51 +108,63 @@ fn main() -> Result<()> {
     }
 
     let api = HidApi::new()?;
-    if let Some(device_info) = api
-        .device_list()
-        .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
-    {
-        let device = device_info.open_device(&api)?;
-        let mut joycon = JoyCon::new(device, device_info.clone())?;
+    loop {
+        if let Some(device_info) = api
+            .device_list()
+            .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
+        {
+            let device = device_info.open_device(&api)?;
+            let joycon = JoyCon::new(device, device_info.clone())?;
 
-        joycon.set_home_light(light::HomeLight::new(
-            0x8,
-            0x2,
-            0x0,
-            &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
-        ))?;
-
-        let battery_level = joycon.tick()?.info.battery_level();
-
-        joycon.set_player_light(light::PlayerLights::new(
-            (battery_level >= BatteryLevel::Full).into(),
-            (battery_level >= BatteryLevel::Medium).into(),
-            (battery_level >= BatteryLevel::Low).into(),
-            if battery_level >= BatteryLevel::Low {
-                PlayerLight::On
-            } else {
-                PlayerLight::Blinking
-            },
-        ))?;
-
-        match opts.subcmd {
-            SubCommand::Calibrate(calib) => match calib.subcmd {
-                CalibrateE::Sticks => calibrate_sticks(&mut joycon)?,
-                CalibrateE::Gyroscope => calibrate_gyro(&mut joycon)?,
-                CalibrateE::Reset => reset_calibration(&mut joycon)?,
-            },
-            SubCommand::Get => get(&mut joycon)?,
-            SubCommand::Set(set) => match set.subcmd {
-                SetE::Color(arg) => set_color(&mut joycon, arg)?,
-            },
-            SubCommand::Monitor => monitor(&mut joycon)?,
-            SubCommand::Dump => dump(&mut joycon)?,
-            SubCommand::Restore => restore(&mut joycon)?,
-            SubCommand::Decode => unreachable!(),
-            SubCommand::Ringcon => ringcon(&mut joycon)?,
+            hid_main(joycon, &opts)?;
+        } else if !opts.wait {
+            eprintln!("No device found");
         }
-    } else {
-        eprintln!("No device found");
+
+        if opts.wait {
+            sleep(Duration::from_millis(200));
+        } else {
+            return Ok(());
+        }
+    }
+}
+
+fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
+    joycon.set_home_light(light::HomeLight::new(
+        0x8,
+        0x2,
+        0x0,
+        &[(0xf, 0xf, 0), (0x2, 0xf, 0)],
+    ))?;
+
+    let battery_level = joycon.tick()?.info.battery_level();
+
+    joycon.set_player_light(light::PlayerLights::new(
+        (battery_level >= BatteryLevel::Full).into(),
+        (battery_level >= BatteryLevel::Medium).into(),
+        (battery_level >= BatteryLevel::Low).into(),
+        if battery_level >= BatteryLevel::Low {
+            PlayerLight::On
+        } else {
+            PlayerLight::Blinking
+        },
+    ))?;
+
+    match opts.subcmd {
+        SubCommand::Calibrate(ref calib) => match calib.subcmd {
+            CalibrateE::Sticks => calibrate_sticks(&mut joycon)?,
+            CalibrateE::Gyroscope => calibrate_gyro(&mut joycon)?,
+            CalibrateE::Reset => reset_calibration(&mut joycon)?,
+        },
+        SubCommand::Get => get(&mut joycon)?,
+        SubCommand::Set(ref set) => match set.subcmd {
+            SetE::Color(ref arg) => set_color(&mut joycon, arg)?,
+        },
+        SubCommand::Monitor => monitor(&mut joycon)?,
+        SubCommand::Dump => dump(&mut joycon)?,
+        SubCommand::Restore => restore(&mut joycon)?,
+        SubCommand::Decode => unreachable!(),
+        SubCommand::Ringcon => ringcon(&mut joycon)?,
     }
     Ok(())
 }
@@ -376,7 +391,7 @@ fn get(joycon: &mut JoyCon) -> Result<()> {
     Ok(())
 }
 
-fn set_color(joycon: &mut JoyCon, arg: SetColor) -> Result<()> {
+fn set_color(joycon: &mut JoyCon, arg: &SetColor) -> Result<()> {
     let dev_info = joycon.get_dev_info()?;
     let is_pro_controller = dev_info.which_controller == WhichController::ProController;
 
@@ -385,7 +400,7 @@ fn set_color(joycon: &mut JoyCon, arg: SetColor) -> Result<()> {
         buttons: arg.buttons.parse()?,
         ..Default::default()
     };
-    if let (Some(left), Some(right)) = (arg.left_grip, arg.right_grip) {
+    if let (Some(left), Some(right)) = (arg.left_grip.as_ref(), arg.right_grip.as_ref()) {
         if is_pro_controller {
             colors.left_grip = left.parse()?;
             colors.right_grip = right.parse()?;
