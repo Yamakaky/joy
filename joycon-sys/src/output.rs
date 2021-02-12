@@ -296,12 +296,21 @@ impl From<MCUCommand> for SubcommandRequest {
     }
 }
 
+impl From<AccessoryCommand> for SubcommandRequest {
+    fn from(accessory_cmd: AccessoryCommand) -> Self {
+        SubcommandRequest {
+            subcommand_id: SubcommandId::MaybeAccessory.into(),
+            u: SubcommandRequestUnion { accessory_cmd },
+        }
+    }
+}
+
 impl fmt::Debug for SubcommandRequest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("SubcommandRequest");
         match self.subcommand_id.try_into() {
             Some(SubcommandId::MaybeAccessory) => {
-                out.field("accessory_cmd", unsafe { &self.u.accessory })
+                out.field("accessory_cmd", unsafe { &self.u.accessory_cmd })
             }
             Some(SubcommandId::SetInputReportMode) => {
                 out.field("report_mode", unsafe { &self.u.input_report_mode })
@@ -442,7 +451,7 @@ union SubcommandRequestUnion {
     imu_sensitivity: crate::imu::Sensitivity,
     shipment_mode: RawId<Bool>,
     enable_vibration: RawId<Bool>,
-    accessory: AccessoryCommand,
+    accessory_cmd: AccessoryCommand,
     raw: [u8; 38],
 }
 

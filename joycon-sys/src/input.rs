@@ -448,6 +448,14 @@ impl SubcommandReply {
             None
         }
     }
+
+    pub fn accessory_response(&self) -> Option<&AccessoryResponse> {
+        if self.subcommand_id == SubcommandId::MaybeAccessory {
+            Some(unsafe { &self.u.accessory })
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Debug for SubcommandReply {

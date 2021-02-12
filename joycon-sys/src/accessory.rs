@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::RawId;
+use crate::{RawId, U16LE};
 
 // subcommand id 0x58
 //
@@ -44,7 +44,32 @@ pub struct AccessoryCommand {
     id: RawId<AccessoryCommandId>,
     ty: RawId<AccessoryType>,
     item: RawId<RingconItemId>,
-    raw: [u8; 20],
+    maybe_includes_arg: u8,
+    maybe_arg_size: u8,
+    raw: [u8; 18],
+}
+impl AccessoryCommand {
+    pub fn get_offline_steps() -> Self {
+        AccessoryCommand {
+            id: AccessoryCommandId::Get.into(),
+            ty: AccessoryType::Ringcon.into(),
+            item: RingconItemId::OfflineSteps.into(),
+            maybe_includes_arg: 2,
+            maybe_arg_size: 0,
+            raw: [0; 18],
+        }
+    }
+
+    pub fn write_offline_steps() -> Self {
+        AccessoryCommand {
+            id: AccessoryCommandId::Reset.into(),
+            ty: AccessoryType::Ringcon.into(),
+            item: RingconItemId::OfflineSteps.into(),
+            maybe_includes_arg: 1,
+            maybe_arg_size: 4,
+            raw: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        }
+    }
 }
 
 #[repr(packed)]
@@ -52,14 +77,36 @@ pub struct AccessoryCommand {
 pub struct AccessoryResponse {
     maybe_error: u8,
     len: u8,
-    raw: [u8; 20],
+    unknown_0x00: [u8; 4],
+    u: AccessoryResponseUnion,
+}
+
+impl AccessoryResponse {
+    pub fn offline_steps(&self) -> &OfflineSteps {
+        unsafe { &self.u.offline_steps }
+    }
 }
 
 impl fmt::Debug for AccessoryResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AccessoryResponse")
             .field("maybe_error", &self.maybe_error)
-            .field("data", &&self.raw[..self.len as usize])
+            .field("always_0x00", &self.unknown_0x00)
+            .field("data", unsafe { &&self.u.raw[..self.len as usize] })
             .finish()
     }
+}
+
+#[derive(Copy, Clone)]
+union AccessoryResponseUnion {
+    offline_steps: OfflineSteps,
+    raw: [u8; 20],
+}
+
+#[repr(packed)]
+#[derive(Copy, Clone, Debug)]
+pub struct OfflineSteps {
+    steps: U16LE,
+    unknown0x00: u8,
+    maybe_crc: u8,
 }
