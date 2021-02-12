@@ -64,7 +64,7 @@ impl JoyCon {
             device_type,
         };
 
-        joycon.send_subcmd_wait(SubcommandRequest::disable_shipment_mode())?;
+        joycon.call_subcmd_wait(SubcommandRequest::disable_shipment_mode())?;
         joycon.set_report_mode_standard()?;
         Ok(joycon)
     }
@@ -159,28 +159,28 @@ impl JoyCon {
     }
 
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
-        let reply = self.send_subcmd_wait(SubcommandRequest::request_device_info())?;
+        let reply = self.call_subcmd_wait(SubcommandRequest::request_device_info())?;
         Ok(*reply.device_info().unwrap())
     }
 
     pub fn set_home_light(&mut self, home_light: light::HomeLight) -> Result<()> {
-        self.send_subcmd_wait(home_light)?;
+        self.call_subcmd_wait(home_light)?;
         Ok(())
     }
 
     pub fn set_player_light(&mut self, player_lights: light::PlayerLights) -> Result<()> {
-        self.send_subcmd_wait(player_lights)?;
+        self.call_subcmd_wait(player_lights)?;
         Ok(())
     }
 
     fn set_report_mode_standard(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
+        self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
             InputReportId::StandardFull,
         ))?;
         Ok(())
     }
 
-    fn send_subcmd_wait<S: Into<SubcommandRequest>>(
+    pub fn call_subcmd_wait<S: Into<SubcommandRequest>>(
         &mut self,
         subcmd: S,
     ) -> Result<SubcommandReply> {
@@ -202,25 +202,25 @@ impl JoyCon {
     }
 
     pub fn read_spi<S: SPI>(&mut self) -> Result<S> {
-        let reply = self.send_subcmd_wait(SPIReadRequest::new(S::range()))?;
+        let reply = self.call_subcmd_wait(SPIReadRequest::new(S::range()))?;
         let result = reply.spi_result().unwrap();
         Ok((*result).try_into()?)
     }
 
     pub fn read_spi_raw(&mut self, range: SPIRange) -> Result<[u8; 0x1D]> {
-        let reply = self.send_subcmd_wait(SPIReadRequest::new(range))?;
+        let reply = self.call_subcmd_wait(SPIReadRequest::new(range))?;
         let result = reply.spi_result().unwrap();
         assert_eq!(result.range(), range);
         Ok(result.raw())
     }
 
     pub fn write_spi<S: SPI + Into<SPIWriteRequest>>(&mut self, value: S) -> Result<bool> {
-        let reply = self.send_subcmd_wait(value.into())?;
+        let reply = self.call_subcmd_wait(value.into())?;
         Ok(reply.spi_write_success().unwrap())
     }
 
     pub unsafe fn write_spi_raw(&mut self, range: SPIRange, data: &[u8]) -> Result<bool> {
-        let reply = self.send_subcmd_wait(SPIWriteRequest::new(range, data))?;
+        let reply = self.call_subcmd_wait(SPIWriteRequest::new(range, data))?;
         Ok(reply.spi_write_success().unwrap())
     }
 }
@@ -237,27 +237,27 @@ impl JoyCon {
     pub fn disable_mcu(&mut self) -> Result<()> {
         self.enable_ir_loop = false;
         self.set_report_mode_standard()?;
-        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
+        self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
         Ok(())
     }
 
     fn enable_mcu(&mut self) -> Result<()> {
         self.set_report_mode_mcu()?;
-        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
         self.wait_mcu_status(MCUMode::Standby)
             .context("enable_mcu")?;
         Ok(())
     }
 
     fn set_report_mode_mcu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_input_report_mode(
+        self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
             InputReportId::StandardFullMCU,
         ))?;
         Ok(())
     }
 
     fn set_mcu_mode_ir(&mut self) -> Result<()> {
-        self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::IR))?;
+        self.call_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::IR))?;
         self.wait_mcu_status(MCUMode::IR)
             .context("set_mcu_mode_ir")?;
         self.enable_ir_loop = true;
@@ -279,7 +279,7 @@ impl JoyCon {
             no_of_frags: frags,
             mcu_fw_version,
         });
-        self.send_subcmd_wait(mcu_cmd)?;
+        self.call_subcmd_wait(mcu_cmd)?;
 
         self.wait_mcu_cond(IRRequest::get_state(), |r| {
             r.as_ir_status()
@@ -366,7 +366,7 @@ impl JoyCon {
             no_of_frags: 0,
             mcu_fw_version,
         });
-        self.send_subcmd_wait(mcu_cmd)?;
+        self.call_subcmd_wait(mcu_cmd)?;
 
         self.wait_mcu_cond(IRRequest::get_state(), |r| {
             r.as_ir_status()
@@ -417,7 +417,7 @@ impl JoyCon {
 /// IMU handling (gyroscope and accelerometer)
 impl JoyCon {
     pub fn enable_imu(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::GyroAccel))?;
+        self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::GyroAccel))?;
         Ok(())
     }
 
@@ -425,7 +425,7 @@ impl JoyCon {
     pub fn set_imu_sens(&mut self) -> Result<()> {
         let gyro_sens = imu::GyroSens::DPS2000;
         let accel_sens = imu::AccSens::G8;
-        self.send_subcmd_wait(imu::Sensitivity {
+        self.call_subcmd_wait(imu::Sensitivity {
             gyro_sens: gyro_sens.into(),
             acc_sens: accel_sens.into(),
             ..imu::Sensitivity::default()
@@ -441,30 +441,30 @@ impl JoyCon {
 /// Ringcon handling
 impl JoyCon {
     pub fn enable_ringcon(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
         loop {
-            let out = self.send_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::MaybeRingcon))?;
+            let out = self.call_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::MaybeRingcon))?;
             if out.mcu_report().unwrap().as_status().unwrap().state == MCUMode::MaybeRingcon {
                 break;
             }
         }
-        self.send_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
+        self.call_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
             ir_mode: MCUIRMode::IRSensorSleep.into(),
             no_of_frags: 0,
             mcu_fw_version: (0.into(), 0.into()),
         }))?;
-        self.send_subcmd_wait(SubcommandRequest::subcmd_0x59())?;
-        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::MaybeRingcon))?;
-        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5c_6())?;
-        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5a())?;
+        self.call_subcmd_wait(SubcommandRequest::subcmd_0x59())?;
+        self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::MaybeRingcon))?;
+        self.call_subcmd_wait(SubcommandRequest::subcmd_0x5c_6())?;
+        self.call_subcmd_wait(SubcommandRequest::subcmd_0x5a())?;
         Ok(())
     }
 
     pub fn disable_ringcon(&mut self) -> Result<()> {
-        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5b())?;
-        self.send_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
-        self.send_subcmd_wait(SubcommandRequest::subcmd_0x5c_0())?;
-        self.send_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
+        self.call_subcmd_wait(SubcommandRequest::subcmd_0x5b())?;
+        self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
+        self.call_subcmd_wait(SubcommandRequest::subcmd_0x5c_0())?;
+        self.call_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
             ir_mode: MCUIRMode::IRSensorReset.into(),
             no_of_frags: 0,
             mcu_fw_version: (0.into(), 0.into()),
