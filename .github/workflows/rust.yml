@@ -4,39 +4,39 @@ on: [push, pull_request]
 
 jobs:
   release:
-    name: GitHub Pages
+    name: Build, test and doc
     runs-on: ubuntu-latest
 
     steps:
-  - uses: actions/checkout@v2
-  - uses: actions/cache@v2
-    id: cache
-    with:
-      path: |
-        ~/.cargo/registry
-        ~/.cargo/git
-        ~/.local/share/cargo
-        target
-      key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
-
-  - name: ⚙️ Install SDL dependencies
-    run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libudev-dev
-
-  - name: 🔨 Build
-    run: cargo build --workspace --verbose
-
-  - name: ⚙️ Run tests
-    run: cargo test --workspace --verbose
-
-  - name: 🔨 Build Documentation
-    uses: actions-rs/cargo@v1
-    with:
-      command: doc
-      args: --workspace  --no-deps
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      id: cache
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          ~/.local/share/cargo
+          target
+        key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
   
-  - name: ☁️ Deploy Documentation
-    uses: peaceiris/actions-gh-pages@v3
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-    with:
-      deploy_key: ${{ secrets.GITHUB_TOKEN }}
-      publish_dir: ./target/doc
+    - name: ⚙️ Install SDL dependencies
+      run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libudev-dev
+  
+    - name: 🔨 Build
+      run: cargo build --workspace --verbose
+  
+    - name: ⚙️ Run tests
+      run: cargo test --workspace --verbose
+  
+    - name: 🔨 Build Documentation
+      uses: actions-rs/cargo@v1
+      with:
+        command: doc
+        args: --workspace  --no-deps
+    
+    - name: ☁️ Deploy Documentation
+      uses: peaceiris/actions-gh-pages@v3
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      with:
+        deploy_key: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./target/doc
