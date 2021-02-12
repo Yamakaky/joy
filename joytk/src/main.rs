@@ -22,6 +22,7 @@ use std::{
 };
 use std::{thread::sleep, time::Instant};
 
+/// Access every feature of the Nintendo Switch controllers
 #[derive(Clap)]
 struct Opts {
     #[clap(subcommand)]
@@ -30,13 +31,27 @@ struct Opts {
 
 #[derive(Clap)]
 enum SubCommand {
+    /// Calibrate the controller
+    ///
+    /// The calibration will be stored on the controller and used by the Switch.
     Calibrate(Calibrate),
+    /// Print settings from the controller
     Get,
+    /// Configure settings of the controller
     Set(Set),
+    /// Show live inputs from the controller
     Monitor,
+    /// Dump the memory of the controller to a binary file
     Dump,
+    /// Restore the memory of the controller from a dump file
     Restore,
+    /// Decode raw reports exchanged between the controller and the Switch
+    ///
+    /// See the `trace/` folder for recorded dumps, and
+    /// [relay_joycon.py](https://github.com/Yamakaky/joycontrol/blob/capture-text-file/scripts/relay_joycon.py)
+    /// for capturing new dumps.
     Decode,
+    /// Ringcon-specific actions
     Ringcon,
 }
 
@@ -48,8 +63,11 @@ struct Calibrate {
 
 #[derive(Clap)]
 enum CalibrateE {
+    /// Calibrate the sticks
     Sticks,
+    /// Calibrate the gyroscope
     Gyroscope,
+    /// Reset gyroscope and sticks calibration to factory values
     Reset,
 }
 
@@ -61,14 +79,21 @@ struct Set {
 
 #[derive(Clap)]
 enum SetE {
+    /// Change the color of the controller
+    ///
+    /// This is used by the switch for the controller icons. Every color is in `RRGGBB` format.
     Color(SetColor),
 }
 
 #[derive(Clap)]
 struct SetColor {
+    /// Color of the body of the controller
     body: String,
+    /// Color of the buttons, sticks and triggers
     buttons: String,
+    /// Color of the left grip (Pro Controller only)
     left_grip: Option<String>,
+    /// Color of the right grip (Pro Controller only)
     right_grip: Option<String>,
 }
 
@@ -131,6 +156,7 @@ fn main() -> Result<()> {
 
 fn reset_calibration(joycon: &mut JoyCon) -> Result<()> {
     joycon.write_spi(UserSensorCalibration::reset())?;
+    // TODO: reset sticks
     Ok(())
 }
 
@@ -243,6 +269,7 @@ fn calibrate_sticks(joycon: &mut JoyCon) -> Result<()> {
 
     dbg!((l_x_min, left_neutral.x(), l_x_max));
     dbg!((l_y_min, left_neutral.y(), l_y_max));
+    // TODO: write calibration
 
     Ok(())
 }
