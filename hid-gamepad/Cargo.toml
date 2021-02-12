@@ -7,11 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.36"
-cgmath = "0.17.0"
+anyhow = "1.0"
+cgmath = "0.18"
 dualshock = { path = "../dualshock/" }
-enum-map = "0.6.4"
+enum-map = "0.6"
 hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 joycon = { path = "../joycon/" }
-thiserror = "1.0.22"
+thiserror = "1.0"

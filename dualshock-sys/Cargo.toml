@@ -10,5 +10,5 @@ edition = "2018"
 num = { version = "0.3", optional = false, default-features = false }
 num-traits = { version = "0.2", optional = false, default-features = false }
 num-derive = { version = "0.3", optional = false, default-features = false }
-cgmath = "0.17.0"
-bitfield = "0.13.2"
+cgmath = "0.18"
+bitfield = "0.13"
