@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["joy_infrared"] = [{"text":"impl Pod for Vertex2D","synthetic":false,"types":[]},{"text":"impl Pod for Uniforms","synthetic":false,"types":[]},{"text":"impl Pod for Lights","synthetic":false,"types":[]},{"text":"impl Pod for Light","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

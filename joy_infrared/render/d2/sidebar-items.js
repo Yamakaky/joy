@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["D2",""],["Vertex2D",""]]});

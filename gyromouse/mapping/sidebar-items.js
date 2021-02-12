@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["JOYKEY_SIZE",""],["MAP_KEY_SIZE",""],["VIRTKEY_SIZE",""]],"enum":[["Action",""],["ExtAction",""],["KeyStatus",""],["MapKey",""],["VirtualKey",""]],"struct":[["Buttons",""],["KeyState",""],["Layer",""]]});

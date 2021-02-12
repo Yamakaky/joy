@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["InputReportId",""]],"struct":[["Accel",""],["BTFullReport",""],["BTSimpleReport",""],["BTTrackpad",""],["Buttons",""],["Dpad",""],["Finger",""],["FingerCoord",""],["FullReport",""],["Gyro",""],["InputReport",""],["SimpleReport",""],["Stick",""],["TrackpadPacket",""],["Trigger",""],["Type",""],["USBReport",""],["USBTrackpad",""]]});

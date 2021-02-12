@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["joy_infrared"] = [{"text":"impl Zeroable for Vertex2D","synthetic":false,"types":[]},{"text":"impl Zeroable for Uniforms","synthetic":false,"types":[]},{"text":"impl Zeroable for Lights","synthetic":false,"types":[]},{"text":"impl Zeroable for Light","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

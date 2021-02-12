@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["joytk"] = [{"text":"impl FromArgMatches for Opts","synthetic":false,"types":[]},{"text":"impl FromArgMatches for SubCommand","synthetic":false,"types":[]},{"text":"impl FromArgMatches for Calibrate","synthetic":false,"types":[]},{"text":"impl FromArgMatches for CalibrateE","synthetic":false,"types":[]},{"text":"impl FromArgMatches for Set","synthetic":false,"types":[]},{"text":"impl FromArgMatches for SetE","synthetic":false,"types":[]},{"text":"impl FromArgMatches for SetColor","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["IMU_SAMPLES_PER_SECOND",""],["IMU_SAMPLE_DURATION",""]],"enum":[["AccAntiAliasing","Anti-aliasing setting of the accelerometer."],["AccSens","Sensitivity range of the accelerometer."],["GyroPerfRate",""],["GyroSens","Sensitivity range of the gyroscope."],["IMUMode",""]],"struct":[["Frame",""],["Sensitivity",""]]});

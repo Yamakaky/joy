@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["OutputReportId",""]],"struct":[["OutputReport","Describes a HID report sent to the JoyCon."],["RumbleData",""],["RumbleSide",""],["SubcommandRequest",""]]});

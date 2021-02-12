@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["DS4_REPORT_DT",""],["DS4_REPORT_RATE",""],["HID_PRODUCT_ID_NEW",""],["HID_PRODUCT_ID_OLD",""],["HID_VENDOR_ID",""]],"enum":[["ConnectionType",""]],"mod":[["input",""],["output",""]],"struct":[["I16LE",""],["RawId",""]]});

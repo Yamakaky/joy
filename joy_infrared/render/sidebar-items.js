@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["JoyconCmd",""],["UserEvent",""]],"fn":[["create_multisampled_framebuffer",""],["create_render_pipeline",""],["run",""]],"mod":[["buffer",""],["camera",""],["controls",""],["d2",""],["d3",""],["ir_compute",""],["texture",""],["uniforms",""]],"struct":[["GUI",""]]});

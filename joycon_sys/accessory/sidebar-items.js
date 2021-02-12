@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["AccessoryCommandId",""],["AccessoryType",""],["RingconItemId",""]],"struct":[["AccessoryCommand",""],["AccessoryResponse",""],["OfflineSteps",""]]});
