@@ -154,6 +154,9 @@ impl fmt::Debug for IRData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("IRData")
             .field("frag_number", &self.frag_number)
+            .field("average_intensity", &self.average_intensity)
+            .field("white_pixel_count", &self.white_pixel_count)
+            .field("ambient_noise_count", &self.ambient_noise_count)
             .finish()
     }
 }
