@@ -93,27 +93,31 @@ impl AccessoryCommand {
 #[derive(Copy, Clone)]
 pub struct AccessoryResponse {
     //254: nothing connected
-    maybe_error: u8,
+    error: u8,
     len: u8,
     unknown_0x00: [u8; 4],
     u: AccessoryResponseUnion,
 }
 
 impl AccessoryResponse {
-    pub fn check_error(&self) {
-        assert_eq!(self.maybe_error, 0);
+    fn check_error(&self) -> Result<(), Error> {
+        match self.error {
+            0 => Ok(()),
+            254 => Err(Error::NoAccessoryConnected),
+            e => Err(Error::Other(e)),
+        }
     }
 
-    pub fn offline_steps(&self) -> &OfflineSteps {
-        self.check_error();
-        unsafe { &self.u.offline_steps }
+    pub fn offline_steps(&self) -> Result<OfflineSteps, Error> {
+        self.check_error()?;
+        Ok(unsafe { self.u.offline_steps })
     }
 }
 
 impl fmt::Debug for AccessoryResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AccessoryResponse")
-            .field("maybe_error", &self.maybe_error)
+            .field("maybe_error", &self.error)
             .field("always_0x00", &self.unknown_0x00)
             .field("data", unsafe { &&self.u.raw[..self.len as usize] })
             .finish()
@@ -129,7 +133,24 @@ union AccessoryResponseUnion {
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct OfflineSteps {
-    steps: U16LE,
+    pub steps: U16LE,
     unknown0x00: u8,
     maybe_crc: u8,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Error {
+    NoAccessoryConnected,
+    Other(u8),
+}
+
+impl std::error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::NoAccessoryConnected => f.write_str("no accessory connected"),
+            Error::Other(e) => f.write_fmt(format_args!("unknown accessory error: {}", e)),
+        }
+    }
 }
