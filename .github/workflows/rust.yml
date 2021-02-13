@@ -1,4 +1,4 @@
-name: Deploy Docs to GitHub Pages
+name: Build, test and doc
 
 on: [push, pull_request]
 
