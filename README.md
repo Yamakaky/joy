@@ -13,6 +13,6 @@ The tools can be run with `cargo run --bin <tool>`.
 ## Libraries
 
 - [`joycon-sys`](https://yamakaky.github.io/joy/joycon_sys): decoding and encoding HID reports. Doesn't include any I/O.
-- [`joycon`](https://yamakaky.github.io/joy/joycon)`joycon`: implements I/O and communication protocols on top of `joycon-sys`.
-- [`dualshock`](https://yamakaky.github.io/joy/dualshock)`dualshock`: decoding HID reports from the DS4 controller.
-- [`hid-gamepad`](https://yamakaky.github.io/joy/hid_gamepad)`hid-gamepad`: abstraction above `dualshock` and `joycon`.
+- [`joycon`](https://yamakaky.github.io/joy/joycon): implements I/O and communication protocols on top of `joycon-sys`.
+- [`dualshock`](https://yamakaky.github.io/joy/dualshock): decoding HID reports from the DS4 controller.
+- [`hid-gamepad`](https://yamakaky.github.io/joy/hid_gamepad): abstraction above `dualshock` and `joycon`.
