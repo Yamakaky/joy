@@ -55,7 +55,7 @@ enum SubCommand {
     /// for capturing new dumps.
     Decode,
     /// Ringcon-specific actions
-    Ringcon,
+    Ringcon(Ringcon),
 }
 
 #[derive(Clap)]
@@ -100,6 +100,22 @@ struct SetColor {
     right_grip: Option<String>,
 }
 
+#[derive(Clap)]
+struct Ringcon {
+    #[clap(subcommand)]
+    subcmd: RingconE,
+}
+
+#[derive(Clap)]
+enum RingconE {
+    /// Get the number of flex stored in the ringcon
+    StoredFlex,
+    /// Show the flex value in realtime
+    Monitor,
+    /// Random experiments
+    Exp,
+}
+
 fn main() -> Result<()> {
     let opts = Opts::parse();
 
@@ -117,16 +133,15 @@ fn main() -> Result<()> {
             let joycon = JoyCon::new(device, device_info.clone())?;
 
             hid_main(joycon, &opts)?;
+            break;
         } else if !opts.wait {
             eprintln!("No device found");
-        }
-
-        if opts.wait {
-            sleep(Duration::from_millis(200));
+            break;
         } else {
-            return Ok(());
+            sleep(Duration::from_millis(200));
         }
     }
+    Ok(())
 }
 
 fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
@@ -164,7 +179,7 @@ fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
         SubCommand::Dump => dump(&mut joycon)?,
         SubCommand::Restore => restore(&mut joycon)?,
         SubCommand::Decode => unreachable!(),
-        SubCommand::Ringcon => ringcon(&mut joycon)?,
+        SubCommand::Ringcon(ref cmd) => ringcon(&mut joycon, cmd)?,
     }
     Ok(())
 }
@@ -495,24 +510,27 @@ fn decode() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn ringcon(joycon: &mut JoyCon) -> anyhow::Result<()> {
+fn ringcon(joycon: &mut JoyCon, cmd: &Ringcon) -> anyhow::Result<()> {
+    println!("Ringcon initialisation...");
     joycon.enable_ringcon()?;
-    dbg!("end init");
-    dbg!(joycon
-        .call_subcmd_wait(AccessoryCommand::get_offline_steps())?
-        .accessory_response()
-        .unwrap()
-        .offline_steps());
-    //dbg!(joycon.call_subcmd(AccessoryCommand::write_offline_steps(0xf0, 173))?);
-    //dbg!(joycon
-    //    .call_subcmd(AccessoryCommand::get_offline_steps())?
-    //    .accessory_response()
-    //    .unwrap()
-    //    .offline_steps());
+    match cmd.subcmd {
+        RingconE::StoredFlex => {
+            println!(
+                "Stored steps: {}",
+                joycon
+                    .call_subcmd_wait(AccessoryCommand::get_offline_steps())?
+                    .accessory_response()
+                    .unwrap()
+                    .offline_steps()?
+                    .steps
+            );
+        }
+        RingconE::Monitor => loop {
+            let report = joycon.recv()?;
+            let frames = report.imu_frames().unwrap();
+            println!("Flex value: {}", frames[2].raw_ringcon());
+        },
+        RingconE::Exp => {}
+    }
     Ok(())
-    //loop {
-    //    let report = joycon.recv()?;
-    //    let frames = report.imu_frames().unwrap();
-    //    dbg!(frames[2].raw_ringcon());
-    //}
 }

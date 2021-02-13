@@ -85,6 +85,12 @@ impl fmt::Debug for U16LE {
     }
 }
 
+impl fmt::Display for U16LE {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        u16::from(*self).fmt(f)
+    }
+}
+
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct I16LE(pub [u8; 2]);
 
