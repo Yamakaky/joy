@@ -295,19 +295,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bluetooth-relay"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bluetooth-sys",
- "hex",
- "hidapi",
- "joycon",
- "libc",
- "socket2",
-]
-
-[[package]]
 name = "bluetooth-sys"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1646,10 +1633,13 @@ name = "joytk"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bluetooth-sys",
  "cgmath",
  "clap 3.0.0-beta.2",
  "hex",
  "joycon",
+ "libc",
+ "socket2",
 ]
 
 [[package]]

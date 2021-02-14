@@ -12,3 +12,8 @@ cgmath = "0.18"
 clap = "3.0.0-beta.2"
 hex = "0.4"
 joycon = { path = "../joycon" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+socket2 = "0.3"
+bluetooth-sys = "0.1"

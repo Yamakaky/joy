@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use cgmath::{Deg, Euler, One, Quaternion, Vector3};
 use clap::Clap;
 use joycon::{
@@ -21,6 +21,9 @@ use std::{
     time::Duration,
 };
 use std::{thread::sleep, time::Instant};
+
+#[cfg(target_os = "linux")]
+mod relay;
 
 /// Access every feature of the Nintendo Switch controllers
 #[derive(Clap)]
@@ -54,6 +57,7 @@ enum SubCommand {
     /// [relay_joycon.py](https://github.com/Yamakaky/joycontrol/blob/capture-text-file/scripts/relay_joycon.py)
     /// for capturing new dumps.
     Decode,
+    Relay,
     /// Ringcon-specific actions
     Ringcon(Ringcon),
 }
@@ -130,9 +134,19 @@ fn main() -> Result<()> {
             .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
         {
             let device = device_info.open_device(&api)?;
-            let joycon = JoyCon::new(device, device_info.clone())?;
 
-            hid_main(joycon, &opts)?;
+            if let SubCommand::Relay = opts.subcmd {
+                if cfg!(target_os = "linux") {
+                    relay::relay(device)?;
+                } else {
+                    bail!("relaying only works on linux");
+                }
+            } else {
+                let joycon = JoyCon::new(device, device_info.clone())?;
+
+                hid_main(joycon, &opts)?;
+            }
+
             break;
         } else if !opts.wait {
             eprintln!("No device found");
@@ -178,8 +192,8 @@ fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
         SubCommand::Monitor => monitor(&mut joycon)?,
         SubCommand::Dump => dump(&mut joycon)?,
         SubCommand::Restore => restore(&mut joycon)?,
-        SubCommand::Decode => unreachable!(),
         SubCommand::Ringcon(ref cmd) => ringcon(&mut joycon, cmd)?,
+        SubCommand::Decode | SubCommand::Relay => unreachable!(),
     }
     Ok(())
 }

@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "bluetooth-relay",
     "dualshock-sys",
     "dualshock",
     "hid-gamepad",

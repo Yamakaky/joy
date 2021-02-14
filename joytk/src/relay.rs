@@ -1,7 +1,9 @@
 use anyhow::Context;
 use bluetooth_sys::*;
-use hidapi::HidApi;
-use joycon::joycon_sys::{output::SubcommandRequest, OutputReport, NINTENDO_VENDOR_ID};
+use joycon::{
+    hidapi::HidDevice,
+    joycon_sys::{output::SubcommandRequest, InputReportId::StandardFull, OutputReport},
+};
 use libc::sockaddr;
 use socket2::{SockAddr, Socket};
 use std::{
@@ -12,19 +14,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-fn main() -> anyhow::Result<()> {
-    let api = HidApi::new()?;
-    let device_info = api
-        .device_list()
-        .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
-        .unwrap();
-    let device = device_info.open_device(&api).context("open device")?;
-
-    dbg!("hid");
-
+pub fn relay(device: HidDevice) -> anyhow::Result<()> {
     let (mut _client_ctl, mut client_itr) = connect_switch()?;
 
-    let subcmd = OutputReport::from(SubcommandRequest::request_device_info());
+    let subcmd = OutputReport::from(SubcommandRequest::set_input_report_mode(StandardFull));
     device.write(subcmd.as_bytes())?;
 
     dbg!("raw");
