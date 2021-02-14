@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::Clap;
 
 /// Access every feature of the Nintendo Switch controllers
@@ -28,11 +30,17 @@ pub enum SubCommand {
     Restore,
     /// Decode raw reports exchanged between the controller and the Switch
     ///
+    /// See the `relay` subcommand to record new traces.
+    ///
     /// See the `trace/` folder for recorded dumps, and
     /// [relay_joycon.py](https://github.com/Yamakaky/joycontrol/blob/capture-text-file/scripts/relay_joycon.py)
     /// for capturing new dumps.
     Decode,
-    Relay,
+    /// Relay the bluetooth trafic between a controller and the Switch
+    ///
+    /// Important commands are decoded and shown, and a full log can be recorded.
+    /// See the `decode` subcommand to decode logs.
+    Relay(Relay),
     /// Ringcon-specific actions
     Ringcon(Ringcon),
 }
@@ -93,4 +101,14 @@ pub enum RingconE {
     Monitor,
     /// Random experiments
     Exp,
+}
+
+#[derive(Clap)]
+pub struct Relay {
+    /// Location of the log to write
+    #[clap(short, long)]
+    pub output: Option<PathBuf>,
+    /// Decode important HID reports and print them to stdout
+    #[clap(short, long)]
+    pub verbose: bool,
 }

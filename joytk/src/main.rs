@@ -43,9 +43,9 @@ fn main() -> Result<()> {
         {
             let device = device_info.open_device(&api)?;
 
-            if let SubCommand::Relay = opts.subcmd {
+            if let SubCommand::Relay(ref r) = opts.subcmd {
                 if cfg!(target_os = "linux") {
-                    relay::relay(device)?;
+                    relay::relay(device, r)?;
                 } else {
                     bail!("relaying only works on linux");
                 }
@@ -101,7 +101,7 @@ fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
         SubCommand::Dump => dump(&mut joycon)?,
         SubCommand::Restore => restore(&mut joycon)?,
         SubCommand::Ringcon(ref cmd) => ringcon(&mut joycon, cmd)?,
-        SubCommand::Decode | SubCommand::Relay => unreachable!(),
+        SubCommand::Decode | SubCommand::Relay(_) => unreachable!(),
     }
     Ok(())
 }

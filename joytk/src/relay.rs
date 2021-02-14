@@ -11,20 +11,33 @@ use socket2::{SockAddr, Socket};
 use std::{
     convert::TryInto,
     ffi::CString,
+    fs::OpenOptions,
+    io::Write,
     mem::{size_of_val, zeroed},
     thread::sleep,
     time::{Duration, Instant},
 };
 
-pub fn relay(device: HidDevice) -> anyhow::Result<()> {
+use crate::opts::Relay;
+
+pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
+    let mut output = opts
+        .output
+        .as_ref()
+        .map(|path| {
+            OpenOptions::new()
+                .write(true)
+                .create(true)
+                .truncate(true)
+                .open(path)
+                .context("opening the log file")
+        })
+        .transpose()?;
     let (mut _client_ctl, mut client_itr) = connect_switch()?;
 
     // Force input reports to be generated so that we don't have to manually click on a button.
     let subcmd = OutputReport::from(SubcommandRequest::set_input_report_mode(StandardFull));
     device.write(subcmd.as_bytes())?;
-
-    dbg!("raw");
-    sleep(Duration::from_millis(200));
 
     let start = Instant::now();
     loop {
@@ -39,11 +52,16 @@ pub fn relay(device: HidDevice) -> anyhow::Result<()> {
                 let raw_report = report.as_bytes_mut();
                 raw_report.copy_from_slice(&buf[1..raw_report.len() + 1]);
 
-                //println!("> {:.4} {:?}", start.elapsed().as_secs_f64(), report);
+                let elapsed = start.elapsed().as_secs_f64();
+
                 if let Some(subcmd) = report.subcmd_reply() {
-                    println!("{:.5?} {:?}", start.elapsed(), subcmd);
+                    println!("{:0>9.4} {:?}", elapsed, subcmd);
                 } else if let Some(mcu) = report.mcu_report() {
-                    println!("{:.5?} {:?}", start.elapsed(), mcu);
+                    println!("{:0>9.4} {:?}", elapsed, mcu);
+                }
+
+                if let Some(ref mut out) = output {
+                    writeln!(out, "> {:0>9.4} {}", elapsed, hex::encode(&buf[1..len + 1]))?;
                 }
 
                 if let Err(e) = client_itr.send(&buf[..len + 1]) {
@@ -70,11 +88,16 @@ pub fn relay(device: HidDevice) -> anyhow::Result<()> {
                     let raw_report = report.as_bytes_mut();
                     raw_report.copy_from_slice(&buf[1..raw_report.len() + 1]);
 
-                    //println!("< {:.4} {:?}", start.elapsed().as_secs_f64(), report);
+                    let elapsed = start.elapsed().as_secs_f64();
+
                     if let Some(subcmd) = report.subcmd_request() {
-                        println!("{:.5?} {:?}", start.elapsed(), subcmd);
+                        println!("{:0>9.4} {:?}", elapsed, subcmd);
                     } else if let Some(mcu) = report.mcu_request() {
-                        println!("{:.5?} {:?}", start.elapsed(), mcu);
+                        println!("{:0>9.4} {:?}", elapsed, mcu);
+                    }
+
+                    if let Some(ref mut out) = output {
+                        writeln!(out, "< {:0>9.4} {}", elapsed, hex::encode(&buf[1..len + 1]))?;
                     }
 
                     device.write(&buf[1..len]).context("joycon send")?;
