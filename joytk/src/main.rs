@@ -22,103 +22,11 @@ use std::{
 };
 use std::{thread::sleep, time::Instant};
 
+mod opts;
 #[cfg(target_os = "linux")]
 mod relay;
 
-/// Access every feature of the Nintendo Switch controllers
-#[derive(Clap)]
-struct Opts {
-    #[clap(subcommand)]
-    subcmd: SubCommand,
-    /// Wait for a controller to connect
-    #[clap(short, long)]
-    wait: bool,
-}
-
-#[derive(Clap)]
-enum SubCommand {
-    /// Calibrate the controller
-    ///
-    /// The calibration will be stored on the controller and used by the Switch.
-    Calibrate(Calibrate),
-    /// Print settings from the controller
-    Get,
-    /// Configure settings of the controller
-    Set(Set),
-    /// Show live inputs from the controller
-    Monitor,
-    /// Dump the memory of the controller to a binary file
-    Dump,
-    /// Restore the memory of the controller from a dump file
-    Restore,
-    /// Decode raw reports exchanged between the controller and the Switch
-    ///
-    /// See the `trace/` folder for recorded dumps, and
-    /// [relay_joycon.py](https://github.com/Yamakaky/joycontrol/blob/capture-text-file/scripts/relay_joycon.py)
-    /// for capturing new dumps.
-    Decode,
-    Relay,
-    /// Ringcon-specific actions
-    Ringcon(Ringcon),
-}
-
-#[derive(Clap)]
-struct Calibrate {
-    #[clap(subcommand)]
-    subcmd: CalibrateE,
-}
-
-#[derive(Clap)]
-enum CalibrateE {
-    /// Calibrate the sticks
-    Sticks,
-    /// Calibrate the gyroscope
-    Gyroscope,
-    /// Reset gyroscope and sticks calibration to factory values
-    Reset,
-}
-
-#[derive(Clap)]
-struct Set {
-    #[clap(subcommand)]
-    subcmd: SetE,
-}
-
-#[derive(Clap)]
-enum SetE {
-    /// Change the color of the controller
-    ///
-    /// This is used by the switch for the controller icons. Every color is in `RRGGBB` format.
-    Color(SetColor),
-}
-
-#[derive(Clap)]
-struct SetColor {
-    /// Color of the body of the controller
-    body: String,
-    /// Color of the buttons, sticks and triggers
-    buttons: String,
-    /// Color of the left grip (Pro Controller only)
-    left_grip: Option<String>,
-    /// Color of the right grip (Pro Controller only)
-    right_grip: Option<String>,
-}
-
-#[derive(Clap)]
-struct Ringcon {
-    #[clap(subcommand)]
-    subcmd: RingconE,
-}
-
-#[derive(Clap)]
-enum RingconE {
-    /// Get the number of flex stored in the ringcon
-    StoredFlex,
-    /// Show the flex value in realtime
-    Monitor,
-    /// Random experiments
-    Exp,
-}
+use opts::*;
 
 fn main() -> Result<()> {
     let opts = Opts::parse();
