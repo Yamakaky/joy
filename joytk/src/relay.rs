@@ -2,7 +2,9 @@ use anyhow::Context;
 use bluetooth_sys::*;
 use joycon::{
     hidapi::HidDevice,
-    joycon_sys::{output::SubcommandRequest, InputReportId::StandardFull, OutputReport},
+    joycon_sys::{
+        output::SubcommandRequest, InputReport, InputReportId::StandardFull, OutputReport,
+    },
 };
 use libc::sockaddr;
 use socket2::{SockAddr, Socket};
@@ -17,6 +19,7 @@ use std::{
 pub fn relay(device: HidDevice) -> anyhow::Result<()> {
     let (mut _client_ctl, mut client_itr) = connect_switch()?;
 
+    // Force input reports to be generated so that we don't have to manually click on a button.
     let subcmd = OutputReport::from(SubcommandRequest::set_input_report_mode(StandardFull));
     device.write(subcmd.as_bytes())?;
 
@@ -32,11 +35,17 @@ pub fn relay(device: HidDevice) -> anyhow::Result<()> {
                 .read_timeout(&mut buf[1..], 0)
                 .context("joycon recv")?;
             if len > 0 {
-                println!(
-                    "> {:.4} {}",
-                    start.elapsed().as_secs_f64(),
-                    hex::encode(&buf[1..len + 1])
-                );
+                let mut report = InputReport::new();
+                let raw_report = report.as_bytes_mut();
+                raw_report.copy_from_slice(&buf[1..raw_report.len() + 1]);
+
+                //println!("> {:.4} {:?}", start.elapsed().as_secs_f64(), report);
+                if let Some(subcmd) = report.subcmd_reply() {
+                    println!("{:.5?} {:?}", start.elapsed(), subcmd);
+                } else if let Some(mcu) = report.mcu_report() {
+                    println!("{:.5?} {:?}", start.elapsed(), mcu);
+                }
+
                 if let Err(e) = client_itr.send(&buf[..len + 1]) {
                     if e.raw_os_error() == Some(107) {
                         eprintln!("Reconnecting the switch");
@@ -44,7 +53,10 @@ pub fn relay(device: HidDevice) -> anyhow::Result<()> {
                         _client_ctl = x.0;
                         client_itr = x.1;
 
-                        let subcmd = OutputReport::from(SubcommandRequest::request_device_info());
+                        // Force input reports to be generated so that we don't have to manually click on a button.
+                        let subcmd = OutputReport::from(SubcommandRequest::set_input_report_mode(
+                            StandardFull,
+                        ));
                         device.write(subcmd.as_bytes())?;
                     }
                 }
@@ -54,11 +66,17 @@ pub fn relay(device: HidDevice) -> anyhow::Result<()> {
             let mut buf = [0; 500];
             if let Ok(len) = client_itr.recv(&mut buf).context("switch recv") {
                 if len > 0 {
-                    println!(
-                        "< {:.4} {}",
-                        start.elapsed().as_secs_f64(),
-                        hex::encode(&buf[1..len + 1])
-                    );
+                    let mut report = OutputReport::new();
+                    let raw_report = report.as_bytes_mut();
+                    raw_report.copy_from_slice(&buf[1..raw_report.len() + 1]);
+
+                    //println!("< {:.4} {:?}", start.elapsed().as_secs_f64(), report);
+                    if let Some(subcmd) = report.subcmd_request() {
+                        println!("{:.5?} {:?}", start.elapsed(), subcmd);
+                    } else if let Some(mcu) = report.mcu_request() {
+                        println!("{:.5?} {:?}", start.elapsed(), mcu);
+                    }
+
                     device.write(&buf[1..len]).context("joycon send")?;
                 }
             }
