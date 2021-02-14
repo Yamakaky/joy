@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["AccessoryCommandId",""],["AccessoryType",""],["RingconItemId",""]],"struct":[["AccessoryCommand",""],["AccessoryResponse",""],["OfflineSteps",""]]});
+initSidebarItems({"enum":[["AccessoryCommandId",""],["AccessoryType",""],["Error",""],["RingconItemId",""]],"struct":[["AccessoryCommand",""],["AccessoryResponse",""],["OfflineSteps",""]]});

@@ -189,6 +189,9 @@
 <span id="186">186</span>
 <span id="187">187</span>
 <span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">mcu</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">ir_register</span>::<span class="kw-2">*</span>;
@@ -346,6 +349,9 @@
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;IRData&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;frag_number&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">frag_number</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;average_intensity&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">average_intensity</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;white_pixel_count&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">white_pixel_count</span>)
+            .<span class="ident">field</span>(<span class="string">&quot;ambient_noise_count&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">ambient_noise_count</span>)
             .<span class="ident">finish</span>()
     }
 }

@@ -8,5 +8,5 @@ sourcesIndex["joy_infrared"] = {"name":"","dirs":[{"name":"render","files":["buf
 sourcesIndex["joy_music"] = {"name":"","files":["main.rs"]};
 sourcesIndex["joycon"] = {"name":"","files":["calibration.rs","hid.rs","image.rs","imu_handler.rs","lib.rs"]};
 sourcesIndex["joycon_sys"] = {"name":"","dirs":[{"name":"mcu","files":["ir.rs","ir_register.rs","mod.rs"]}],"files":["accessory.rs","common.rs","imu.rs","input.rs","lib.rs","light.rs","output.rs","spi.rs"]};
-sourcesIndex["joytk"] = {"name":"","files":["main.rs"]};
+sourcesIndex["joytk"] = {"name":"","files":["main.rs","opts.rs","relay.rs"]};
 createSourceSidebar();

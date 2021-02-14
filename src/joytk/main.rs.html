@@ -459,68 +459,8 @@
 <span id="456">456</span>
 <span id="457">457</span>
 <span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
-<span id="468">468</span>
-<span id="469">469</span>
-<span id="470">470</span>
-<span id="471">471</span>
-<span id="472">472</span>
-<span id="473">473</span>
-<span id="474">474</span>
-<span id="475">475</span>
-<span id="476">476</span>
-<span id="477">477</span>
-<span id="478">478</span>
-<span id="479">479</span>
-<span id="480">480</span>
-<span id="481">481</span>
-<span id="482">482</span>
-<span id="483">483</span>
-<span id="484">484</span>
-<span id="485">485</span>
-<span id="486">486</span>
-<span id="487">487</span>
-<span id="488">488</span>
-<span id="489">489</span>
-<span id="490">490</span>
-<span id="491">491</span>
-<span id="492">492</span>
-<span id="493">493</span>
-<span id="494">494</span>
-<span id="495">495</span>
-<span id="496">496</span>
-<span id="497">497</span>
-<span id="498">498</span>
-<span id="499">499</span>
-<span id="500">500</span>
-<span id="501">501</span>
-<span id="502">502</span>
-<span id="503">503</span>
-<span id="504">504</span>
-<span id="505">505</span>
-<span id="506">506</span>
-<span id="507">507</span>
-<span id="508">508</span>
-<span id="509">509</span>
-<span id="510">510</span>
-<span id="511">511</span>
-<span id="512">512</span>
-<span id="513">513</span>
-<span id="514">514</span>
-<span id="515">515</span>
-<span id="516">516</span>
-<span id="517">517</span>
-<span id="518">518</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
+<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Deg</span>, <span class="ident">Euler</span>, <span class="ident">One</span>, <span class="ident">Quaternion</span>, <span class="ident">Vector3</span>};
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
 <span class="kw">use</span> <span class="ident">joycon</span>::{
@@ -544,83 +484,11 @@
 };
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">thread</span>::<span class="ident">sleep</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
 
-<span class="doccomment">/// Access every feature of the Nintendo Switch controllers</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Opts</span> {
-    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
-    <span class="ident">subcmd</span>: <span class="ident">SubCommand</span>,
-    <span class="doccomment">/// Wait for a controller to connect</span>
-    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>)]</span>
-    <span class="ident">wait</span>: <span class="ident">bool</span>,
-}
+<span class="kw">mod</span> <span class="ident">opts</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_os</span> <span class="op">=</span> <span class="string">&quot;linux&quot;</span>)]</span>
+<span class="kw">mod</span> <span class="ident">relay</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">enum</span> <span class="ident">SubCommand</span> {
-    <span class="doccomment">/// Calibrate the controller</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// The calibration will be stored on the controller and used by the Switch.</span>
-    <span class="ident">Calibrate</span>(<span class="ident">Calibrate</span>),
-    <span class="doccomment">/// Print settings from the controller</span>
-    <span class="ident">Get</span>,
-    <span class="doccomment">/// Configure settings of the controller</span>
-    <span class="ident">Set</span>(<span class="ident">Set</span>),
-    <span class="doccomment">/// Show live inputs from the controller</span>
-    <span class="ident">Monitor</span>,
-    <span class="doccomment">/// Dump the memory of the controller to a binary file</span>
-    <span class="ident">Dump</span>,
-    <span class="doccomment">/// Restore the memory of the controller from a dump file</span>
-    <span class="ident">Restore</span>,
-    <span class="doccomment">/// Decode raw reports exchanged between the controller and the Switch</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// See the `trace/` folder for recorded dumps, and</span>
-    <span class="doccomment">/// [relay_joycon.py](https://github.com/Yamakaky/joycontrol/blob/capture-text-file/scripts/relay_joycon.py)</span>
-    <span class="doccomment">/// for capturing new dumps.</span>
-    <span class="ident">Decode</span>,
-    <span class="doccomment">/// Ringcon-specific actions</span>
-    <span class="ident">Ringcon</span>,
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Calibrate</span> {
-    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
-    <span class="ident">subcmd</span>: <span class="ident">CalibrateE</span>,
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">enum</span> <span class="ident">CalibrateE</span> {
-    <span class="doccomment">/// Calibrate the sticks</span>
-    <span class="ident">Sticks</span>,
-    <span class="doccomment">/// Calibrate the gyroscope</span>
-    <span class="ident">Gyroscope</span>,
-    <span class="doccomment">/// Reset gyroscope and sticks calibration to factory values</span>
-    <span class="ident">Reset</span>,
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Set</span> {
-    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
-    <span class="ident">subcmd</span>: <span class="ident">SetE</span>,
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">enum</span> <span class="ident">SetE</span> {
-    <span class="doccomment">/// Change the color of the controller</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This is used by the switch for the controller icons. Every color is in `RRGGBB` format.</span>
-    <span class="ident">Color</span>(<span class="ident">SetColor</span>),
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
-<span class="kw">struct</span> <span class="ident">SetColor</span> {
-    <span class="doccomment">/// Color of the body of the controller</span>
-    <span class="ident">body</span>: <span class="ident">String</span>,
-    <span class="doccomment">/// Color of the buttons, sticks and triggers</span>
-    <span class="ident">buttons</span>: <span class="ident">String</span>,
-    <span class="doccomment">/// Color of the left grip (Pro Controller only)</span>
-    <span class="ident">left_grip</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// Color of the right grip (Pro Controller only)</span>
-    <span class="ident">right_grip</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-}
+<span class="kw">use</span> <span class="ident">opts</span>::<span class="kw-2">*</span>;
 
 <span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">opts</span> <span class="op">=</span> <span class="ident">Opts</span>::<span class="ident">parse</span>();
@@ -636,19 +504,28 @@
             .<span class="ident">find</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">vendor_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NINTENDO_VENDOR_ID</span>)
         {
             <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">device_info</span>.<span class="ident">open_device</span>(<span class="kw-2">&amp;</span><span class="ident">api</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">joycon</span> <span class="op">=</span> <span class="ident">JoyCon</span>::<span class="ident">new</span>(<span class="ident">device</span>, <span class="ident">device_info</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
 
-            <span class="ident">hid_main</span>(<span class="ident">joycon</span>, <span class="kw-2">&amp;</span><span class="ident">opts</span>)<span class="question-mark">?</span>;
+            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">SubCommand</span>::<span class="ident">Relay</span>(<span class="kw-2">ref</span> <span class="ident">r</span>) <span class="op">=</span> <span class="ident">opts</span>.<span class="ident">subcmd</span> {
+                <span class="kw">if</span> <span class="macro">cfg</span><span class="macro">!</span>(<span class="ident">target_os</span> <span class="op">=</span> <span class="string">&quot;linux&quot;</span>) {
+                    <span class="ident">relay</span>::<span class="ident">relay</span>(<span class="ident">device</span>, <span class="ident">r</span>)<span class="question-mark">?</span>;
+                } <span class="kw">else</span> {
+                    <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;relaying only works on linux&quot;</span>);
+                }
+            } <span class="kw">else</span> {
+                <span class="kw">let</span> <span class="ident">joycon</span> <span class="op">=</span> <span class="ident">JoyCon</span>::<span class="ident">new</span>(<span class="ident">device</span>, <span class="ident">device_info</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
+
+                <span class="ident">hid_main</span>(<span class="ident">joycon</span>, <span class="kw-2">&amp;</span><span class="ident">opts</span>)<span class="question-mark">?</span>;
+            }
+
+            <span class="kw">break</span>;
         } <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">opts</span>.<span class="ident">wait</span> {
             <span class="macro">eprintln</span><span class="macro">!</span>(<span class="string">&quot;No device found&quot;</span>);
-        }
-
-        <span class="kw">if</span> <span class="ident">opts</span>.<span class="ident">wait</span> {
-            <span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">200</span>));
+            <span class="kw">break</span>;
         } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+            <span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">200</span>));
         }
     }
+    <span class="prelude-val">Ok</span>(())
 }
 
 <span class="kw">fn</span> <span class="ident">hid_main</span>(<span class="kw-2">mut</span> <span class="ident">joycon</span>: <span class="ident">JoyCon</span>, <span class="ident">opts</span>: <span class="kw-2">&amp;</span><span class="ident">Opts</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -685,8 +562,8 @@
         <span class="ident">SubCommand</span>::<span class="ident">Monitor</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">monitor</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">joycon</span>)<span class="question-mark">?</span>,
         <span class="ident">SubCommand</span>::<span class="ident">Dump</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">dump</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">joycon</span>)<span class="question-mark">?</span>,
         <span class="ident">SubCommand</span>::<span class="ident">Restore</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">restore</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">joycon</span>)<span class="question-mark">?</span>,
-        <span class="ident">SubCommand</span>::<span class="ident">Decode</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
-        <span class="ident">SubCommand</span>::<span class="ident">Ringcon</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ringcon</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">joycon</span>)<span class="question-mark">?</span>,
+        <span class="ident">SubCommand</span>::<span class="ident">Ringcon</span>(<span class="kw-2">ref</span> <span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ringcon</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">joycon</span>, <span class="ident">cmd</span>)<span class="question-mark">?</span>,
+        <span class="ident">SubCommand</span>::<span class="ident">Decode</span> <span class="op">|</span> <span class="ident">SubCommand</span>::<span class="ident">Relay</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
     }
     <span class="prelude-val">Ok</span>(())
 }
@@ -1017,26 +894,29 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">ringcon</span>(<span class="ident">joycon</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">JoyCon</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">ringcon</span>(<span class="ident">joycon</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">JoyCon</span>, <span class="ident">cmd</span>: <span class="kw-2">&amp;</span><span class="ident">Ringcon</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Ringcon initialisation...&quot;</span>);
     <span class="ident">joycon</span>.<span class="ident">enable_ringcon</span>()<span class="question-mark">?</span>;
-    <span class="macro">dbg</span><span class="macro">!</span>(<span class="string">&quot;end init&quot;</span>);
-    <span class="macro">dbg</span><span class="macro">!</span>(<span class="ident">joycon</span>
-        .<span class="ident">call_subcmd_wait</span>(<span class="ident">AccessoryCommand</span>::<span class="ident">get_offline_steps</span>())<span class="question-mark">?</span>
-        .<span class="ident">accessory_response</span>()
-        .<span class="ident">unwrap</span>()
-        .<span class="ident">offline_steps</span>());
-    <span class="comment">//dbg!(joycon.call_subcmd(AccessoryCommand::write_offline_steps(0xf0, 173))?);</span>
-    <span class="comment">//dbg!(joycon</span>
-    <span class="comment">//    .call_subcmd(AccessoryCommand::get_offline_steps())?</span>
-    <span class="comment">//    .accessory_response()</span>
-    <span class="comment">//    .unwrap()</span>
-    <span class="comment">//    .offline_steps());</span>
+    <span class="kw">match</span> <span class="ident">cmd</span>.<span class="ident">subcmd</span> {
+        <span class="ident">RingconE</span>::<span class="ident">StoredFlex</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="macro">println</span><span class="macro">!</span>(
+                <span class="string">&quot;Stored steps: {}&quot;</span>,
+                <span class="ident">joycon</span>
+                    .<span class="ident">call_subcmd_wait</span>(<span class="ident">AccessoryCommand</span>::<span class="ident">get_offline_steps</span>())<span class="question-mark">?</span>
+                    .<span class="ident">accessory_response</span>()
+                    .<span class="ident">unwrap</span>()
+                    .<span class="ident">offline_steps</span>()<span class="question-mark">?</span>
+                    .<span class="ident">steps</span>
+            );
+        }
+        <span class="ident">RingconE</span>::<span class="ident">Monitor</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">loop</span> {
+            <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">joycon</span>.<span class="ident">recv</span>()<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">frames</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">imu_frames</span>().<span class="ident">unwrap</span>();
+            <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Flex value: {}&quot;</span>, <span class="ident">frames</span>[<span class="number">2</span>].<span class="ident">raw_ringcon</span>());
+        },
+        <span class="ident">RingconE</span>::<span class="ident">Exp</span> <span class="op">=</span><span class="op">&gt;</span> {}
+    }
     <span class="prelude-val">Ok</span>(())
-    <span class="comment">//loop {</span>
-    <span class="comment">//    let report = joycon.recv()?;</span>
-    <span class="comment">//    let frames = report.imu_frames().unwrap();</span>
-    <span class="comment">//    dbg!(frames[2].raw_ringcon());</span>
-    <span class="comment">//}</span>
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "joytk";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
