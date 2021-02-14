@@ -7,6 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.38"
 bluetooth-sys = "0.1"
+hex = "0.4.2"
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
+joycon = { path = "../joycon" }
 libc = "0.2"
+socket2 = "0.3.19"
