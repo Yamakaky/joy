@@ -192,7 +192,6 @@ impl MCUCommand {
 impl fmt::Debug for MCUCommand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut out = f.debug_struct("MCUCommand");
-        out.field("crc", unsafe { &self.u.crc });
         match (self.cmd_id.try_into(), self.subcmd_id.try_into()) {
             (Some(MCUCommandId::ConfigureIR), Some(MCUSubCommandId::SetIRMode)) => {
                 out.field("set_ir_mode", unsafe { &self.u.ir_mode })
