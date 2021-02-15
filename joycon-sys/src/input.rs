@@ -7,7 +7,7 @@ use crate::mcu::*;
 use crate::spi::*;
 use crate::{accessory::AccessoryResponse, common::*};
 use num::FromPrimitive;
-use std::fmt;
+use std::{fmt, mem::size_of_val};
 
 /// Describes a HID report from the JoyCon.
 ///
@@ -27,10 +27,22 @@ impl InputReport {
         unsafe { std::mem::zeroed() }
     }
 
-    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, std::mem::size_of_val(self))
+    pub fn len(&self) -> usize {
+        match self.report_id.try_into() {
+            Some(InputReportId::Normal) => 12,
+            Some(InputReportId::StandardAndSubcmd) | Some(InputReportId::StandardFull) => 49,
+            Some(InputReportId::StandardFullMCU) => 362,
+            Some(InputReportId::MCUFwUpdate) => unimplemented!(),
+            None => size_of_val(self),
         }
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self as *const _ as *const u8, self.len()) }
+    }
+
+    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
+        unsafe { std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, size_of_val(self)) }
     }
 
     pub fn validate(&self) {

@@ -7,7 +7,7 @@ use crate::mcu::*;
 use crate::spi::*;
 use crate::{accessory::AccessoryCommand, light};
 use crate::{common::*, imu::IMUMode};
-use std::fmt;
+use std::{fmt, mem::size_of_val};
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
@@ -86,16 +86,22 @@ impl OutputReport {
         }
     }
 
-    pub fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            std::slice::from_raw_parts(self as *const _ as *const u8, std::mem::size_of_val(self))
+    pub fn len(&self) -> usize {
+        match self.report_id.try_into() {
+            Some(OutputReportId::RumbleAndSubcmd) => 49,
+            Some(OutputReportId::MCUFwUpdate) => unimplemented!(),
+            Some(OutputReportId::RumbleOnly) => 10,
+            Some(OutputReportId::RequestMCUData) => 48,
+            None => size_of_val(self),
         }
     }
 
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe { std::slice::from_raw_parts(self as *const _ as *const u8, self.len()) }
+    }
+
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, std::mem::size_of_val(self))
-        }
+        unsafe { std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, size_of_val(self)) }
     }
 
     pub fn subcmd_request(&self) -> Option<&SubcommandRequest> {

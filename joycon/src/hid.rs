@@ -78,7 +78,7 @@ impl JoyCon {
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
         let nb_written = self.device.write(buffer)?;
-        assert_eq!(nb_written, buffer.len());
+        assert_eq!(nb_written, report.len());
         Ok(())
     }
 
@@ -86,7 +86,8 @@ impl JoyCon {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
         // TODO: 64 byte on pro controller, why ?
-        let _nb_read = self.device.read(buffer)?;
+        let nb_read = self.device.read(buffer)?;
+        assert_eq!(nb_read, report.len());
         //dbg!(nb_read);
         //assert_eq!(nb_read, buffer.len());
         report.validate();
