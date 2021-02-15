@@ -38,6 +38,10 @@ impl OutputReport {
         unsafe { std::mem::zeroed() }
     }
 
+    pub fn is_special(&self) -> bool {
+        self.report_id != OutputReportId::RumbleOnly
+    }
+
     pub fn set_registers(regs: &[ir::Register]) -> (OutputReport, &[ir::Register]) {
         let size = regs.len().min(9);
         let mut regs_fixed = [ir::Register::default(); 9];

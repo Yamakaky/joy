@@ -10,7 +10,7 @@ use joycon_sys::spi::*;
 use joycon_sys::*;
 use joycon_sys::{imu::IMUMode, mcu::ir::*};
 use joycon_sys::{input::*, light};
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 const WAIT_TIMEOUT: u32 = 200;
 
@@ -79,7 +79,14 @@ impl JoyCon {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
-        trace!(raw_report = hex::encode(report.as_bytes()).as_str());
+        if report.is_special() {
+            debug!(
+                report = format!("{:?}", report).as_str(),
+                raw_report = hex::encode(report.as_bytes()).as_str()
+            );
+        } else {
+            trace!(raw_report = hex::encode(report.as_bytes()).as_str());
+        }
         let nb_written = self.device.write(buffer)?;
         assert_eq!(nb_written, report.len());
         Ok(())
@@ -92,6 +99,14 @@ impl JoyCon {
         let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, report.len());
         trace!(raw_report = hex::encode(report.as_bytes()).as_str());
+        if report.is_special() {
+            debug!(
+                report = format!("{:?}", report).as_str(),
+                raw_report = hex::encode(report.as_bytes()).as_str()
+            );
+        } else {
+            trace!(raw_report = hex::encode(report.as_bytes()).as_str());
+        }
         report.validate();
         if let Some(frames) = report.imu_frames() {
             self.imu_handler.handle_frames(frames);

@@ -27,6 +27,16 @@ impl InputReport {
         unsafe { std::mem::zeroed() }
     }
 
+    pub fn is_special(&self) -> bool {
+        self.report_id != InputReportId::Normal
+            && self.report_id != InputReportId::StandardFull
+            && self
+                .mcu_report()
+                .and_then(MCUReport::as_ir_data)
+                .map(|_| false)
+                .unwrap_or(true)
+    }
+
     pub fn len(&self) -> usize {
         match self.report_id.try_into() {
             Some(InputReportId::Normal) => 12,
