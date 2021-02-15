@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
 pub struct PlayerLights(u8);
@@ -37,7 +39,7 @@ impl From<bool> for PlayerLight {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 pub struct HomeLight {
     s1: Settings1,
     s2: Settings2,
@@ -88,6 +90,22 @@ impl HomeLight {
         }
 
         HomeLight { s1, s2, cycles }
+    }
+
+    fn cycles(&self) -> &[HomeLightCycle] {
+        let nb = self.s1.nb_mini_cycles() as usize;
+        &self.cycles[..(nb + 1) / 2]
+    }
+}
+
+impl fmt::Debug for HomeLight {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("HomeLight")
+            .field("mini_cycle_duration", &self.s1.mini_cycle_duration())
+            .field("start_intensity", &self.s2.led_start_intensity())
+            .field("nb_full_cycles", &self.s2.nb_full_cycles())
+            .field("cycles", &self.cycles())
+            .finish()
     }
 }
 
