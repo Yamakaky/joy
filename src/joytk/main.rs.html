@@ -459,6 +459,20 @@
 <span id="456">456</span>
 <span id="457">457</span>
 <span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Deg</span>, <span class="ident">Euler</span>, <span class="ident">One</span>, <span class="ident">Quaternion</span>, <span class="ident">Vector3</span>};
@@ -483,6 +497,7 @@
     <span class="ident">time</span>::<span class="ident">Duration</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">thread</span>::<span class="ident">sleep</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
+<span class="kw">use</span> <span class="ident">tracing_subscriber</span>::{<span class="ident">fmt</span>::<span class="ident">format</span>::<span class="ident">FmtSpan</span>, <span class="ident">EnvFilter</span>};
 
 <span class="kw">mod</span> <span class="ident">opts</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">target_os</span> <span class="op">=</span> <span class="string">&quot;linux&quot;</span>)]</span>
@@ -491,6 +506,19 @@
 <span class="kw">use</span> <span class="ident">opts</span>::<span class="kw-2">*</span>;
 
 <span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">formatter</span> <span class="op">=</span> <span class="ident">tracing_subscriber</span>::<span class="ident">fmt</span>()
+        .<span class="ident">with_span_events</span>(<span class="kw">if</span> <span class="ident">std</span>::<span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;LOG_TIMING&quot;</span>).<span class="ident">is_ok</span>() {
+            <span class="ident">FmtSpan</span>::<span class="ident">CLOSE</span>
+        } <span class="kw">else</span> {
+            <span class="ident">FmtSpan</span>::<span class="ident">NONE</span>
+        })
+        .<span class="ident">with_env_filter</span>(<span class="ident">EnvFilter</span>::<span class="ident">from_default_env</span>());
+    <span class="kw">if</span> <span class="ident">std</span>::<span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;LOG_PRETTY&quot;</span>).<span class="ident">is_ok</span>() {
+        <span class="ident">formatter</span>.<span class="ident">pretty</span>().<span class="ident">init</span>();
+    } <span class="kw">else</span> {
+        <span class="ident">formatter</span>.<span class="ident">init</span>();
+    }
+
     <span class="kw">let</span> <span class="ident">opts</span> <span class="op">=</span> <span class="ident">Opts</span>::<span class="ident">parse</span>();
 
     <span class="kw">if</span> <span class="kw">let</span> <span class="ident">SubCommand</span>::<span class="ident">Decode</span> <span class="op">=</span> <span class="ident">opts</span>.<span class="ident">subcmd</span> {

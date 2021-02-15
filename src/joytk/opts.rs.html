@@ -115,12 +115,36 @@
 <span id="112">112</span>
 <span id="113">113</span>
 <span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">PathBuf</span>;
 
 <span class="kw">use</span> <span class="ident">clap</span>::<span class="ident">Clap</span>;
 
 <span class="doccomment">/// Access every feature of the Nintendo Switch controllers</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Env variables:</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// - `RUST_LOG=&lt;level&gt;`:</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///   -   `trace`: log every bluetooth packet</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///   -   `debug`: only log important packets</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// - `LOG_PRETTY=1`: use a more verbose logging format</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// - `LOG_TIMING=1`: show timings</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Opts</span> {
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>

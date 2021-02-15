@@ -497,6 +497,48 @@
 <span id="494">494</span>
 <span id="495">495</span>
 <span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryInto</span>;
 
@@ -510,6 +552,7 @@
 <span class="kw">use</span> <span class="ident">joycon_sys</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">joycon_sys</span>::{<span class="ident">imu</span>::<span class="ident">IMUMode</span>, <span class="ident">mcu</span>::<span class="ident">ir</span>::<span class="kw-2">*</span>};
 <span class="kw">use</span> <span class="ident">joycon_sys</span>::{<span class="ident">input</span>::<span class="kw-2">*</span>, <span class="ident">light</span>};
+<span class="kw">use</span> <span class="ident">tracing</span>::{<span class="ident">debug</span>, <span class="ident">instrument</span>, <span class="ident">trace</span>};
 
 <span class="kw">const</span> <span class="ident">WAIT_TIMEOUT</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">200</span>;
 
@@ -539,6 +582,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">JoyCon</span> {
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="ident">device</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">device</span>: <span class="ident">hidapi</span>::<span class="ident">HidDevice</span>, <span class="ident">info</span>: <span class="ident">hidapi</span>::<span class="ident">DeviceInfo</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">JoyCon</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">device_type</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">info</span>.<span class="ident">product_id</span>() {
             <span class="ident">JOYCON_L_BT</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">WhichController</span>::<span class="ident">LeftJoyCon</span>,
@@ -573,22 +617,32 @@
         <span class="self">self</span>.<span class="ident">device_type</span> <span class="op">=</span><span class="op">=</span> <span class="ident">WhichController</span>::<span class="ident">RightJoyCon</span>
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;trace&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>))]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">report</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">OutputReport</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">report</span>.<span class="ident">packet_counter</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">counter</span>;
         <span class="self">self</span>.<span class="ident">counter</span> <span class="op">=</span> (<span class="self">self</span>.<span class="ident">counter</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">&amp;</span> <span class="number">0xf</span>;
         <span class="kw">let</span> <span class="ident">buffer</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">as_bytes</span>();
+        <span class="kw">if</span> <span class="ident">report</span>.<span class="ident">is_special</span>() {
+            <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">out_report</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">report</span>.<span class="ident">as_bytes</span>()).<span class="ident">as_str</span>());
+        } <span class="kw">else</span> {
+            <span class="macro">trace</span><span class="macro">!</span>(<span class="ident">out_report</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">report</span>.<span class="ident">as_bytes</span>()).<span class="ident">as_str</span>());
+        }
         <span class="kw">let</span> <span class="ident">nb_written</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">device</span>.<span class="ident">write</span>(<span class="ident">buffer</span>)<span class="question-mark">?</span>;
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">nb_written</span>, <span class="ident">buffer</span>.<span class="ident">len</span>());
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">nb_written</span>, <span class="ident">report</span>.<span class="ident">len</span>());
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;trace&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>))]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">recv</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">InputReport</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">InputReport</span>::<span class="ident">new</span>();
         <span class="kw">let</span> <span class="ident">buffer</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">as_bytes_mut</span>();
-        <span class="comment">// TODO: 64 byte on pro controller, why ?</span>
-        <span class="kw">let</span> <span class="ident">_nb_read</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">device</span>.<span class="ident">read</span>(<span class="ident">buffer</span>)<span class="question-mark">?</span>;
-        <span class="comment">//dbg!(nb_read);</span>
-        <span class="comment">//assert_eq!(nb_read, buffer.len());</span>
+        <span class="kw">let</span> <span class="ident">nb_read</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">device</span>.<span class="ident">read</span>(<span class="ident">buffer</span>)<span class="question-mark">?</span>;
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">nb_read</span>, <span class="ident">report</span>.<span class="ident">len</span>());
+        <span class="kw">if</span> <span class="ident">report</span>.<span class="ident">is_special</span>() {
+            <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">in__report</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">report</span>.<span class="ident">as_bytes</span>()).<span class="ident">as_str</span>());
+        } <span class="kw">else</span> {
+            <span class="macro">trace</span><span class="macro">!</span>(<span class="ident">in__report</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">report</span>.<span class="ident">as_bytes</span>()).<span class="ident">as_str</span>());
+        }
         <span class="ident">report</span>.<span class="ident">validate</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">frames</span>) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">imu_frames</span>() {
             <span class="self">self</span>.<span class="ident">imu_handler</span>.<span class="ident">handle_frames</span>(<span class="ident">frames</span>);
@@ -658,21 +712,25 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_dev_info</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">DeviceInfo</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">request_device_info</span>())<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="kw-2">*</span><span class="ident">reply</span>.<span class="ident">device_info</span>().<span class="ident">unwrap</span>())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_home_light</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">home_light</span>: <span class="ident">light</span>::<span class="ident">HomeLight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">home_light</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_player_light</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">player_lights</span>: <span class="ident">light</span>::<span class="ident">PlayerLights</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">player_lights</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_report_mode_standard</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">set_input_report_mode</span>(
             <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>,
@@ -680,7 +738,8 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call_subcmd_wait</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">SubcommandRequest</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call_subcmd_wait</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">SubcommandRequest</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">subcmd</span>: <span class="ident">S</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SubcommandReply</span><span class="op">&gt;</span> {
@@ -701,12 +760,14 @@
         <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Timeout while waiting for subcommand&quot;</span>);
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_spi</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">SPI</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SPIReadRequest</span>::<span class="ident">new</span>(<span class="ident">S</span>::<span class="ident">range</span>()))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">reply</span>.<span class="ident">spi_result</span>().<span class="ident">unwrap</span>();
         <span class="prelude-val">Ok</span>((<span class="kw-2">*</span><span class="ident">result</span>).<span class="ident">try_into</span>()<span class="question-mark">?</span>)
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_spi_raw</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">range</span>: <span class="ident">SPIRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">0x1D</span>]<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SPIReadRequest</span>::<span class="ident">new</span>(<span class="ident">range</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">reply</span>.<span class="ident">spi_result</span>().<span class="ident">unwrap</span>();
@@ -714,11 +775,16 @@
         <span class="prelude-val">Ok</span>(<span class="ident">result</span>.<span class="ident">raw</span>())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_spi</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">SPI</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">SPIWriteRequest</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">value</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_spi</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">SPI</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">SPIWriteRequest</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">value</span>: <span class="ident">S</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">value</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">reply</span>.<span class="ident">spi_write_success</span>().<span class="ident">unwrap</span>())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">write_spi_raw</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">range</span>: <span class="ident">SPIRange</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">reply</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SPIWriteRequest</span>::<span class="ident">new</span>(<span class="ident">range</span>, <span class="ident">data</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">reply</span>.<span class="ident">spi_write_success</span>().<span class="ident">unwrap</span>())
@@ -727,6 +793,7 @@
 
 <span class="doccomment">/// MCU handling (infrared camera and NFC reader)</span>
 <span class="kw">impl</span> <span class="ident">JoyCon</span> {
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enable_ir</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">resolution</span>: <span class="ident">Resolution</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">enable_mcu</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">set_mcu_mode_ir</span>()<span class="question-mark">?</span>;
@@ -734,6 +801,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">disable_mcu</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">enable_ir_loop</span> <span class="op">=</span> <span class="bool-val">false</span>;
         <span class="self">self</span>.<span class="ident">set_report_mode_standard</span>()<span class="question-mark">?</span>;
@@ -741,6 +809,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">enable_mcu</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">set_report_mode_mcu</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">set_mcu_mode</span>(<span class="ident">MCUMode</span>::<span class="ident">Standby</span>))<span class="question-mark">?</span>;
@@ -749,6 +818,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_report_mode_mcu</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">set_input_report_mode</span>(
             <span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span>,
@@ -756,6 +826,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_mcu_mode_ir</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">MCUCommand</span>::<span class="ident">set_mcu_mode</span>(<span class="ident">MCUMode</span>::<span class="ident">IR</span>))<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">wait_mcu_status</span>(<span class="ident">MCUMode</span>::<span class="ident">IR</span>)
@@ -764,6 +835,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_ir_image_mode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ir_mode</span>: <span class="ident">MCUIRMode</span>, <span class="ident">frags</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mcu_fw_version</span> <span class="op">=</span> <span class="ident">Default</span>::<span class="ident">default</span>();
         <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequest</span>::<span class="ident">get_mcu_status</span>(), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
@@ -790,6 +862,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_ir_registers</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Register</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">registers</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> <span class="ident">page</span> <span class="kw">in</span> <span class="number">0</span>..<span class="op">=</span><span class="number">4</span> {
@@ -824,6 +897,7 @@
         <span class="prelude-val">Ok</span>(<span class="ident">registers</span>)
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_ir_registers</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">regs</span>: <span class="kw-2">&amp;</span>[<span class="ident">ir</span>::<span class="ident">Register</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">regs_mut</span> <span class="op">=</span> <span class="ident">regs</span>;
         <span class="kw">while</span> <span class="op">!</span><span class="ident">regs_mut</span>.<span class="ident">is_empty</span>() {
@@ -840,6 +914,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_ir_resolution</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">resolution</span>: <span class="ident">Resolution</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">set_ir_wait_conf</span>()
             .<span class="ident">context</span>(<span class="string">&quot;change_ir_resolution reset&quot;</span>)<span class="question-mark">?</span>;
@@ -851,6 +926,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_ir_wait_conf</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mcu_fw_version</span> <span class="op">=</span> <span class="ident">Default</span>::<span class="ident">default</span>();
         <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequest</span>::<span class="ident">get_mcu_status</span>(), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
@@ -877,13 +953,15 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">send_mcu_subcmd</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mcu_subcmd</span>: <span class="ident">MCURequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">out_report</span> <span class="op">=</span> <span class="ident">mcu_subcmd</span>.<span class="ident">into</span>();
         <span class="self">self</span>.<span class="ident">send</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">out_report</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">wait_mcu_cond</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">MCURequest</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>, <span class="ident">f</span>), <span class="ident">err</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">wait_mcu_cond</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">MCURequest</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">mcu_subcmd</span>: <span class="ident">R</span>,
         <span class="kw-2">mut</span> <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">MCUReport</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span>,
@@ -904,6 +982,7 @@
         <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;error getting the MCU status: timeout&quot;</span>);
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">wait_mcu_status</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mode</span>: <span class="ident">MCUMode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MCUReport</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequest</span>::<span class="ident">get_mcu_status</span>(), <span class="op">|</span><span class="ident">report</span><span class="op">|</span> {
             <span class="ident">report</span>
@@ -916,12 +995,14 @@
 
 <span class="doccomment">/// IMU handling (gyroscope and accelerometer)</span>
 <span class="kw">impl</span> <span class="ident">JoyCon</span> {
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enable_imu</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">set_imu_mode</span>(<span class="ident">IMUMode</span>::<span class="ident">GyroAccel</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="comment">// TODO: needed?</span>
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_imu_sens</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gyro_sens</span> <span class="op">=</span> <span class="ident">imu</span>::<span class="ident">GyroSens</span>::<span class="ident">DPS2000</span>;
         <span class="kw">let</span> <span class="ident">accel_sens</span> <span class="op">=</span> <span class="ident">imu</span>::<span class="ident">AccSens</span>::<span class="ident">G8</span>;
@@ -940,6 +1021,7 @@
 
 <span class="doccomment">/// Ringcon handling</span>
 <span class="kw">impl</span> <span class="ident">JoyCon</span> {
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enable_ringcon</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">set_mcu_mode</span>(<span class="ident">MCUMode</span>::<span class="ident">Standby</span>))<span class="question-mark">?</span>;
         <span class="kw">loop</span> {
@@ -960,6 +1042,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">disable_ringcon</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">subcmd_0x5b</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">SubcommandRequest</span>::<span class="ident">set_imu_mode</span>(<span class="ident">IMUMode</span>::<span class="ident">_Unknown0x02</span>))<span class="question-mark">?</span>;
@@ -972,6 +1055,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
+    <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mcu_wait_not_busy</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">recv</span>()<span class="question-mark">?</span>;
