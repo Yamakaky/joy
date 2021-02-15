@@ -10,6 +10,7 @@ use joycon_sys::spi::*;
 use joycon_sys::*;
 use joycon_sys::{imu::IMUMode, mcu::ir::*};
 use joycon_sys::{input::*, light};
+use tracing::{instrument, trace};
 
 const WAIT_TIMEOUT: u32 = 200;
 
@@ -73,23 +74,24 @@ impl JoyCon {
         self.device_type == WhichController::RightJoyCon
     }
 
+    #[instrument(skip(self, report))]
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
+        trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         let nb_written = self.device.write(buffer)?;
         assert_eq!(nb_written, report.len());
         Ok(())
     }
 
+    #[instrument(skip(self))]
     pub fn recv(&mut self) -> Result<InputReport> {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
-        // TODO: 64 byte on pro controller, why ?
         let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, report.len());
-        //dbg!(nb_read);
-        //assert_eq!(nb_read, buffer.len());
+        trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         report.validate();
         if let Some(frames) = report.imu_frames() {
             self.imu_handler.handle_frames(frames);
@@ -174,6 +176,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(skip(self))]
     fn set_report_mode_standard(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
             InputReportId::StandardFull,
@@ -181,7 +184,8 @@ impl JoyCon {
         Ok(())
     }
 
-    pub fn call_subcmd_wait<S: Into<SubcommandRequest>>(
+    #[instrument(skip(self))]
+    pub fn call_subcmd_wait<S: Into<SubcommandRequest> + std::fmt::Debug>(
         &mut self,
         subcmd: S,
     ) -> Result<SubcommandReply> {

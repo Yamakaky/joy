@@ -59,7 +59,7 @@ impl fmt::Debug for Frame {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct Sensitivity {
     pub gyro_sens: RawId<GyroSens>,
     pub acc_sens: RawId<AccSens>,

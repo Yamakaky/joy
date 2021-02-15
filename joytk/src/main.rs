@@ -21,6 +21,7 @@ use std::{
     time::Duration,
 };
 use std::{thread::sleep, time::Instant};
+use tracing_subscriber::EnvFilter;
 
 mod opts;
 #[cfg(target_os = "linux")]
@@ -29,6 +30,11 @@ mod relay;
 use opts::*;
 
 fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .pretty()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+
     let opts = Opts::parse();
 
     if let SubCommand::Decode = opts.subcmd {

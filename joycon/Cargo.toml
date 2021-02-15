@@ -14,3 +14,5 @@ image = { version = "0.23", features = ["png"], optional = false, default-featur
 joycon-sys = { path = "../joycon-sys" }
 hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
 enum-map = "0.6"
+tracing = "0.1"
+hex = "0.4"
