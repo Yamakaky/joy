@@ -31,7 +31,11 @@ use opts::*;
 
 fn main() -> Result<()> {
     let formatter = tracing_subscriber::fmt()
-        .with_span_events(FmtSpan::CLOSE)
+        .with_span_events(if std::env::var("LOG_TIMING").is_ok() {
+            FmtSpan::CLOSE
+        } else {
+            FmtSpan::NONE
+        })
         .with_env_filter(EnvFilter::from_default_env());
     if std::env::var("LOG_PRETTY").is_ok() {
         formatter.pretty().init();
