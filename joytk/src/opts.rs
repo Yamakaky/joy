@@ -3,6 +3,13 @@ use std::path::PathBuf;
 use clap::Clap;
 
 /// Access every feature of the Nintendo Switch controllers
+///
+/// Env variables:
+/// - `RUST_LOG=<level>`:
+///   - `trace`: log every bluetooth packet
+///   - `debug`: only log important packets
+/// - `LOG_PRETTY=1`: use a more verbose logging format
+/// - `LOG_TIMING=1`: show timings
 #[derive(Clap)]
 pub struct Opts {
     #[clap(subcommand)]
