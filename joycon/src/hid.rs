@@ -81,7 +81,7 @@ impl JoyCon {
         let buffer = report.as_bytes();
         if report.is_special() {
             debug!(
-                report = format!("{:?}", report).as_str(),
+                report = debug(&report),
                 raw_report = hex::encode(report.as_bytes()).as_str()
             );
         } else {
@@ -101,7 +101,7 @@ impl JoyCon {
         trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         if report.is_special() {
             debug!(
-                report = format!("{:?}", report).as_str(),
+                report = debug(report),
                 raw_report = hex::encode(report.as_bytes()).as_str()
             );
         } else {
