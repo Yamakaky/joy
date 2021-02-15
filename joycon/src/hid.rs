@@ -81,22 +81,7 @@ impl JoyCon {
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
         if report.is_special() {
-            if let Some(subcmd) = report.subcmd_request() {
-                debug!(
-                    report = debug(subcmd),
-                    raw_report = hex::encode(report.as_bytes()).as_str()
-                );
-            } else if let Some(mcucmd) = report.mcu_request() {
-                debug!(
-                    report = debug(mcucmd),
-                    raw_report = hex::encode(report.as_bytes()).as_str()
-                );
-            } else {
-                debug!(
-                    report = debug(&report),
-                    raw_report = hex::encode(report.as_bytes()).as_str()
-                );
-            }
+            debug!(raw_report = hex::encode(report.as_bytes()).as_str());
         } else {
             trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         }
@@ -112,22 +97,7 @@ impl JoyCon {
         let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, report.len());
         if report.is_special() {
-            if let Some(subcmd) = report.subcmd_reply() {
-                debug!(
-                    report = debug(subcmd),
-                    raw_report = hex::encode(report.as_bytes()).as_str()
-                );
-            } else if let Some(mcucmd) = report.mcu_report() {
-                debug!(
-                    report = debug(mcucmd),
-                    raw_report = hex::encode(report.as_bytes()).as_str()
-                );
-            } else {
-                debug!(
-                    report = debug(&report),
-                    raw_report = hex::encode(report.as_bytes()).as_str()
-                );
-            }
+            debug!(raw_report = hex::encode(report.as_bytes()).as_str());
         } else {
             trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         }
