@@ -81,9 +81,9 @@ impl JoyCon {
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
         if report.is_special() {
-            debug!(raw_report = hex::encode(report.as_bytes()).as_str());
+            debug!(out_report = hex::encode(report.as_bytes()).as_str());
         } else {
-            trace!(raw_report = hex::encode(report.as_bytes()).as_str());
+            trace!(out_report = hex::encode(report.as_bytes()).as_str());
         }
         let nb_written = self.device.write(buffer)?;
         assert_eq!(nb_written, report.len());
@@ -97,9 +97,9 @@ impl JoyCon {
         let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, report.len());
         if report.is_special() {
-            debug!(raw_report = hex::encode(report.as_bytes()).as_str());
+            debug!(in__report = hex::encode(report.as_bytes()).as_str());
         } else {
-            trace!(raw_report = hex::encode(report.as_bytes()).as_str());
+            trace!(in__report = hex::encode(report.as_bytes()).as_str());
         }
         report.validate();
         if let Some(frames) = report.imu_frames() {
