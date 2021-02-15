@@ -40,6 +40,7 @@ pub struct JoyCon {
 }
 
 impl JoyCon {
+    #[instrument(level = "info", skip(device), err)]
     pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> Result<JoyCon> {
         let device_type = match info.product_id() {
             JOYCON_L_BT => WhichController::LeftJoyCon,
@@ -74,16 +75,28 @@ impl JoyCon {
         self.device_type == WhichController::RightJoyCon
     }
 
-    #[instrument(skip(self, report))]
+    #[instrument(level = "trace", skip(self))]
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;
         let buffer = report.as_bytes();
         if report.is_special() {
-            debug!(
-                report = debug(&report),
-                raw_report = hex::encode(report.as_bytes()).as_str()
-            );
+            if let Some(subcmd) = report.subcmd_request() {
+                debug!(
+                    report = debug(subcmd),
+                    raw_report = hex::encode(report.as_bytes()).as_str()
+                );
+            } else if let Some(mcucmd) = report.mcu_request() {
+                debug!(
+                    report = debug(mcucmd),
+                    raw_report = hex::encode(report.as_bytes()).as_str()
+                );
+            } else {
+                debug!(
+                    report = debug(&report),
+                    raw_report = hex::encode(report.as_bytes()).as_str()
+                );
+            }
         } else {
             trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         }
@@ -92,18 +105,29 @@ impl JoyCon {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(level = "trace", skip(self))]
     pub fn recv(&mut self) -> Result<InputReport> {
         let mut report = InputReport::new();
         let buffer = report.as_bytes_mut();
         let nb_read = self.device.read(buffer)?;
         assert_eq!(nb_read, report.len());
-        trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         if report.is_special() {
-            debug!(
-                report = debug(report),
-                raw_report = hex::encode(report.as_bytes()).as_str()
-            );
+            if let Some(subcmd) = report.subcmd_reply() {
+                debug!(
+                    report = debug(subcmd),
+                    raw_report = hex::encode(report.as_bytes()).as_str()
+                );
+            } else if let Some(mcucmd) = report.mcu_report() {
+                debug!(
+                    report = debug(mcucmd),
+                    raw_report = hex::encode(report.as_bytes()).as_str()
+                );
+            } else {
+                debug!(
+                    report = debug(&report),
+                    raw_report = hex::encode(report.as_bytes()).as_str()
+                );
+            }
         } else {
             trace!(raw_report = hex::encode(report.as_bytes()).as_str());
         }
@@ -176,22 +200,25 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
         let reply = self.call_subcmd_wait(SubcommandRequest::request_device_info())?;
         Ok(*reply.device_info().unwrap())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn set_home_light(&mut self, home_light: light::HomeLight) -> Result<()> {
         self.call_subcmd_wait(home_light)?;
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn set_player_light(&mut self, player_lights: light::PlayerLights) -> Result<()> {
         self.call_subcmd_wait(player_lights)?;
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(level = "info", skip(self), err)]
     fn set_report_mode_standard(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
             InputReportId::StandardFull,
@@ -199,7 +226,7 @@ impl JoyCon {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(level = "debug", skip(self), err)]
     pub fn call_subcmd_wait<S: Into<SubcommandRequest> + std::fmt::Debug>(
         &mut self,
         subcmd: S,
@@ -221,12 +248,14 @@ impl JoyCon {
         bail!("Timeout while waiting for subcommand");
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn read_spi<S: SPI>(&mut self) -> Result<S> {
         let reply = self.call_subcmd_wait(SPIReadRequest::new(S::range()))?;
         let result = reply.spi_result().unwrap();
         Ok((*result).try_into()?)
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn read_spi_raw(&mut self, range: SPIRange) -> Result<[u8; 0x1D]> {
         let reply = self.call_subcmd_wait(SPIReadRequest::new(range))?;
         let result = reply.spi_result().unwrap();
@@ -234,11 +263,16 @@ impl JoyCon {
         Ok(result.raw())
     }
 
-    pub fn write_spi<S: SPI + Into<SPIWriteRequest>>(&mut self, value: S) -> Result<bool> {
+    #[instrument(level = "info", skip(self), err)]
+    pub fn write_spi<S: SPI + Into<SPIWriteRequest> + std::fmt::Debug>(
+        &mut self,
+        value: S,
+    ) -> Result<bool> {
         let reply = self.call_subcmd_wait(value.into())?;
         Ok(reply.spi_write_success().unwrap())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub unsafe fn write_spi_raw(&mut self, range: SPIRange, data: &[u8]) -> Result<bool> {
         let reply = self.call_subcmd_wait(SPIWriteRequest::new(range, data))?;
         Ok(reply.spi_write_success().unwrap())
@@ -247,6 +281,7 @@ impl JoyCon {
 
 /// MCU handling (infrared camera and NFC reader)
 impl JoyCon {
+    #[instrument(level = "info", skip(self), err)]
     pub fn enable_ir(&mut self, resolution: Resolution) -> Result<()> {
         self.enable_mcu()?;
         self.set_mcu_mode_ir()?;
@@ -254,6 +289,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn disable_mcu(&mut self) -> Result<()> {
         self.enable_ir_loop = false;
         self.set_report_mode_standard()?;
@@ -261,6 +297,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     fn enable_mcu(&mut self) -> Result<()> {
         self.set_report_mode_mcu()?;
         self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
@@ -269,6 +306,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     fn set_report_mode_mcu(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
             InputReportId::StandardFullMCU,
@@ -276,6 +314,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     fn set_mcu_mode_ir(&mut self) -> Result<()> {
         self.call_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::IR))?;
         self.wait_mcu_status(MCUMode::IR)
@@ -284,6 +323,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
@@ -310,6 +350,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn get_ir_registers(&mut self) -> Result<Vec<Register>> {
         let mut registers = vec![];
         for page in 0..=4 {
@@ -344,6 +385,7 @@ impl JoyCon {
         Ok(registers)
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn set_ir_registers(&mut self, regs: &[ir::Register]) -> Result<()> {
         let mut regs_mut = regs;
         while !regs_mut.is_empty() {
@@ -360,6 +402,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn change_ir_resolution(&mut self, resolution: Resolution) -> Result<()> {
         self.set_ir_wait_conf()
             .context("change_ir_resolution reset")?;
@@ -371,6 +414,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     fn set_ir_wait_conf(&mut self) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
@@ -397,13 +441,15 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     fn send_mcu_subcmd(&mut self, mcu_subcmd: MCURequest) -> Result<()> {
         let mut out_report = mcu_subcmd.into();
         self.send(&mut out_report)?;
         Ok(())
     }
 
-    fn wait_mcu_cond<R: Into<MCURequest>>(
+    #[instrument(level = "debug", skip(self, f), err)]
+    fn wait_mcu_cond<R: Into<MCURequest> + std::fmt::Debug>(
         &mut self,
         mcu_subcmd: R,
         mut f: impl FnMut(&MCUReport) -> bool,
@@ -424,6 +470,7 @@ impl JoyCon {
         bail!("error getting the MCU status: timeout");
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
         self.wait_mcu_cond(MCURequest::get_mcu_status(), |report| {
             report
@@ -436,12 +483,14 @@ impl JoyCon {
 
 /// IMU handling (gyroscope and accelerometer)
 impl JoyCon {
+    #[instrument(level = "info", skip(self), err)]
     pub fn enable_imu(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::GyroAccel))?;
         Ok(())
     }
 
     // TODO: needed?
+    #[instrument(level = "info", skip(self), err)]
     pub fn set_imu_sens(&mut self) -> Result<()> {
         let gyro_sens = imu::GyroSens::DPS2000;
         let accel_sens = imu::AccSens::G8;
@@ -460,6 +509,7 @@ impl JoyCon {
 
 /// Ringcon handling
 impl JoyCon {
+    #[instrument(level = "info", skip(self), err)]
     pub fn enable_ringcon(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
         loop {
@@ -480,6 +530,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "info", skip(self), err)]
     pub fn disable_ringcon(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::subcmd_0x5b())?;
         self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
@@ -492,6 +543,7 @@ impl JoyCon {
         Ok(())
     }
 
+    #[instrument(level = "debug", skip(self), err)]
     pub fn mcu_wait_not_busy(&mut self) -> anyhow::Result<()> {
         loop {
             let report = self.recv()?;

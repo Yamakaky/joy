@@ -21,7 +21,7 @@ use std::{
     time::Duration,
 };
 use std::{thread::sleep, time::Instant};
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 
 mod opts;
 #[cfg(target_os = "linux")]
@@ -30,10 +30,14 @@ mod relay;
 use opts::*;
 
 fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .pretty()
-        .with_env_filter(EnvFilter::from_default_env())
-        .init();
+    let formatter = tracing_subscriber::fmt()
+        .with_span_events(FmtSpan::CLOSE)
+        .with_env_filter(EnvFilter::from_default_env());
+    if std::env::var("LOG_PRETTY").is_ok() {
+        formatter.pretty().init();
+    } else {
+        formatter.init();
+    }
 
     let opts = Opts::parse();
 
