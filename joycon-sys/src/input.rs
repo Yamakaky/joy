@@ -162,7 +162,13 @@ pub struct StandardInputReport {
 impl fmt::Debug for InputReport {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use InputReportId::*;
-
+        if let Some(subcmd) = self.subcmd_reply() {
+            return subcmd.fmt(f);
+        } else if let Some(mcucmd) = self.mcu_report() {
+            if mcucmd.as_ir_data().is_none() {
+                return mcucmd.fmt(f);
+            }
+        }
         let mut out = f.debug_struct("InputReport");
         out.field("report_id", &self.report_id);
         match self.report_id.try_into() {
@@ -250,11 +256,19 @@ impl From<u8> for BatteryLevel {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Default)]
 pub struct ButtonsStatus {
     pub right: RightButtons,
     pub middle: MiddleButtons,
     pub left: LeftButtons,
+}
+
+impl fmt::Debug for ButtonsStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("ButtonsStatus")
+            .field(&format_args!("{}", self))
+            .finish()
+    }
 }
 
 impl fmt::Display for ButtonsStatus {
@@ -505,6 +519,7 @@ impl fmt::Debug for SubcommandReply {
             | subcmd @ Some(SubcommandId::SetPlayerLights)
             | subcmd @ Some(SubcommandId::SetInputReportMode)
             | subcmd @ Some(SubcommandId::SetShipmentMode)
+            | subcmd @ Some(SubcommandId::SetHomeLight)
             | subcmd @ Some(SubcommandId::EnableVibration) => {
                 out.field("subcommand", &subcmd.expect("unreachable"))
             }

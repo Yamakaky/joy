@@ -169,6 +169,12 @@ impl From<MCURequest> for OutputReport {
 
 impl fmt::Debug for OutputReport {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(subcmd) = self.subcmd_request() {
+            return subcmd.fmt(f);
+        } else if let Some(mcu) = self.mcu_request() {
+            return mcu.fmt(f);
+        }
+
         let mut out = f.debug_struct("OutputReport");
         out.field("id", &self.report_id)
             .field("counter", &self.packet_counter);
@@ -339,6 +345,9 @@ impl fmt::Debug for SubcommandRequest {
             }
             Some(SubcommandId::SetPlayerLights) => {
                 out.field("set_player_lights", unsafe { &self.u.player_lights })
+            }
+            Some(SubcommandId::SetHomeLight) => {
+                out.field("set_home_light", unsafe { &self.u.home_light })
             }
             subcmd @ Some(SubcommandId::GetOnlyControllerState)
             | subcmd @ Some(SubcommandId::GetTriggerButtonsElapsedTime)
