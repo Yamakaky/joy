@@ -10,7 +10,7 @@ use joycon_sys::spi::*;
 use joycon_sys::*;
 use joycon_sys::{imu::IMUMode, mcu::ir::*};
 use joycon_sys::{input::*, light};
-use tracing::{debug, instrument, trace};
+use tracing::{field::debug, instrument, trace, Span};
 
 const WAIT_TIMEOUT: u32 = 200;
 
@@ -75,32 +75,26 @@ impl JoyCon {
         self.device_type == WhichController::RightJoyCon
     }
 
-    #[instrument(level = "trace", skip(self))]
+    #[instrument(level = "trace", skip(self), fields(special))]
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
         report.packet_counter = self.counter;
         self.counter = (self.counter + 1) & 0xf;
-        let buffer = report.as_bytes();
-        if report.is_special() {
-            debug!(out_report = hex::encode(report.as_bytes()).as_str());
-        } else {
-            trace!(out_report = hex::encode(report.as_bytes()).as_str());
-        }
-        let nb_written = self.device.write(buffer)?;
+        Span::current().record("special", &report.is_special());
+        trace!(out_report = %hex::encode(report.as_bytes()));
+        let nb_written = self.device.write(report.as_bytes())?;
         assert_eq!(nb_written, report.len());
         Ok(())
     }
 
-    #[instrument(level = "trace", skip(self))]
+    #[instrument(level = "trace", skip(self), fields(special, report))]
     pub fn recv(&mut self) -> Result<InputReport> {
         let mut report = InputReport::new();
-        let buffer = report.as_bytes_mut();
-        let nb_read = self.device.read(buffer)?;
+        let nb_read = self.device.read(report.as_bytes_mut())?;
         assert_eq!(nb_read, report.len());
-        if report.is_special() {
-            debug!(in__report = hex::encode(report.as_bytes()).as_str());
-        } else {
-            trace!(in__report = hex::encode(report.as_bytes()).as_str());
-        }
+        Span::current()
+            .record("special", &report.is_special())
+            .record("report", &debug(report));
+        trace!(in__report = %hex::encode(report.as_bytes()));
         report.validate();
         if let Some(frames) = report.imu_frames() {
             self.imu_handler.handle_frames(frames);
