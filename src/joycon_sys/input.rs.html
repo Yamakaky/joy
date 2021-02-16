@@ -656,6 +656,21 @@
 <span id="653">653</span>
 <span id="654">654</span>
 <span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structs binary compatible with the HID input reports</span>
 <span class="doccomment">//!</span>
@@ -821,7 +836,13 @@
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">InputReport</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">use</span> <span class="ident">InputReportId</span>::<span class="kw-2">*</span>;
-
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subcmd</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">subcmd_reply</span>() {
+            <span class="kw">return</span> <span class="ident">subcmd</span>.<span class="ident">fmt</span>(<span class="ident">f</span>);
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mcucmd</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">mcu_report</span>() {
+            <span class="kw">if</span> <span class="ident">mcucmd</span>.<span class="ident">as_ir_data</span>().<span class="ident">is_none</span>() {
+                <span class="kw">return</span> <span class="ident">mcucmd</span>.<span class="ident">fmt</span>(<span class="ident">f</span>);
+            }
+        }
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">out</span> <span class="op">=</span> <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;InputReport&quot;</span>);
         <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;report_id&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">report_id</span>);
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">report_id</span>.<span class="ident">try_into</span>() {
@@ -909,11 +930,19 @@
 }
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ButtonsStatus</span> {
     <span class="kw">pub</span> <span class="ident">right</span>: <span class="ident">RightButtons</span>,
     <span class="kw">pub</span> <span class="ident">middle</span>: <span class="ident">MiddleButtons</span>,
     <span class="kw">pub</span> <span class="ident">left</span>: <span class="ident">LeftButtons</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">ButtonsStatus</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="ident">f</span>.<span class="ident">debug_tuple</span>(<span class="string">&quot;ButtonsStatus&quot;</span>)
+            .<span class="ident">field</span>(<span class="kw-2">&amp;</span><span class="macro">format_args</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="self">self</span>))
+            .<span class="ident">finish</span>()
+    }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">ButtonsStatus</span> {
@@ -1164,6 +1193,7 @@
             <span class="op">|</span> <span class="ident">subcmd</span> @ <span class="prelude-val">Some</span>(<span class="ident">SubcommandId</span>::<span class="ident">SetPlayerLights</span>)
             <span class="op">|</span> <span class="ident">subcmd</span> @ <span class="prelude-val">Some</span>(<span class="ident">SubcommandId</span>::<span class="ident">SetInputReportMode</span>)
             <span class="op">|</span> <span class="ident">subcmd</span> @ <span class="prelude-val">Some</span>(<span class="ident">SubcommandId</span>::<span class="ident">SetShipmentMode</span>)
+            <span class="op">|</span> <span class="ident">subcmd</span> @ <span class="prelude-val">Some</span>(<span class="ident">SubcommandId</span>::<span class="ident">SetHomeLight</span>)
             <span class="op">|</span> <span class="ident">subcmd</span> @ <span class="prelude-val">Some</span>(<span class="ident">SubcommandId</span>::<span class="ident">EnableVibration</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;subcommand&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">subcmd</span>.<span class="ident">expect</span>(<span class="string">&quot;unreachable&quot;</span>))
             }
