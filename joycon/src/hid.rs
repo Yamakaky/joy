@@ -290,7 +290,7 @@ impl JoyCon {
     #[instrument(level = "info", skip(self), err)]
     fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
-        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
+        self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
             if let Some(status) = r.as_status() {
                 mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
                 true
@@ -381,7 +381,7 @@ impl JoyCon {
     #[instrument(level = "info", skip(self), err)]
     fn set_ir_wait_conf(&mut self) -> Result<()> {
         let mut mcu_fw_version = Default::default();
-        self.wait_mcu_cond(MCURequest::get_mcu_status(), |r| {
+        self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
             if let Some(status) = r.as_status() {
                 mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
                 true
@@ -436,7 +436,7 @@ impl JoyCon {
 
     #[instrument(level = "debug", skip(self), err)]
     fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
-        self.wait_mcu_cond(MCURequest::get_mcu_status(), |report| {
+        self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |report| {
             report
                 .as_status()
                 .map(|status| dbg!(status.state) == mode)

@@ -182,10 +182,11 @@ fn check_output_layout() {
     unsafe {
         let report = crate::output::OutputReport::new();
         let cmd = report.as_mcu_request();
-        assert_eq!(11, offset_of(&report, &cmd.u.ir_request.id));
+        assert_eq!(10, offset_of(&report, cmd));
+        assert_eq!(11, offset_of(&report, &cmd.u.get_ir_data));
         assert_eq!(
             15,
-            offset_of(&report, &cmd.u.ir_request.u.read_registers.nb_registers)
+            offset_of(&report, &cmd.u.get_ir_data.u.read_registers.nb_registers)
         );
     }
 }

@@ -1,4 +1,5 @@
 use crate::common::*;
+use crate::raw_enum;
 /// Cf https://github.com/CTCaer/Nintendo_Switch_Reverse_Engineering/blob/ir-nfc/mcu_ir_nfc_notes.md
 use ir::*;
 use std::fmt;
@@ -270,78 +271,23 @@ pub enum MCURequestId {
     GetIRData = 3,
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct MCURequest {
-    id: RawId<MCURequestId>,
-    u: MCURequestUnion,
-}
-
-impl MCURequest {
-    pub fn id(&self) -> MCURequestId {
-        self.id.try_into().unwrap()
-    }
-    pub fn get_mcu_status() -> Self {
-        let mut u = MCURequestUnion::new();
-        u.nothing = ();
-        // no crc with u.nothing
-        MCURequest {
-            id: MCURequestId::GetMCUStatus.into(),
-            u,
-        }
-    }
-
-    fn compute_crc(mut self, id: IRRequestId) -> Self {
-        unsafe {
-            self.u.crc.compute_crc8(id);
-        }
-        self
+raw_enum! {
+    #[id: MCURequestId]
+    #[union: MCURequestUnion]
+    #[struct: MCURequest]
+    #[field crc crc_mut: MCURequestCRC]
+    pub enum MCURequestEnum {
+        get_mcu_status get_mcu_status_mut: GetMCUStatus = (),
+        get_ncf_data get_nfc_data_mut: GetNFCData = (),
+        get_ir_data get_ir_data_mut: GetIRData = IRRequest
     }
 }
 
 impl From<IRRequest> for MCURequest {
     fn from(ir_request: IRRequest) -> Self {
-        let mut u = MCURequestUnion::new();
-        u.ir_request = ir_request;
-        // no crc with u.nothing
-        MCURequest {
-            id: MCURequestId::GetIRData.into(),
-            u,
-        }
-        .compute_crc(ir_request.id())
-    }
-}
-
-impl fmt::Debug for MCURequest {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut out = f.debug_struct("MCURequest");
-        match self.id.try_into() {
-            Some(MCURequestId::GetIRData) => out.field("ir_request", unsafe { &self.u.ir_request }),
-            Some(MCURequestId::GetNFCData) => unimplemented!(),
-            id @ Some(MCURequestId::GetMCUStatus) => out.field("id", &id),
-            None => out.field("id", &self.id),
-        };
-        out.finish()
-    }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union MCURequestUnion {
-    nothing: (),
-    ir_request: IRRequest,
-    crc: MCURequestCRC,
-}
-
-impl MCURequestUnion {
-    fn new() -> Self {
-        MCURequestUnion {
-            crc: MCURequestCRC {
-                bytes: [0; 36],
-                crc: 0,
-                _padding_0xff: 0,
-            },
-        }
+        let mut request: MCURequest = MCURequestEnum::GetIRData(ir_request).into();
+        request.crc_mut().compute_crc8(ir_request.id());
+        request
     }
 }
 

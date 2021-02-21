@@ -1,7 +1,6 @@
 use cgmath::Vector3;
 use num::{FromPrimitive, ToPrimitive};
-use std::fmt;
-use std::marker::PhantomData;
+use std::{fmt, marker::PhantomData};
 
 pub const NINTENDO_VENDOR_ID: u16 = 1406;
 
