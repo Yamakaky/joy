@@ -15,10 +15,20 @@ raw_enum! {
     #[struct: InputReport]
     pub enum InputReportEnum {
         normal normal_mut: Normal = NormalInputReport,
-        standard_subcmd standard_subcmd_mut: StandardAndSubcmd = (StandardInputReport, SubcommandReply),
+        standard_subcmd standard_subcmd_mut: StandardAndSubcmd = (
+            StandardInputReport,
+            SubcommandReply,
+        ),
         mcu_fw_update mcu_fw_update_mut: MCUFwUpdate = (),
-        standard_full standard_full_mut: StandardFull = (StandardInputReport, [imu::Frame; 3]),
-        standard_full_mcu standard_full_mcu_mut: StandardFullMCU = (StandardInputReport, [imu::Frame; 3], MCUReport)
+        standard_full standard_full_mut: StandardFull = (
+            StandardInputReport,
+            [imu::Frame; 3]
+        ),
+        standard_full_mcu standard_full_mcu_mut: StandardFullMCU = (
+            StandardInputReport,
+            [imu::Frame; 3],
+            MCUReport
+        )
     }
 }
 
@@ -85,11 +95,7 @@ impl InputReport {
     }
 
     pub fn subcmd_reply(&self) -> Option<&SubcommandReply> {
-        if self.id == InputReportId::StandardAndSubcmd {
-            Some(unsafe { &self.u.standard_subcmd.1 })
-        } else {
-            None
-        }
+        self.standard_subcmd().map(|x| &x.1)
     }
 
     pub fn imu_frames(&self) -> Option<&[imu::Frame; 3]> {
