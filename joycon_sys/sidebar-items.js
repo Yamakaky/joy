@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["accessory",""],["common",""],["imu",""],["input","Structs binary compatible with the HID input reports"],["light",""],["mcu",""],["output","Structs binary compatible with the HID output reports"],["spi",""]]});
+initSidebarItems({"macro":[["raw_enum",""]],"mod":[["accessory",""],["common",""],["imu",""],["input","Structs binary compatible with the HID input reports"],["light",""],["mcu",""],["output","Structs binary compatible with the HID output reports"],["spi",""]]});

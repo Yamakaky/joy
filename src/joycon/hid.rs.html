@@ -826,7 +826,7 @@
     <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_ir_image_mode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ir_mode</span>: <span class="ident">MCUIRMode</span>, <span class="ident">frags</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mcu_fw_version</span> <span class="op">=</span> <span class="ident">Default</span>::<span class="ident">default</span>();
-        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequest</span>::<span class="ident">get_mcu_status</span>(), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
+        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequestEnum</span>::<span class="ident">GetMCUStatus</span>(()), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">status</span>) <span class="op">=</span> <span class="ident">r</span>.<span class="ident">as_status</span>() {
                 <span class="ident">mcu_fw_version</span> <span class="op">=</span> (<span class="ident">status</span>.<span class="ident">fw_major_version</span>, <span class="ident">status</span>.<span class="ident">fw_minor_version</span>);
                 <span class="bool-val">true</span>
@@ -841,7 +841,7 @@
         });
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">mcu_cmd</span>)<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">IRRequest</span>::<span class="ident">get_state</span>(), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
+        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">IRRequestEnum</span>::<span class="ident">GetState</span>(()), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
             <span class="ident">r</span>.<span class="ident">as_ir_status</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="macro">dbg</span><span class="macro">!</span>(<span class="ident">status</span>.<span class="ident">ir_mode</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">ir_mode</span>)
                 .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
@@ -917,7 +917,7 @@
     <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;info&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">set_ir_wait_conf</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mcu_fw_version</span> <span class="op">=</span> <span class="ident">Default</span>::<span class="ident">default</span>();
-        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequest</span>::<span class="ident">get_mcu_status</span>(), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
+        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequestEnum</span>::<span class="ident">GetMCUStatus</span>(()), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">status</span>) <span class="op">=</span> <span class="ident">r</span>.<span class="ident">as_status</span>() {
                 <span class="ident">mcu_fw_version</span> <span class="op">=</span> (<span class="ident">status</span>.<span class="ident">fw_major_version</span>, <span class="ident">status</span>.<span class="ident">fw_minor_version</span>);
                 <span class="bool-val">true</span>
@@ -932,7 +932,7 @@
         });
         <span class="self">self</span>.<span class="ident">call_subcmd_wait</span>(<span class="ident">mcu_cmd</span>)<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">IRRequest</span>::<span class="ident">get_state</span>(), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
+        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">IRRequestEnum</span>::<span class="ident">GetState</span>(()), <span class="op">|</span><span class="ident">r</span><span class="op">|</span> {
             <span class="ident">r</span>.<span class="ident">as_ir_status</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">ir_mode</span> <span class="op">=</span><span class="op">=</span> <span class="ident">MCUIRMode</span>::<span class="ident">WaitingForConfigurationMaybe</span>)
                 .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
@@ -972,7 +972,7 @@
 
     <span class="attribute">#[<span class="ident">instrument</span>(<span class="ident">level</span> <span class="op">=</span> <span class="string">&quot;debug&quot;</span>, <span class="ident">skip</span>(<span class="self">self</span>), <span class="ident">err</span>)]</span>
     <span class="kw">fn</span> <span class="ident">wait_mcu_status</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mode</span>: <span class="ident">MCUMode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MCUReport</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequest</span>::<span class="ident">get_mcu_status</span>(), <span class="op">|</span><span class="ident">report</span><span class="op">|</span> {
+        <span class="self">self</span>.<span class="ident">wait_mcu_cond</span>(<span class="ident">MCURequestEnum</span>::<span class="ident">GetMCUStatus</span>(()), <span class="op">|</span><span class="ident">report</span><span class="op">|</span> {
             <span class="ident">report</span>
                 .<span class="ident">as_status</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="macro">dbg</span><span class="macro">!</span>(<span class="ident">status</span>.<span class="ident">state</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">mode</span>)

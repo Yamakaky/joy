@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["MCUCommandId",""],["MCUMode",""],["MCUReportId",""],["MCURequestId",""],["MCUSubCommandId",""]],"mod":[["ir",""]],"struct":[["MCUCommand",""],["MCUCommandCRC",""],["MCUReport",""],["MCURequest",""],["MCURequestCRC",""],["MCUStatus",""]]});
+initSidebarItems({"enum":[["MCUCommandId",""],["MCUMode",""],["MCUReportId",""],["MCURequestEnum",""],["MCURequestId",""],["MCUSubCommandId",""]],"mod":[["ir",""]],"struct":[["MCUCommand",""],["MCUCommandCRC",""],["MCUReport",""],["MCURequest",""],["MCURequestCRC",""],["MCUStatus",""]]});
