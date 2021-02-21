@@ -2,11 +2,15 @@
 //!
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports
 
-use crate::mcu::ir::*;
-use crate::mcu::*;
-use crate::spi::*;
-use crate::{accessory::AccessoryCommand, light};
-use crate::{common::*, imu::IMUMode};
+use crate::{
+    accessory::AccessoryCommand,
+    common::*,
+    imu::IMUMode,
+    light,
+    mcu::{ir::*, *},
+    raw_enum,
+    spi::*,
+};
 use std::{fmt, mem::size_of_val};
 
 #[repr(u8)]
@@ -18,28 +22,38 @@ pub enum OutputReportId {
     RequestMCUData = 0x11,
 }
 
-/// Describes a HID report sent to the JoyCon.
-///
-/// ```ignore
-/// let report = OutputReport::from(SubcommandRequest::request_device_info());
-/// write_hid_report(report.as_bytes());
-/// ```
+// Describes a HID report sent to the JoyCon.
+//
+// ```ignore
+// let report = OutputReport::from(SubcommandRequest::request_device_info());
+// write_hid_report(report.as_bytes());
+// ```
+raw_enum! {
+    #[id: OutputReportId]
+    #[union: OutputReportUnion]
+    #[struct: OutputReport]
+    pub enum OutputReportEnum {
+        rumble_subcmd rumble_subcmd_mut: RumbleAndSubcmd = (Rumble, SubcommandRequest),
+        mcu_fw_update mcu_fw_update_mut: MCUFwUpdate = (),
+        rumble_only rumble_only_mut: RumbleOnly = Rumble,
+        request_mcu_data request_mcu_data_mut: RequestMCUData = (Rumble, MCURequest)
+    }
+}
+
 #[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct OutputReport {
-    pub report_id: RawId<OutputReportId>,
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Rumble {
     pub packet_counter: u8,
     pub rumble_data: RumbleData,
-    u: OutputReportUnion,
 }
 
 impl OutputReport {
-    pub fn new() -> OutputReport {
-        unsafe { std::mem::zeroed() }
+    pub fn packet_counter(&mut self) -> &mut u8 {
+        unsafe { &mut self.u.rumble_only.packet_counter }
     }
 
     pub fn is_special(&self) -> bool {
-        self.report_id != OutputReportId::RumbleOnly
+        self.id != OutputReportId::RumbleOnly
     }
 
     pub fn set_registers(regs: &[ir::Register]) -> (OutputReport, &[ir::Register]) {
@@ -82,16 +96,15 @@ impl OutputReport {
     }
 
     pub fn set_rumble(rumble: RumbleData) -> OutputReport {
-        OutputReport {
-            report_id: OutputReportId::RumbleOnly.into(),
+        OutputReportEnum::RumbleOnly(Rumble {
             packet_counter: 0,
             rumble_data: rumble,
-            u: OutputReportUnion { nothing: () },
-        }
+        })
+        .into()
     }
 
     pub fn len(&self) -> usize {
-        match self.report_id.try_into() {
+        match self.id.try_into() {
             Some(OutputReportId::RumbleAndSubcmd) => 49,
             Some(OutputReportId::MCUFwUpdate) => unimplemented!(),
             Some(OutputReportId::RumbleOnly) => 10,
@@ -108,30 +121,14 @@ impl OutputReport {
         unsafe { std::slice::from_raw_parts_mut(self as *mut _ as *mut u8, size_of_val(self)) }
     }
 
-    pub fn subcmd_request(&self) -> Option<&SubcommandRequest> {
-        if self.report_id == OutputReportId::RumbleAndSubcmd {
-            Some(unsafe { &self.u.subcmd })
-        } else {
-            None
-        }
-    }
-
-    pub fn mcu_request(&self) -> Option<&MCURequest> {
-        if self.report_id == OutputReportId::RequestMCUData {
-            Some(unsafe { &self.u.mcu_request })
-        } else {
-            None
-        }
-    }
-
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_request(&self) -> &MCURequest {
-        &self.u.mcu_request
+        &self.u.request_mcu_data.1
     }
 
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_cmd(&self) -> &MCUCommand {
-        &self.u.subcmd.u.mcu_cmd
+        &self.u.rumble_subcmd.1.u.mcu_cmd
     }
 }
 
@@ -147,55 +144,14 @@ impl Default for OutputReport {
 
 impl From<SubcommandRequest> for OutputReport {
     fn from(subcmd: SubcommandRequest) -> Self {
-        OutputReport {
-            report_id: OutputReportId::RumbleAndSubcmd.into(),
-            packet_counter: 0,
-            rumble_data: RumbleData::default(),
-            u: OutputReportUnion { subcmd },
-        }
+        OutputReportEnum::RumbleAndSubcmd((Rumble::default(), subcmd)).into()
     }
 }
 
 impl From<MCURequest> for OutputReport {
     fn from(mcu_request: MCURequest) -> Self {
-        OutputReport {
-            report_id: OutputReportId::RequestMCUData.into(),
-            packet_counter: 0,
-            rumble_data: RumbleData::default(),
-            u: OutputReportUnion { mcu_request },
-        }
+        OutputReportEnum::RequestMCUData((Rumble::default(), mcu_request)).into()
     }
-}
-
-impl fmt::Debug for OutputReport {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(subcmd) = self.subcmd_request() {
-            return subcmd.fmt(f);
-        } else if let Some(mcu) = self.mcu_request() {
-            return mcu.fmt(f);
-        }
-
-        let mut out = f.debug_struct("OutputReport");
-        out.field("id", &self.report_id)
-            .field("counter", &self.packet_counter);
-        if self.report_id == OutputReportId::RumbleAndSubcmd {
-            out.field("subcmd", unsafe { &self.u.subcmd });
-        } else if self.report_id == OutputReportId::RequestMCUData {
-            out.field("mcu_subcmd", unsafe { &self.u.mcu_request });
-        }
-        out.finish()
-    }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union OutputReportUnion {
-    // For OutputReportId::RumbleOnly
-    nothing: (),
-    // For OutputReportId::RumbleAndSubcmd
-    subcmd: SubcommandRequest,
-    // For OutputReportId::RequestMCUData
-    mcu_request: MCURequest,
 }
 
 #[repr(packed)]
@@ -524,9 +480,9 @@ impl From<light::HomeLight> for SubcommandRequest {
 pub fn check_layout() {
     unsafe {
         let report = OutputReport::new();
-        assert_eq!(2, offset_of(&report, &report.rumble_data));
-        assert_eq!(10, offset_of(&report, &report.u.subcmd.subcommand_id));
-        assert_eq!(11, offset_of(&report, &report.u.subcmd.u.mcu_cmd));
+        assert_eq!(2, offset_of(&report, &report.u.rumble_only.rumble_data));
+        assert_eq!(10, offset_of(&report, &report.u.rumble_subcmd.1));
+        assert_eq!(11, offset_of(&report, report.as_mcu_cmd()));
         assert_eq!(49, std::mem::size_of_val(&report));
     }
 }

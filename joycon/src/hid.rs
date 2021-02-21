@@ -77,7 +77,7 @@ impl JoyCon {
 
     #[instrument(level = "trace", skip(self), fields(special))]
     pub fn send(&mut self, report: &mut OutputReport) -> Result<()> {
-        report.packet_counter = self.counter;
+        *report.packet_counter() = self.counter;
         self.counter = (self.counter + 1) & 0xf;
         Span::current().record("special", &report.is_special());
         trace!(out_report = %hex::encode(report.as_bytes()));
