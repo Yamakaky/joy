@@ -2,34 +2,38 @@
 //!
 //! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
 
-use crate::imu;
 use crate::mcu::*;
 use crate::spi::*;
 use crate::{accessory::AccessoryResponse, common::*};
+use crate::{imu, raw_enum};
 use num::FromPrimitive;
 use std::{fmt, mem::size_of_val};
 
-/// Describes a HID report from the JoyCon.
-///
-/// ```ignore
-/// let mut report = InputReport::new();
-/// read_hid_report(buffer.as_bytes_mut());
-/// ```
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct InputReport {
-    report_id: RawId<InputReportId>,
-    u: InputReportContent,
+raw_enum! {
+    #[id: InputReportId]
+    #[union: InputReportUnion]
+    #[struct: InputReport]
+    pub enum InputReportEnum {
+        normal normal_mut: Normal = NormalInputReport,
+        standard_subcmd standard_subcmd_mut: StandardAndSubcmd = (StandardInputReport, SubcommandReply),
+        mcu_fw_update mcu_fw_update_mut: MCUFwUpdate = (),
+        standard_full standard_full_mut: StandardFull = (StandardInputReport, [imu::Frame; 3]),
+        standard_full_mcu standard_full_mcu_mut: StandardFullMCU = (StandardInputReport, [imu::Frame; 3], MCUReport)
+    }
 }
 
-impl InputReport {
-    pub fn new() -> InputReport {
-        unsafe { std::mem::zeroed() }
-    }
+// Describes a HID report from the JoyCon.
+//
+// ```ignore
+// let mut report = InputReport::new();
+// read_hid_report(buffer.as_bytes_mut());
+// ```
+//pub struct InputReport {
 
+impl InputReport {
     pub fn is_special(&self) -> bool {
-        self.report_id != InputReportId::Normal
-            && self.report_id != InputReportId::StandardFull
+        self.id != InputReportId::Normal
+            && self.id != InputReportId::StandardFull
             && self
                 .mcu_report()
                 .and_then(MCUReport::as_ir_data)
@@ -38,7 +42,7 @@ impl InputReport {
     }
 
     pub fn len(&self) -> usize {
-        match self.report_id.try_into() {
+        match self.id.try_into() {
             Some(InputReportId::Normal) => 12,
             Some(InputReportId::StandardAndSubcmd) | Some(InputReportId::StandardFull) => 49,
             Some(InputReportId::StandardFullMCU) => 362,
@@ -56,7 +60,7 @@ impl InputReport {
     }
 
     pub fn validate(&self) {
-        match self.report_id.try_into() {
+        match self.id.try_into() {
             Some(_) => {
                 if let Some(rep) = self.subcmd_reply() {
                     rep.validate()
@@ -65,78 +69,45 @@ impl InputReport {
                     rep.validate()
                 }
             }
-            None => panic!("unknown report id {:x?}", self.report_id),
-        }
-    }
-
-    pub fn normal(&self) -> Option<&NormalInputReport> {
-        if self.report_id == InputReportId::Normal {
-            Some(unsafe { &self.u.normal })
-        } else {
-            None
+            None => panic!("unknown report id {:x?}", self.id),
         }
     }
 
     pub fn standard(&self) -> Option<&StandardInputReport> {
-        if self.report_id == InputReportId::StandardAndSubcmd
-            || self.report_id == InputReportId::StandardFull
-            || self.report_id == InputReportId::StandardFullMCU
+        if self.id == InputReportId::StandardAndSubcmd
+            || self.id == InputReportId::StandardFull
+            || self.id == InputReportId::StandardFullMCU
         {
-            Some(unsafe { &self.u.standard })
+            Some(unsafe { &self.u.standard_full.0 })
         } else {
             None
         }
     }
 
     pub fn subcmd_reply(&self) -> Option<&SubcommandReply> {
-        if self.report_id == InputReportId::StandardAndSubcmd {
-            Some(unsafe { &self.u.standard.u.subcmd_reply })
+        if self.id == InputReportId::StandardAndSubcmd {
+            Some(unsafe { &self.u.standard_subcmd.1 })
         } else {
             None
         }
     }
 
     pub fn imu_frames(&self) -> Option<&[imu::Frame; 3]> {
-        if self.report_id == InputReportId::StandardFull
-            || self.report_id == InputReportId::StandardFullMCU
-        {
-            Some(unsafe { &self.u.standard.u.imu_mcu.imu_frames })
+        if self.id == InputReportId::StandardFull || self.id == InputReportId::StandardFullMCU {
+            Some(unsafe { &self.u.standard_full.1 })
         } else {
             None
         }
     }
 
     pub fn mcu_report(&self) -> Option<&MCUReport> {
-        if self.report_id == InputReportId::StandardFullMCU {
-            Some(unsafe { &self.u.standard.u.imu_mcu.mcu_report })
-        } else {
-            None
-        }
+        self.standard_full_mcu().map(|x| &x.2)
     }
 
     #[cfg(test)]
     pub(crate) unsafe fn u_mcu_report(&self) -> &MCUReport {
-        &self.u.standard.u.imu_mcu.mcu_report
+        &self.u.standard_full_mcu.2
     }
-}
-
-impl Default for InputReport {
-    fn default() -> Self {
-        // Whatever value
-        InputReport {
-            report_id: InputReportId::Normal.into(),
-            u: InputReportContent {
-                normal: NormalInputReport::default(),
-            },
-        }
-    }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union InputReportContent {
-    normal: NormalInputReport,
-    standard: StandardInputReport,
 }
 
 #[repr(packed)]
@@ -148,7 +119,7 @@ pub struct NormalInputReport {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct StandardInputReport {
     pub timer: u8,
     pub info: DeviceStatus,
@@ -156,57 +127,6 @@ pub struct StandardInputReport {
     pub left_stick: Stick,
     pub right_stick: Stick,
     pub vibrator: u8,
-    u: StandardInputReportUnion,
-}
-
-impl fmt::Debug for InputReport {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use InputReportId::*;
-        if let Some(subcmd) = self.subcmd_reply() {
-            return subcmd.fmt(f);
-        } else if let Some(mcucmd) = self.mcu_report() {
-            if mcucmd.as_ir_data().is_none() {
-                return mcucmd.fmt(f);
-            }
-        }
-        let mut out = f.debug_struct("InputReport");
-        out.field("report_id", &self.report_id);
-        match self.report_id.try_into() {
-            Some(StandardAndSubcmd) | Some(StandardFull) | Some(StandardFullMCU) => {
-                let content = unsafe { &self.u.standard };
-                out.field("timer", &content.timer)
-                    .field("info", &content.info)
-                    .field("buttons", &content.buttons)
-                    .field("left_stick", &content.left_stick)
-                    .field("right_stick", &content.right_stick)
-                    .field("vibrator", &content.vibrator);
-            }
-            _ => {}
-        }
-
-        match self.report_id.try_into() {
-            Some(InputReportId::Normal) => {
-                out.field("pote", unsafe { &self.u.normal });
-            }
-            Some(InputReportId::StandardAndSubcmd) => {
-                out.field("subcommand_reply", unsafe {
-                    &self.u.standard.u.subcmd_reply
-                });
-            }
-            Some(InputReportId::MCUFwUpdate) => {
-                out.field("mcu_fw_update", &"[data]");
-            }
-            Some(InputReportId::StandardFull) => {
-                out.field("imu", unsafe { &self.u.standard.u.imu_mcu.imu_frames });
-            }
-            Some(InputReportId::StandardFullMCU) => {
-                out.field("imu", unsafe { &self.u.standard.u.imu_mcu.imu_frames });
-                out.field("mcu", unsafe { &self.u.standard.u.imu_mcu.mcu_report });
-            }
-            None => {}
-        };
-        out.finish()
-    }
 }
 
 bitfield::bitfield! {
@@ -421,15 +341,6 @@ impl fmt::Debug for Stick {
             .field(&self.y())
             .finish()
     }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union StandardInputReportUnion {
-    _nothing: (),
-    subcmd_reply: SubcommandReply,
-    _mcu_fw_update: [u8; 37],
-    imu_mcu: IMUMCU,
 }
 
 #[repr(packed)]
@@ -654,17 +565,11 @@ pub struct IMUMCU {
 fn check_layout() {
     unsafe {
         let report = InputReport::new();
-        assert_eq!(6, offset_of(&report, &report.u.standard.left_stick));
-        assert_eq!(
-            13,
-            offset_of(&report, &report.u.standard.u.imu_mcu.imu_frames)
-        );
-        assert_eq!(13, offset_of(&report, &report.u.standard.u.subcmd_reply));
-        assert_eq!(15, offset_of(&report, &report.u.standard.u.subcmd_reply.u));
-        assert_eq!(
-            49,
-            offset_of(&report, &report.u.standard.u.imu_mcu.mcu_report)
-        );
+        assert_eq!(6, offset_of(&report, &report.u.standard_full.0.left_stick));
+        assert_eq!(13, offset_of(&report, &report.u.standard_full.1));
+        assert_eq!(13, offset_of(&report, &report.u.standard_subcmd.1));
+        assert_eq!(15, offset_of(&report, &report.u.standard_subcmd.1.u));
+        assert_eq!(49, offset_of(&report, &report.u.standard_full_mcu.2));
         assert_eq!(362, std::mem::size_of_val(&report));
     }
 }
