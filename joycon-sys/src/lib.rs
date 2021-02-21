@@ -40,7 +40,7 @@ macro_rules! raw_enum {
         #[derive(Copy, Clone)]
         union $union {
             $($varname: $var),*,
-            $($field: $fieldty),*,
+            $($field: $fieldty),*
         }
         #[derive(Copy, Clone, Debug)]
         pub enum $name {

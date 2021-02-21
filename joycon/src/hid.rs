@@ -305,7 +305,7 @@ impl JoyCon {
         });
         self.call_subcmd_wait(mcu_cmd)?;
 
-        self.wait_mcu_cond(IRRequest::get_state(), |r| {
+        self.wait_mcu_cond(IRRequestEnum::GetState(()), |r| {
             r.as_ir_status()
                 .map(|status| dbg!(status.ir_mode) == ir_mode)
                 .unwrap_or(false)
@@ -396,7 +396,7 @@ impl JoyCon {
         });
         self.call_subcmd_wait(mcu_cmd)?;
 
-        self.wait_mcu_cond(IRRequest::get_state(), |r| {
+        self.wait_mcu_cond(IRRequestEnum::GetState(()), |r| {
             r.as_ir_status()
                 .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
                 .unwrap_or(false)

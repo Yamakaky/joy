@@ -286,8 +286,16 @@ raw_enum! {
 impl From<IRRequest> for MCURequest {
     fn from(ir_request: IRRequest) -> Self {
         let mut request: MCURequest = MCURequestEnum::GetIRData(ir_request).into();
-        request.crc_mut().compute_crc8(ir_request.id());
         request
+            .crc_mut()
+            .compute_crc8(ir_request.id().try_into().unwrap());
+        request
+    }
+}
+
+impl From<IRRequestEnum> for MCURequest {
+    fn from(ir_request: IRRequestEnum) -> Self {
+        ir_request.into()
     }
 }
 

@@ -1,62 +1,6 @@
 use crate::mcu::*;
 pub use ir_register::*;
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct IRRequest {
-    id: RawId<IRRequestId>,
-    #[allow(dead_code)]
-    u: IRRequestUnion,
-}
-
-impl IRRequest {
-    pub fn id(&self) -> IRRequestId {
-        self.id.try_into().unwrap()
-    }
-
-    pub fn get_state() -> IRRequest {
-        IRRequest {
-            id: IRRequestId::GetState.into(),
-            u: IRRequestUnion { nothing: () },
-        }
-    }
-}
-
-impl From<IRAckRequestPacket> for IRRequest {
-    fn from(ack_request_packet: IRAckRequestPacket) -> Self {
-        IRRequest {
-            id: IRRequestId::GetSensorData.into(),
-            u: IRRequestUnion { ack_request_packet },
-        }
-    }
-}
-
-impl From<IRReadRegisters> for IRRequest {
-    fn from(read_registers: IRReadRegisters) -> Self {
-        IRRequest {
-            id: IRRequestId::ReadRegister.into(),
-            u: IRRequestUnion { read_registers },
-        }
-    }
-}
-
-impl fmt::Debug for IRRequest {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut out = f.debug_struct("IRRequest");
-        match self.id.try_into() {
-            id @ Some(IRRequestId::GetState) => out.field("id", &id),
-            Some(IRRequestId::GetSensorData) => {
-                out.field("ack", unsafe { &self.u.ack_request_packet })
-            }
-            Some(IRRequestId::ReadRegister) => {
-                out.field("read_register", unsafe { &self.u.read_registers })
-            }
-            None => out.field("id", &self.id),
-        };
-        out.finish()
-    }
-}
-
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, FromPrimitive, ToPrimitive)]
 pub enum IRRequestId {
@@ -65,12 +9,37 @@ pub enum IRRequestId {
     ReadRegister = 3,
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union IRRequestUnion {
-    nothing: (),
-    ack_request_packet: IRAckRequestPacket,
-    read_registers: IRReadRegisters,
+raw_enum! {
+    #[id: IRRequestId]
+    #[union: IRRequestUnion]
+    #[struct: IRRequest]
+    pub enum IRRequestEnum {
+        get_sensor_data get_sensor_data_mut: GetSensorData = IRAckRequestPacket,
+        get_state get_state_mut: GetState = (),
+        read_register read_register_mut: ReadRegister = IRReadRegisters
+    }
+}
+
+impl From<IRAckRequestPacket> for IRRequest {
+    fn from(ack_request_packet: IRAckRequestPacket) -> Self {
+        IRRequest {
+            id: IRRequestId::GetSensorData.into(),
+            u: IRRequestUnion {
+                get_sensor_data: ack_request_packet,
+            },
+        }
+    }
+}
+
+impl From<IRReadRegisters> for IRRequest {
+    fn from(read_registers: IRReadRegisters) -> Self {
+        IRRequest {
+            id: IRRequestId::ReadRegister.into(),
+            u: IRRequestUnion {
+                read_register: read_registers,
+            },
+        }
+    }
 }
 
 #[repr(packed)]
@@ -186,7 +155,7 @@ fn check_output_layout() {
         assert_eq!(11, offset_of(&report, &cmd.u.get_ir_data));
         assert_eq!(
             15,
-            offset_of(&report, &cmd.u.get_ir_data.u.read_registers.nb_registers)
+            offset_of(&report, &cmd.u.get_ir_data.u.read_register.nb_registers)
         );
     }
 }
