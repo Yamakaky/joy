@@ -576,134 +576,43 @@
 <span id="573">573</span>
 <span id="574">574</span>
 <span id="575">575</span>
-<span id="576">576</span>
-<span id="577">577</span>
-<span id="578">578</span>
-<span id="579">579</span>
-<span id="580">580</span>
-<span id="581">581</span>
-<span id="582">582</span>
-<span id="583">583</span>
-<span id="584">584</span>
-<span id="585">585</span>
-<span id="586">586</span>
-<span id="587">587</span>
-<span id="588">588</span>
-<span id="589">589</span>
-<span id="590">590</span>
-<span id="591">591</span>
-<span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
-<span id="595">595</span>
-<span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
-<span id="600">600</span>
-<span id="601">601</span>
-<span id="602">602</span>
-<span id="603">603</span>
-<span id="604">604</span>
-<span id="605">605</span>
-<span id="606">606</span>
-<span id="607">607</span>
-<span id="608">608</span>
-<span id="609">609</span>
-<span id="610">610</span>
-<span id="611">611</span>
-<span id="612">612</span>
-<span id="613">613</span>
-<span id="614">614</span>
-<span id="615">615</span>
-<span id="616">616</span>
-<span id="617">617</span>
-<span id="618">618</span>
-<span id="619">619</span>
-<span id="620">620</span>
-<span id="621">621</span>
-<span id="622">622</span>
-<span id="623">623</span>
-<span id="624">624</span>
-<span id="625">625</span>
-<span id="626">626</span>
-<span id="627">627</span>
-<span id="628">628</span>
-<span id="629">629</span>
-<span id="630">630</span>
-<span id="631">631</span>
-<span id="632">632</span>
-<span id="633">633</span>
-<span id="634">634</span>
-<span id="635">635</span>
-<span id="636">636</span>
-<span id="637">637</span>
-<span id="638">638</span>
-<span id="639">639</span>
-<span id="640">640</span>
-<span id="641">641</span>
-<span id="642">642</span>
-<span id="643">643</span>
-<span id="644">644</span>
-<span id="645">645</span>
-<span id="646">646</span>
-<span id="647">647</span>
-<span id="648">648</span>
-<span id="649">649</span>
-<span id="650">650</span>
-<span id="651">651</span>
-<span id="652">652</span>
-<span id="653">653</span>
-<span id="654">654</span>
-<span id="655">655</span>
-<span id="656">656</span>
-<span id="657">657</span>
-<span id="658">658</span>
-<span id="659">659</span>
-<span id="660">660</span>
-<span id="661">661</span>
-<span id="662">662</span>
-<span id="663">663</span>
-<span id="664">664</span>
-<span id="665">665</span>
-<span id="666">666</span>
-<span id="667">667</span>
-<span id="668">668</span>
-<span id="669">669</span>
-<span id="670">670</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structs binary compatible with the HID input reports</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">imu</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">mcu</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">spi</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">accessory</span>::<span class="ident">AccessoryResponse</span>, <span class="ident">common</span>::<span class="kw-2">*</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">imu</span>, <span class="ident">raw_enum</span>};
 <span class="kw">use</span> <span class="ident">num</span>::<span class="ident">FromPrimitive</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>, <span class="ident">mem</span>::<span class="ident">size_of_val</span>};
 
-<span class="doccomment">/// Describes a HID report from the JoyCon.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```ignore</span>
-<span class="doccomment">/// let mut report = InputReport::new();</span>
-<span class="doccomment">/// read_hid_report(buffer.as_bytes_mut());</span>
-<span class="doccomment">/// ```</span>
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InputReport</span> {
-    <span class="ident">report_id</span>: <span class="ident">RawId</span><span class="op">&lt;</span><span class="ident">InputReportId</span><span class="op">&gt;</span>,
-    <span class="ident">u</span>: <span class="ident">InputReportContent</span>,
+<span class="macro">raw_enum</span><span class="macro">!</span> {
+    <span class="attribute">#[<span class="ident">id</span>: <span class="ident">InputReportId</span>]</span>
+    <span class="attribute">#[<span class="ident">union</span>: <span class="ident">InputReportUnion</span>]</span>
+    <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">InputReport</span>]</span>
+    <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">InputReportEnum</span> {
+        <span class="ident">normal</span> <span class="ident">normal_mut</span>: <span class="ident">Normal</span> <span class="op">=</span> <span class="ident">NormalInputReport</span>,
+        <span class="ident">standard_subcmd</span> <span class="ident">standard_subcmd_mut</span>: <span class="ident">StandardAndSubcmd</span> <span class="op">=</span> (<span class="ident">StandardInputReport</span>, <span class="ident">SubcommandReply</span>),
+        <span class="ident">mcu_fw_update</span> <span class="ident">mcu_fw_update_mut</span>: <span class="ident">MCUFwUpdate</span> <span class="op">=</span> (),
+        <span class="ident">standard_full</span> <span class="ident">standard_full_mut</span>: <span class="ident">StandardFull</span> <span class="op">=</span> (<span class="ident">StandardInputReport</span>, [<span class="ident">imu</span>::<span class="ident">Frame</span>; <span class="number">3</span>]),
+        <span class="ident">standard_full_mcu</span> <span class="ident">standard_full_mcu_mut</span>: <span class="ident">StandardFullMCU</span> <span class="op">=</span> (<span class="ident">StandardInputReport</span>, [<span class="ident">imu</span>::<span class="ident">Frame</span>; <span class="number">3</span>], <span class="ident">MCUReport</span>)
+    }
 }
 
-<span class="kw">impl</span> <span class="ident">InputReport</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">InputReport</span> {
-        <span class="kw">unsafe</span> { <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">zeroed</span>() }
-    }
+<span class="comment">// Describes a HID report from the JoyCon.</span>
+<span class="comment">//</span>
+<span class="comment">// ```ignore</span>
+<span class="comment">// let mut report = InputReport::new();</span>
+<span class="comment">// read_hid_report(buffer.as_bytes_mut());</span>
+<span class="comment">// ```</span>
+<span class="comment">//pub struct InputReport {</span>
 
+<span class="kw">impl</span> <span class="ident">InputReport</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_special</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">Normal</span>
-            <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>
+        <span class="self">self</span>.<span class="ident">id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">Normal</span>
+            <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>
             <span class="op">&amp;&amp;</span> <span class="self">self</span>
                 .<span class="ident">mcu_report</span>()
                 .<span class="ident">and_then</span>(<span class="ident">MCUReport</span>::<span class="ident">as_ir_data</span>)
@@ -712,7 +621,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">report_id</span>.<span class="ident">try_into</span>() {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">id</span>.<span class="ident">try_into</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">Normal</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">12</span>,
             <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">StandardAndSubcmd</span>) <span class="op">|</span> <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">49</span>,
             <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">362</span>,
@@ -730,7 +639,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">report_id</span>.<span class="ident">try_into</span>() {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">id</span>.<span class="ident">try_into</span>() {
             <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">rep</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">subcmd_reply</span>() {
                     <span class="ident">rep</span>.<span class="ident">validate</span>()
@@ -739,78 +648,45 @@
                     <span class="ident">rep</span>.<span class="ident">validate</span>()
                 }
             }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;unknown report id {:x?}&quot;</span>, <span class="self">self</span>.<span class="ident">report_id</span>),
-        }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">normal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">NormalInputReport</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">Normal</span> {
-            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">normal</span> })
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;unknown report id {:x?}&quot;</span>, <span class="self">self</span>.<span class="ident">id</span>),
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">standard</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">StandardInputReport</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardAndSubcmd</span>
-            <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>
-            <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span>
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardAndSubcmd</span>
+            <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>
+            <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span>
         {
-            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span> })
+            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard_full</span>.<span class="number">0</span> })
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_reply</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SubcommandReply</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardAndSubcmd</span> {
-            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">subcmd_reply</span> })
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardAndSubcmd</span> {
+            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard_subcmd</span>.<span class="number">1</span> })
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">imu_frames</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">imu</span>::<span class="ident">Frame</span>; <span class="number">3</span>]<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>
-            <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span>
-        {
-            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">imu_frames</span> })
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFull</span> <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span> {
+            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard_full</span>.<span class="number">1</span> })
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mcu_report</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">MCUReport</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">report_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span> {
-            <span class="prelude-val">Some</span>(<span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">mcu_report</span> })
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        }
+        <span class="self">self</span>.<span class="ident">standard_full_mcu</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">x</span>.<span class="number">2</span>)
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">u_mcu_report</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">MCUReport</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">mcu_report</span>
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard_full_mcu</span>.<span class="number">2</span>
     }
-}
-
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">InputReport</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="comment">// Whatever value</span>
-        <span class="ident">InputReport</span> {
-            <span class="ident">report_id</span>: <span class="ident">InputReportId</span>::<span class="ident">Normal</span>.<span class="ident">into</span>(),
-            <span class="ident">u</span>: <span class="ident">InputReportContent</span> {
-                <span class="ident">normal</span>: <span class="ident">NormalInputReport</span>::<span class="ident">default</span>(),
-            },
-        }
-    }
-}
-
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
-<span class="ident">union</span> <span class="ident">InputReportContent</span> {
-    <span class="ident">normal</span>: <span class="ident">NormalInputReport</span>,
-    <span class="ident">standard</span>: <span class="ident">StandardInputReport</span>,
 }
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
@@ -822,7 +698,7 @@
 }
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StandardInputReport</span> {
     <span class="kw">pub</span> <span class="ident">timer</span>: <span class="ident">u8</span>,
     <span class="kw">pub</span> <span class="ident">info</span>: <span class="ident">DeviceStatus</span>,
@@ -830,57 +706,6 @@
     <span class="kw">pub</span> <span class="ident">left_stick</span>: <span class="ident">Stick</span>,
     <span class="kw">pub</span> <span class="ident">right_stick</span>: <span class="ident">Stick</span>,
     <span class="kw">pub</span> <span class="ident">vibrator</span>: <span class="ident">u8</span>,
-    <span class="ident">u</span>: <span class="ident">StandardInputReportUnion</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">InputReport</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="kw">use</span> <span class="ident">InputReportId</span>::<span class="kw-2">*</span>;
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subcmd</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">subcmd_reply</span>() {
-            <span class="kw">return</span> <span class="ident">subcmd</span>.<span class="ident">fmt</span>(<span class="ident">f</span>);
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mcucmd</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">mcu_report</span>() {
-            <span class="kw">if</span> <span class="ident">mcucmd</span>.<span class="ident">as_ir_data</span>().<span class="ident">is_none</span>() {
-                <span class="kw">return</span> <span class="ident">mcucmd</span>.<span class="ident">fmt</span>(<span class="ident">f</span>);
-            }
-        }
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">out</span> <span class="op">=</span> <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;InputReport&quot;</span>);
-        <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;report_id&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">report_id</span>);
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">report_id</span>.<span class="ident">try_into</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">StandardAndSubcmd</span>) <span class="op">|</span> <span class="prelude-val">Some</span>(<span class="ident">StandardFull</span>) <span class="op">|</span> <span class="prelude-val">Some</span>(<span class="ident">StandardFullMCU</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">content</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span> };
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;timer&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">content</span>.<span class="ident">timer</span>)
-                    .<span class="ident">field</span>(<span class="string">&quot;info&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">content</span>.<span class="ident">info</span>)
-                    .<span class="ident">field</span>(<span class="string">&quot;buttons&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">content</span>.<span class="ident">buttons</span>)
-                    .<span class="ident">field</span>(<span class="string">&quot;left_stick&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">content</span>.<span class="ident">left_stick</span>)
-                    .<span class="ident">field</span>(<span class="string">&quot;right_stick&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">content</span>.<span class="ident">right_stick</span>)
-                    .<span class="ident">field</span>(<span class="string">&quot;vibrator&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">content</span>.<span class="ident">vibrator</span>);
-            }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {}
-        }
-
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">report_id</span>.<span class="ident">try_into</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">Normal</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;pote&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">normal</span> });
-            }
-            <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">StandardAndSubcmd</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;subcommand_reply&quot;</span>, <span class="kw">unsafe</span> {
-                    <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">subcmd_reply</span>
-                });
-            }
-            <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">MCUFwUpdate</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;mcu_fw_update&quot;</span>, <span class="kw-2">&amp;</span><span class="string">&quot;[data]&quot;</span>);
-            }
-            <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">StandardFull</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;imu&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">imu_frames</span> });
-            }
-            <span class="prelude-val">Some</span>(<span class="ident">InputReportId</span>::<span class="ident">StandardFullMCU</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;imu&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">imu_frames</span> });
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;mcu&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">mcu_report</span> });
-            }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {}
-        };
-        <span class="ident">out</span>.<span class="ident">finish</span>()
-    }
 }
 
 <span class="ident">bitfield</span>::<span class="macro">bitfield</span><span class="macro">!</span> {
@@ -1095,15 +920,6 @@
             .<span class="ident">field</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">y</span>())
             .<span class="ident">finish</span>()
     }
-}
-
-<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
-<span class="ident">union</span> <span class="ident">StandardInputReportUnion</span> {
-    <span class="ident">_nothing</span>: (),
-    <span class="ident">subcmd_reply</span>: <span class="ident">SubcommandReply</span>,
-    <span class="ident">_mcu_fw_update</span>: [<span class="ident">u8</span>; <span class="number">37</span>],
-    <span class="ident">imu_mcu</span>: <span class="ident">IMUMCU</span>,
 }
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
@@ -1328,17 +1144,11 @@
 <span class="kw">fn</span> <span class="ident">check_layout</span>() {
     <span class="kw">unsafe</span> {
         <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">InputReport</span>::<span class="ident">new</span>();
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">6</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">left_stick</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="number">13</span>,
-            <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">imu_frames</span>)
-        );
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">13</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">subcmd_reply</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">15</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">subcmd_reply</span>.<span class="ident">u</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="number">49</span>,
-            <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard</span>.<span class="ident">u</span>.<span class="ident">imu_mcu</span>.<span class="ident">mcu_report</span>)
-        );
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">6</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard_full</span>.<span class="number">0</span>.<span class="ident">left_stick</span>));
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">13</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard_full</span>.<span class="number">1</span>));
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">13</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard_subcmd</span>.<span class="number">1</span>));
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">15</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard_subcmd</span>.<span class="number">1</span>.<span class="ident">u</span>));
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">49</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">standard_full_mcu</span>.<span class="number">2</span>));
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">362</span>, <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">size_of_val</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>));
     }
 }
