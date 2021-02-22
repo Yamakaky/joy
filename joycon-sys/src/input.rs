@@ -366,8 +366,8 @@ impl SubcommandReply {
         )
     }
 
-    pub fn id(&self) -> Option<SubcommandId> {
-        self.subcommand_id.try_into()
+    pub fn id(&self) -> RawId<SubcommandId> {
+        self.subcommand_id
     }
 
     pub fn device_info(&self) -> Option<&DeviceInfo> {

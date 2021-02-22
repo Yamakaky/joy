@@ -166,7 +166,7 @@ impl JoyCon {
 
     #[instrument(level = "info", skip(self), err)]
     pub fn get_dev_info(&mut self) -> Result<DeviceInfo> {
-        let reply = self.call_subcmd_wait(SubcommandRequest::request_device_info())?;
+        let reply = self.call_subcmd_wait(SubcommandRequestEnum::RequestDeviceInfo(()))?;
         Ok(*reply.device_info().unwrap())
     }
 
@@ -184,8 +184,8 @@ impl JoyCon {
 
     #[instrument(level = "info", skip(self), err)]
     fn set_report_mode_standard(&mut self) -> Result<()> {
-        self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
-            InputReportId::StandardFull,
+        self.call_subcmd_wait(SubcommandRequestEnum::SetInputReportMode(
+            InputReportId::StandardFull.into(),
         ))?;
         Ok(())
     }
@@ -202,7 +202,7 @@ impl JoyCon {
         for _ in 0..WAIT_TIMEOUT {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
-                if reply.id() == Some(subcmd.id()) {
+                if &reply.id() == subcmd.id() {
                     ensure!(reply.ack.is_ok(), "subcmd reply is nack");
                     return Ok(*reply);
                 }
@@ -257,14 +257,14 @@ impl JoyCon {
     pub fn disable_mcu(&mut self) -> Result<()> {
         self.enable_ir_loop = false;
         self.set_report_mode_standard()?;
-        self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Suspend))?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Suspend.into()))?;
         Ok(())
     }
 
     #[instrument(level = "info", skip(self), err)]
     fn enable_mcu(&mut self) -> Result<()> {
         self.set_report_mode_mcu()?;
-        self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Standby.into()))?;
         self.wait_mcu_status(MCUMode::Standby)
             .context("enable_mcu")?;
         Ok(())
@@ -272,8 +272,8 @@ impl JoyCon {
 
     #[instrument(level = "info", skip(self), err)]
     fn set_report_mode_mcu(&mut self) -> Result<()> {
-        self.call_subcmd_wait(SubcommandRequest::set_input_report_mode(
-            InputReportId::StandardFullMCU,
+        self.call_subcmd_wait(SubcommandRequestEnum::SetInputReportMode(
+            InputReportId::StandardFullMCU.into(),
         ))?;
         Ok(())
     }
@@ -449,7 +449,7 @@ impl JoyCon {
 impl JoyCon {
     #[instrument(level = "info", skip(self), err)]
     pub fn enable_imu(&mut self) -> Result<()> {
-        self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::GyroAccel))?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetIMUMode(IMUMode::GyroAccel.into()))?;
         Ok(())
     }
 
@@ -475,7 +475,7 @@ impl JoyCon {
 impl JoyCon {
     #[instrument(level = "info", skip(self), err)]
     pub fn enable_ringcon(&mut self) -> Result<()> {
-        self.call_subcmd_wait(SubcommandRequest::set_mcu_mode(MCUMode::Standby))?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Standby.into()))?;
         loop {
             let out = self.call_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::MaybeRingcon))?;
             if out.mcu_report().unwrap().as_status().unwrap().state == MCUMode::MaybeRingcon {
@@ -488,7 +488,9 @@ impl JoyCon {
             mcu_fw_version: (0.into(), 0.into()),
         }))?;
         self.call_subcmd_wait(SubcommandRequest::subcmd_0x59())?;
-        self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::MaybeRingcon))?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetIMUMode(
+            IMUMode::MaybeRingcon.into(),
+        ))?;
         self.call_subcmd_wait(SubcommandRequest::subcmd_0x5c_6())?;
         self.call_subcmd_wait(SubcommandRequest::subcmd_0x5a())?;
         Ok(())
@@ -497,7 +499,9 @@ impl JoyCon {
     #[instrument(level = "info", skip(self), err)]
     pub fn disable_ringcon(&mut self) -> Result<()> {
         self.call_subcmd_wait(SubcommandRequest::subcmd_0x5b())?;
-        self.call_subcmd_wait(SubcommandRequest::set_imu_mode(IMUMode::_Unknown0x02))?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetIMUMode(
+            IMUMode::_Unknown0x02.into(),
+        ))?;
         self.call_subcmd_wait(SubcommandRequest::subcmd_0x5c_0())?;
         self.call_subcmd_wait(MCUCommand::configure_mcu_ir(MCUIRModeData {
             ir_mode: MCUIRMode::IRSensorReset.into(),

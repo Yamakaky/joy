@@ -154,7 +154,7 @@ pub fn raw_from_vector(v: Vector3<f64>) -> [I16LE; 3] {
 }
 
 #[repr(transparent)]
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
 pub struct RawId<Id>(u8, PhantomData<Id>);
 
 impl<Id> RawId<Id> {

@@ -3,7 +3,7 @@ use bluetooth_sys::*;
 use joycon::{
     hidapi::HidDevice,
     joycon_sys::{
-        output::SubcommandRequest, InputReport, InputReportId::StandardFull, OutputReport,
+        output::SubcommandRequestEnum, InputReport, InputReportId::StandardFull, OutputReport,
     },
 };
 use libc::sockaddr;
@@ -36,8 +36,12 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
     let (mut _client_ctl, mut client_itr) = connect_switch()?;
 
     // Force input reports to be generated so that we don't have to manually click on a button.
-    let subcmd = OutputReport::from(SubcommandRequest::set_input_report_mode(StandardFull));
-    device.write(subcmd.as_bytes())?;
+    device.write(
+        OutputReport::from(SubcommandRequestEnum::SetInputReportMode(
+            StandardFull.into(),
+        ))
+        .as_bytes(),
+    )?;
 
     let start = Instant::now();
     loop {
@@ -72,10 +76,12 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
                         client_itr = x.1;
 
                         // Force input reports to be generated so that we don't have to manually click on a button.
-                        let subcmd = OutputReport::from(SubcommandRequest::set_input_report_mode(
-                            StandardFull,
-                        ));
-                        device.write(subcmd.as_bytes())?;
+                        device.write(
+                            OutputReport::from(SubcommandRequestEnum::SetInputReportMode(
+                                StandardFull.into(),
+                            ))
+                            .as_bytes(),
+                        )?;
                     }
                 }
             }
