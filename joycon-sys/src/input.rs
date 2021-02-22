@@ -349,110 +349,53 @@ impl fmt::Debug for Stick {
     }
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct SubcommandReply {
-    pub ack: Ack,
-    subcommand_id: RawId<SubcommandId>,
-    u: SubcommandReplyUnion,
+raw_enum! {
+    #[pre_id ack ack_mut: Ack]
+    #[id: SubcommandId]
+    #[union: SubcommandReplyUnion]
+    #[struct: SubcommandReply]
+    #[raw [u8; 39]]
+    pub enum SubcommandReplyEnum {
+        controller_state controller_state_mut: GetOnlyControllerState = (),
+        bluetooth_manual_pairing bluetooth_manual_pairing_mut: BluetoothManualPairing = (),
+        device_info device_info_mut: RequestDeviceInfo = DeviceInfo,
+        input_report_mode_result input_report_mode_result_mut: SetInputReportMode = (),
+        trigger_buttons_elapsed_time trigger_buttons_elapsed_time_mut: GetTriggerButtonsElapsedTime = [U16LE; 7],
+        shipment_mode_result shipment_mode_result_mut: SetShipmentMode = (),
+        spi_read_result spi_read_result_mut: SPIRead = SPIReadResult,
+        spi_write_result spi_write_result_mut: SPIWrite = SPIWriteResult,
+        mcu_report mcu_report_mut: SetMCUConf = MCUReport,
+        mcu_state_result mcu_state_result_mut: SetMCUState = (),
+        player_lights_result player_lights_result_mut: SetPlayerLights = (),
+        home_light_result home_light_result_mut: SetHomeLight = (),
+        imu_mode_result imu_mode_result_mut: SetIMUMode = (),
+        imu_sens_result imu_sens_result_mut: SetIMUSens = (),
+        enable_vibration enable_vibration_mut: EnableVibration = (),
+        maybe_accessory maybe_accessory_mut: MaybeAccessory = AccessoryResponse,
+        unknown0x59 unknown0x59_mut: Unknown0x59 = (),
+        unknown0x5a unknown0x5a_mut: Unknown0x5a = (),
+        unknown0x5b unknown0x5b_mut: Unknown0x5b = (),
+        unknown0x5c unknown0x5c_mut: Unknown0x5c = ()
+    }
 }
 
 impl SubcommandReply {
     pub fn validate(&self) {
         assert!(
-            self.subcommand_id.try_into().is_some(),
+            self.id.try_into().is_some(),
             "invalid subcmd id{:?}",
-            self.subcommand_id
+            self.id
         )
     }
 
-    pub fn id(&self) -> RawId<SubcommandId> {
-        self.subcommand_id
-    }
-
-    pub fn device_info(&self) -> Option<&DeviceInfo> {
-        if self.subcommand_id == SubcommandId::RequestDeviceInfo {
-            Some(unsafe { &self.u.device_info })
-        } else {
-            None
-        }
-    }
-
-    pub fn spi_result(&self) -> Option<&SPIReadResult> {
-        if self.subcommand_id == SubcommandId::SPIRead {
-            Some(unsafe { &self.u.spi_read })
-        } else {
-            None
-        }
-    }
-
-    pub fn spi_write_success(&self) -> Option<bool> {
-        if self.subcommand_id == SubcommandId::SPIWrite {
-            Some(self.ack.is_ok() && unsafe { self.u.spi_write.success() })
-        } else {
-            None
-        }
-    }
-
-    pub fn mcu_report(&self) -> Option<&MCUReport> {
-        if self.subcommand_id == SubcommandId::SetMCUConf {
-            Some(unsafe { &self.u.mcu_report })
-        } else {
-            None
-        }
-    }
-
-    pub fn accessory_response(&self) -> Option<&AccessoryResponse> {
-        if self.subcommand_id == SubcommandId::MaybeAccessory {
-            Some(unsafe { &self.u.accessory })
-        } else {
-            None
-        }
-    }
-}
-
-impl fmt::Debug for SubcommandReply {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut out = f.debug_struct("SubcommandReply");
-        out.field("ack", &self.ack);
-        match self.subcommand_id.try_into() {
-            Some(SubcommandId::RequestDeviceInfo) => {
-                out.field("device_info", unsafe { &self.u.device_info })
-            }
-            Some(SubcommandId::GetTriggerButtonsElapsedTime) => out
-                .field("trigger_buttons_elapsed_time", unsafe {
-                    &self.u.trigger_buttons_elapsed_time
-                }),
-            Some(SubcommandId::SetMCUConf) | Some(SubcommandId::SetMCUState) => {
-                out.field("mcu_report", unsafe { &self.u.mcu_report })
-            }
-            Some(SubcommandId::SPIRead) => {
-                out.field("spi_read_result", unsafe { &self.u.spi_read })
-            }
-            Some(SubcommandId::MaybeAccessory) => {
-                out.field("accessory_response", unsafe { &self.u.accessory })
-            }
-            subcmd @ Some(SubcommandId::SetIMUMode)
-            | subcmd @ Some(SubcommandId::SetPlayerLights)
-            | subcmd @ Some(SubcommandId::SetInputReportMode)
-            | subcmd @ Some(SubcommandId::SetShipmentMode)
-            | subcmd @ Some(SubcommandId::SetHomeLight)
-            | subcmd @ Some(SubcommandId::EnableVibration) => {
-                out.field("subcommand", &subcmd.expect("unreachable"))
-            }
-            Some(subcmd) => out
-                .field("subcommand", &subcmd)
-                .field("raw", unsafe { &self.u.raw }),
-            None => out
-                .field("subcommand_id", &self.subcommand_id)
-                .field("raw", unsafe { &self.u.raw }),
-        };
-        out.finish()
+    pub fn is_spi_write_success(&self) -> Option<bool> {
+        self.spi_write_result()
+            .map(|r| self.ack.is_ok() && r.success())
     }
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
 pub struct Ack(u8);
 
 impl Ack {
@@ -474,19 +417,6 @@ impl fmt::Debug for Ack {
             out.finish()
         }
     }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union SubcommandReplyUnion {
-    // add to validate() when adding variant
-    device_info: DeviceInfo,
-    spi_read: SPIReadResult,
-    spi_write: SPIWriteResult,
-    mcu_report: MCUReport,
-    trigger_buttons_elapsed_time: [U16LE; 7],
-    accessory: AccessoryResponse,
-    raw: [u8; 39],
 }
 
 #[repr(packed)]

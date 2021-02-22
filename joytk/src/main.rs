@@ -455,7 +455,7 @@ fn ringcon(joycon: &mut JoyCon, cmd: &Ringcon) -> anyhow::Result<()> {
                 "Stored steps: {}",
                 joycon
                     .call_subcmd_wait(AccessoryCommand::get_offline_steps())?
-                    .accessory_response()
+                    .maybe_accessory()
                     .unwrap()
                     .offline_steps()?
                     .steps

@@ -203,7 +203,7 @@ impl JoyCon {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
                 if reply.id() == subcmd.id() {
-                    ensure!(reply.ack.is_ok(), "subcmd reply is nack");
+                    ensure!(reply.ack().is_ok(), "subcmd reply is nack");
                     return Ok(*reply);
                 }
             }
@@ -215,14 +215,14 @@ impl JoyCon {
     #[instrument(level = "info", skip(self), err)]
     pub fn read_spi<S: SPI>(&mut self) -> Result<S> {
         let reply = self.call_subcmd_wait(SPIReadRequest::new(S::range()))?;
-        let result = reply.spi_result().unwrap();
+        let result = reply.spi_read_result().unwrap();
         Ok((*result).try_into()?)
     }
 
     #[instrument(level = "info", skip(self), err)]
     pub fn read_spi_raw(&mut self, range: SPIRange) -> Result<[u8; 0x1D]> {
         let reply = self.call_subcmd_wait(SPIReadRequest::new(range))?;
-        let result = reply.spi_result().unwrap();
+        let result = reply.spi_read_result().unwrap();
         assert_eq!(result.range(), range);
         Ok(result.raw())
     }
@@ -233,13 +233,13 @@ impl JoyCon {
         value: S,
     ) -> Result<bool> {
         let reply = self.call_subcmd_wait(value.into())?;
-        Ok(reply.spi_write_success().unwrap())
+        Ok(reply.is_spi_write_success().unwrap())
     }
 
     #[instrument(level = "info", skip(self), err)]
     pub unsafe fn write_spi_raw(&mut self, range: SPIRange, data: &[u8]) -> Result<bool> {
         let reply = self.call_subcmd_wait(SPIWriteRequest::new(range, data))?;
-        Ok(reply.spi_write_success().unwrap())
+        Ok(reply.is_spi_write_success().unwrap())
     }
 }
 
