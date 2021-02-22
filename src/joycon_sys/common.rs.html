@@ -225,7 +225,7 @@
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">cgmath</span>::<span class="ident">Vector3</span>;
 <span class="kw">use</span> <span class="ident">num</span>::{<span class="ident">FromPrimitive</span>, <span class="ident">ToPrimitive</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>, <span class="ident">marker</span>::<span class="ident">PhantomData</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">any</span>::<span class="ident">type_name</span>, <span class="ident">fmt</span>, <span class="ident">marker</span>::<span class="ident">PhantomData</span>};
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NINTENDO_VENDOR_ID</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">1406</span>;
 
@@ -405,7 +405,7 @@
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">try_into</span>() {
             <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:?}&quot;</span>, <span class="ident">id</span>)
         } <span class="kw">else</span> {
-            <span class="ident">f</span>.<span class="ident">debug_tuple</span>(<span class="string">&quot;RawId&quot;</span>)
+            <span class="ident">f</span>.<span class="ident">debug_tuple</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;RawId&lt;{}&gt;&quot;</span>, <span class="ident">type_name</span>::<span class="op">&lt;</span><span class="ident">Id</span><span class="op">&gt;</span>()))
                 .<span class="ident">field</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="self">self</span>.<span class="number">0</span>))
                 .<span class="ident">finish</span>()
         }

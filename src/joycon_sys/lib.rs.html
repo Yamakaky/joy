@@ -119,6 +119,13 @@
 <span id="116">116</span>
 <span id="117">117</span>
 <span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Helper crate for interacting with a JoyCon and Switch Pro Controller via HID.</span>
 <span class="doccomment">//!</span>
@@ -147,6 +154,7 @@
         <span class="attribute">#[<span class="ident">id</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">tyid</span>:<span class="ident">ident</span>]</span>
         <span class="attribute">#[<span class="ident">union</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">union</span>:<span class="ident">ident</span>]</span>
         <span class="attribute">#[<span class="kw">struct</span>: <span class="macro-nonterminal">$</span><span class="kw">struct</span>:<span class="macro-nonterminal">ident</span>]</span>
+        $(<span class="attribute">#[<span class="ident">raw</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rawty</span>:<span class="ident">ty</span>]</span>)<span class="question-mark">?</span>
         $(<span class="attribute">#[<span class="ident">field</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">field</span>:<span class="ident">ident</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fieldmut</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fieldty</span>:<span class="ident">ty</span>]</span>)<span class="op">*</span>
         <span class="kw">pub</span> <span class="kw">enum</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">ident</span> {
             $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">varname</span>:<span class="ident">ident</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">varnamemut</span>:<span class="ident">ident</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">id</span>:<span class="ident">ident</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">var</span>:<span class="ident">ty</span>),<span class="op">+</span>
@@ -162,6 +170,7 @@
         <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
         <span class="ident">union</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">union</span> {
             $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">varname</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">var</span>),<span class="kw-2">*</span>,
+            $(<span class="ident">raw</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">rawty</span>,)<span class="question-mark">?</span>
             $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">field</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fieldty</span>),<span class="op">*</span>
         }
         <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
@@ -230,8 +239,13 @@
             <span class="kw">fn</span> <span class="macro-nonterminal">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> ::<span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">out</span> <span class="op">=</span> <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="kw">struct</span>));
                 <span class="kw">match</span> <span class="self">self</span>.<span class="macro-nonterminal">id</span>.<span class="ident">try_into</span>() {
-                    $(<span class="prelude-val">Some</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tyid</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">out</span>.<span class="ident">field</span>(::<span class="ident">std</span>::<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">varname</span>), <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="macro-nonterminal">$</span><span class="macro-nonterminal">varname</span> })),<span class="kw-2">*</span>,
-                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented</span><span class="macro">!</span>(),
+                    $(<span class="prelude-val">Some</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">tyid</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">id</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">out</span>.<span class="ident">field</span>(::<span class="ident">std</span>::<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">varname</span>), <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="macro-nonterminal">$</span><span class="macro-nonterminal">varname</span> });
+                    }),<span class="op">*</span>
+                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;id&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">id</span>);
+                        $(<span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;raw&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">raw</span> <span class="kw">as</span> <span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">rawty</span> });)<span class="question-mark">?</span>
+                    }
                 };
                 <span class="ident">out</span>.<span class="ident">finish</span>()
             }

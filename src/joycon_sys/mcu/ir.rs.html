@@ -257,7 +257,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IRStatus</span> {
     <span class="ident">_unknown_0x00</span>: <span class="ident">u8</span>,
-    <span class="kw">pub</span> <span class="ident">ir_mode</span>: <span class="ident">MCUIRMode</span>,
+    <span class="kw">pub</span> <span class="ident">ir_mode</span>: <span class="ident">RawId</span><span class="op">&lt;</span><span class="ident">MCUIRMode</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">required_fw_major_version</span>: <span class="ident">U16LE</span>,
     <span class="kw">pub</span> <span class="ident">required_fw_minor_version</span>: <span class="ident">U16LE</span>,
 }

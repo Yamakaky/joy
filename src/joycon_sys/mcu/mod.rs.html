@@ -351,6 +351,7 @@
 <span id="348">348</span>
 <span id="349">349</span>
 <span id="350">350</span>
+<span id="351">351</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">common</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">raw_enum</span>;
@@ -379,7 +380,7 @@
     <span class="attribute">#[<span class="ident">id</span>: <span class="ident">MCUReportId</span>]</span>
     <span class="attribute">#[<span class="ident">union</span>: <span class="ident">MCUReportUnion</span>]</span>
     <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">MCUReport</span>]</span>
-    <span class="attribute">#[<span class="ident">field</span> <span class="ident">raw</span> <span class="ident">raw_mut</span>: [<span class="ident">u8</span>; <span class="number">312</span>]</span>]
+    <span class="attribute">#[<span class="ident">raw</span> [<span class="ident">u8</span>; <span class="number">312</span>]</span>]
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">MCUReportEnum</span> {
         <span class="ident">empty</span> <span class="ident">empty_mut</span>: <span class="ident">Empty</span> <span class="op">=</span> (),
         <span class="ident">state_report</span> <span class="ident">state_report_mut</span>: <span class="ident">StateReport</span> <span class="op">=</span> <span class="ident">MCUStatus</span>,
@@ -501,7 +502,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">out</span> <span class="op">=</span> <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;MCUCommand&quot;</span>);
         <span class="kw">match</span> (<span class="self">self</span>.<span class="ident">cmd_id</span>.<span class="ident">try_into</span>(), <span class="self">self</span>.<span class="ident">subcmd_id</span>.<span class="ident">try_into</span>()) {
             (<span class="prelude-val">Some</span>(<span class="ident">MCUCommandId</span>::<span class="ident">ConfigureIR</span>), <span class="prelude-val">Some</span>(<span class="ident">MCUSubCommandId</span>::<span class="ident">SetIRMode</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;set_ir_mode&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">ir_mode</span> })
+                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;set_ir_ir_mode&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">ir_mode</span> })
             }
             (<span class="prelude-val">Some</span>(<span class="ident">MCUCommandId</span>::<span class="ident">ConfigureIR</span>), <span class="prelude-val">Some</span>(<span class="ident">MCUSubCommandId</span>::<span class="ident">WriteIRRegisters</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;cmd&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">regs</span> })
@@ -510,7 +511,7 @@
                 <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;set_mcu_mode&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">mcu_mode</span> })
             }
             (<span class="prelude-val">Some</span>(<span class="ident">MCUCommandId</span>::<span class="ident">ConfigureMCU</span>), <span class="prelude-val">Some</span>(<span class="ident">MCUSubCommandId</span>::<span class="ident">SetIRMode</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;set_ir_mode&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">ir_mode</span> })
+                <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;set_mcu_ir_mode&quot;</span>, <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">ir_mode</span> })
             }
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">out</span>.<span class="ident">field</span>(<span class="string">&quot;subcommand&quot;</span>, <span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="ident">cmd_id</span>, <span class="self">self</span>.<span class="ident">subcmd_id</span>)),
         };
@@ -581,6 +582,7 @@
     <span class="attribute">#[<span class="ident">id</span>: <span class="ident">MCURequestId</span>]</span>
     <span class="attribute">#[<span class="ident">union</span>: <span class="ident">MCURequestUnion</span>]</span>
     <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">MCURequest</span>]</span>
+    <span class="attribute">#[<span class="ident">raw</span> [<span class="ident">u8</span>; <span class="number">38</span>]</span>]
     <span class="attribute">#[<span class="ident">field</span> <span class="ident">crc</span> <span class="ident">crc_mut</span>: <span class="ident">MCURequestCRC</span>]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">MCURequestEnum</span> {
         <span class="ident">get_mcu_status</span> <span class="ident">get_mcu_status_mut</span>: <span class="ident">GetMCUStatus</span> <span class="op">=</span> (),

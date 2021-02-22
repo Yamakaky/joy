@@ -353,6 +353,7 @@
 <span id="350">350</span>
 <span id="351">351</span>
 <span id="352">352</span>
+<span id="353">353</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structs binary compatible with the HID output reports</span>
 <span class="doccomment">//!</span>
@@ -504,6 +505,7 @@
     <span class="attribute">#[<span class="ident">id</span>: <span class="ident">SubcommandId</span>]</span>
     <span class="attribute">#[<span class="ident">union</span>: <span class="ident">SubcommandRequestUnion</span>]</span>
     <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">SubcommandRequest</span>]</span>
+    <span class="attribute">#[<span class="ident">raw</span> [<span class="ident">u8</span>; <span class="number">38</span>]</span>]
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SubcommandRequestEnum</span> {
         <span class="ident">get_only_controller_state</span> <span class="ident">get_only_controller_state_mut</span>: <span class="ident">GetOnlyControllerState</span> <span class="op">=</span> (),
         <span class="ident">bluetooth_manual_pairing</span> <span class="ident">bluetooth_manual_pairing_mut</span>: <span class="ident">BluetoothManualPairing</span> <span class="op">=</span> (),
