@@ -22,7 +22,9 @@ pub use output::OutputReport;
 #[macro_export]
 macro_rules! raw_enum {
     (
+        $(#[pre_id $preid:ident $preidmut:ident: $preidty:ty])?
         #[id: $tyid:ident]
+        $(#[post_id $postid:ident $postidmut:ident: $postidty:ty])?
         #[union: $union:ident]
         #[struct: $struct:ident]
         $(#[raw $rawty:ty])?
@@ -34,15 +36,17 @@ macro_rules! raw_enum {
         #[repr(packed)]
         #[derive(Copy, Clone)]
         pub struct $struct {
+            $($preid: $preidty,)?
             id: RawId<$tyid>,
+            $($postid: $postidty,)?
             u: $union,
         }
         #[repr(packed)]
         #[derive(Copy, Clone)]
         union $union {
-            $($varname: $var),*,
+            $($varname: $var,)*
             $(raw: $rawty,)?
-            $($field: $fieldty),*
+            $($field: $fieldty,)*
         }
         #[derive(Copy, Clone, Debug)]
         pub enum $name {
@@ -61,8 +65,17 @@ macro_rules! raw_enum {
 
         impl ::std::convert::From<$name> for $struct {
             fn from(x: $name) -> Self {
-                match x {
-                    $($name::$id(data) => $struct { id: $tyid::$id.into(), u: $union { $varname: data } }),*,
+                let (id, u) = match x {
+                    $($name::$id(data) => (
+                        $tyid::$id.into(),
+                        $union { $varname: data }
+                    )),*,
+                };
+                $struct {
+                    $($preid: ::std::default::Default::default(),)?
+                    id,
+                    $($postid: ::std::default::Default::default(),)?
+                    u,
                 }
             }
         }
@@ -84,8 +97,7 @@ macro_rules! raw_enum {
                         None
                     }
                 }
-            )*
-            $(
+
                 pub fn $varnamemut(&mut self) -> Option<&mut $var> {
                     if self.id == $tyid::$id {
                         Some(unsafe { &mut self.u.$varname })
@@ -95,11 +107,28 @@ macro_rules! raw_enum {
                 }
             )*
             $(
+                pub fn $preid(&self) -> &$preidty {
+                    &self.$preid
+                }
+
+                pub fn $preidmut(&mut self) -> &mut $preidty {
+                    &mut self.$preid
+                }
+            )?
+            $(
+                pub fn $postid(&self) -> &$postidty {
+                    &self.$postid
+                }
+
+                pub fn $postidmut(&mut self) -> &mut $postidty {
+                    &mut self.$postid
+                }
+            )?
+            $(
                 pub fn $field(&self) -> &$fieldty {
                     unsafe { &self.u.$field}
                 }
-            )*
-            $(
+
                 pub fn $fieldmut(&mut self) -> &mut $fieldty {
                     unsafe { &mut self.u.$field}
                 }

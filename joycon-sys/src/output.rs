@@ -30,13 +30,14 @@ pub enum OutputReportId {
 // ```
 raw_enum! {
     #[id: OutputReportId]
+    #[post_id rumble rumble_mut: Rumble]
     #[union: OutputReportUnion]
     #[struct: OutputReport]
     pub enum OutputReportEnum {
-        rumble_subcmd rumble_subcmd_mut: RumbleAndSubcmd = (Rumble, SubcommandRequest),
+        rumble_subcmd rumble_subcmd_mut: RumbleAndSubcmd = SubcommandRequest,
         mcu_fw_update mcu_fw_update_mut: MCUFwUpdate = (),
-        rumble_only rumble_only_mut: RumbleOnly = Rumble,
-        request_mcu_data request_mcu_data_mut: RequestMCUData = (Rumble, MCURequest)
+        rumble_only rumble_only_mut: RumbleOnly = (),
+        request_mcu_data request_mcu_data_mut: RequestMCUData = MCURequest
     }
 }
 
@@ -49,7 +50,7 @@ pub struct Rumble {
 
 impl OutputReport {
     pub fn packet_counter(&mut self) -> &mut u8 {
-        unsafe { &mut self.u.rumble_only.packet_counter }
+        &mut self.rumble.packet_counter
     }
 
     pub fn is_special(&self) -> bool {
@@ -88,12 +89,10 @@ impl OutputReport {
         })
     }
 
-    pub fn set_rumble(rumble: RumbleData) -> OutputReport {
-        OutputReportEnum::RumbleOnly(Rumble {
-            packet_counter: 0,
-            rumble_data: rumble,
-        })
-        .into()
+    pub fn set_rumble(rumble_data: RumbleData) -> OutputReport {
+        let mut report: OutputReport = OutputReportEnum::RumbleOnly(()).into();
+        report.rumble.rumble_data = rumble_data;
+        report
     }
 
     pub fn len(&self) -> usize {
@@ -116,18 +115,18 @@ impl OutputReport {
 
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_request(&self) -> &MCURequest {
-        &self.u.request_mcu_data.1
+        &self.u.request_mcu_data
     }
 
     #[cfg(test)]
     pub(crate) unsafe fn as_mcu_cmd(&self) -> &MCUCommand {
-        &self.u.rumble_subcmd.1.u.set_mcu_conf
+        &self.u.rumble_subcmd.u.set_mcu_conf
     }
 }
 
 impl From<SubcommandRequest> for OutputReport {
     fn from(subcmd: SubcommandRequest) -> Self {
-        OutputReportEnum::RumbleAndSubcmd((Rumble::default(), subcmd)).into()
+        OutputReportEnum::RumbleAndSubcmd(subcmd).into()
     }
 }
 
@@ -139,7 +138,7 @@ impl From<SubcommandRequestEnum> for OutputReport {
 
 impl From<MCURequest> for OutputReport {
     fn from(mcu_request: MCURequest) -> Self {
-        OutputReportEnum::RequestMCUData((Rumble::default(), mcu_request)).into()
+        OutputReportEnum::RequestMCUData(mcu_request).into()
     }
 }
 
@@ -345,8 +344,8 @@ impl From<light::HomeLight> for SubcommandRequest {
 pub fn check_layout() {
     unsafe {
         let report = OutputReport::new();
-        assert_eq!(2, offset_of(&report, &report.u.rumble_only.rumble_data));
-        assert_eq!(10, offset_of(&report, &report.u.rumble_subcmd.1));
+        assert_eq!(2, offset_of(&report, &report.rumble.rumble_data));
+        assert_eq!(10, offset_of(&report, &report.u.rumble_subcmd));
         assert_eq!(11, offset_of(&report, report.as_mcu_cmd()));
         assert_eq!(49, std::mem::size_of_val(&report));
     }

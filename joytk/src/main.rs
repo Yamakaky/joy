@@ -435,9 +435,9 @@ fn decode() -> anyhow::Result<()> {
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            if let Some((_, subcmd)) = report.rumble_subcmd() {
+            if let Some(subcmd) = report.rumble_subcmd() {
                 println!("{} {:?}", time, subcmd);
-            } else if let Some((_, mcu)) = report.request_mcu_data() {
+            } else if let Some(mcu) = report.request_mcu_data() {
                 println!("{} {:?}", time, mcu);
             }
         }

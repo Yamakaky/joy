@@ -96,9 +96,9 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
 
                     let elapsed = start.elapsed().as_secs_f64();
 
-                    if let Some((_, subcmd)) = report.rumble_subcmd() {
+                    if let Some(subcmd) = report.rumble_subcmd() {
                         println!("{:0>9.4} {:?}", elapsed, subcmd);
-                    } else if let Some((_, mcu)) = report.request_mcu_data() {
+                    } else if let Some(mcu) = report.request_mcu_data() {
                         println!("{:0>9.4} {:?}", elapsed, mcu);
                     }
 
