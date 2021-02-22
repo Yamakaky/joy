@@ -70,8 +70,8 @@ macro_rules! raw_enum {
                 unsafe { ::std::mem::zeroed() }
             }
 
-            pub fn id(&self) -> &RawId<$tyid> {
-                &self.id
+            pub fn id(&self) -> RawId<$tyid> {
+                self.id
             }
 
             $(

@@ -46,7 +46,7 @@ impl InputReport {
             && self.id != InputReportId::StandardFull
             && self
                 .mcu_report()
-                .and_then(MCUReport::as_ir_data)
+                .and_then(MCUReport::ir_data)
                 .map(|_| false)
                 .unwrap_or(true)
     }

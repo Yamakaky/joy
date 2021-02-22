@@ -21,11 +21,22 @@ pub enum MCUReportId {
     EmptyAwaitingCmd = 0xff,
 }
 
-#[repr(packed)]
-#[derive(Copy, Clone)]
-pub struct MCUReport {
-    pub id: RawId<MCUReportId>,
-    u: MCUReportUnion,
+raw_enum! {
+    #[id: MCUReportId]
+    #[union: MCUReportUnion]
+    #[struct: MCUReport]
+    #[field raw raw_mut: [u8; 312]]
+    pub enum MCUReportEnum {
+        empty empty_mut: Empty = (),
+        state_report state_report_mut: StateReport = MCUStatus,
+        ir_data ir_data_mut: IRData = IRData,
+        busy_initializing busy_initializing_mut: BusyInitializing = (),
+        ir_status ir_status_mut: IRStatus = IRStatus,
+        ir_registers ir_registers_mut: IRRegisters = IRRegistersSlice,
+        nfc_state nfc_state_mut: NFCState = (),
+        nfc_readdata nfc_read_data_mut: NFCReadData = (),
+        empty_awaiting_cmd empty_awaiting_cmd_mut: EmptyAwaitingCmd = ()
+    }
 }
 
 impl MCUReport {
@@ -41,68 +52,9 @@ impl MCUReport {
             println!("{:?}", slice);
         }
     }
-    pub fn as_status(&self) -> Option<&MCUStatus> {
-        if self.id == MCUReportId::StateReport {
-            Some(unsafe { &self.u.status })
-        } else {
-            None
-        }
-    }
-
     pub fn is_busy_init(&self) -> bool {
         self.id == MCUReportId::BusyInitializing
     }
-
-    pub fn as_ir_status(&self) -> Option<&IRStatus> {
-        if self.id == MCUReportId::IRStatus {
-            Some(unsafe { &self.u.ir_status })
-        } else {
-            None
-        }
-    }
-
-    pub fn as_ir_data(&self) -> Option<&IRData> {
-        if self.id == MCUReportId::IRData {
-            Some(unsafe { &self.u.ir_data })
-        } else {
-            None
-        }
-    }
-
-    pub fn as_ir_registers(&self) -> Option<&IRRegistersSlice> {
-        if self.id == MCUReportId::IRRegisters {
-            Some(unsafe { &self.u.ir_registers })
-        } else {
-            None
-        }
-    }
-}
-
-impl fmt::Debug for MCUReport {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut out = f.debug_struct("MCUReport");
-        match self.id.try_into() {
-            Some(MCUReportId::StateReport) => out.field("status", unsafe { &self.u.status }),
-            x @ Some(MCUReportId::BusyInitializing) => out.field("type", &x),
-            x @ Some(MCUReportId::Empty) => out.field("type", &x),
-            x @ Some(MCUReportId::EmptyAwaitingCmd) => out.field("type", &x),
-            Some(MCUReportId::IRData) => out.field("ir_data", unsafe { &self.u.ir_data }),
-            x @ Some(_) => out.field("report", &x),
-            None => out.field("unknown_mcu_report_id", &self.id),
-        }
-        .finish()
-    }
-}
-
-#[repr(packed)]
-#[derive(Copy, Clone)]
-union MCUReportUnion {
-    // add to validate when adding variant
-    _raw: [u8; 312],
-    status: MCUStatus,
-    ir_status: IRStatus,
-    ir_data: IRData,
-    ir_registers: IRRegistersSlice,
 }
 
 #[repr(packed)]
@@ -355,7 +307,7 @@ fn check_input_layout() {
         let report = crate::InputReport::new();
         let mcu_report = report.u_mcu_report();
         assert_eq!(49, offset_of(&report, mcu_report));
-        assert_eq!(56, offset_of(&report, &mcu_report.u.status.state));
+        assert_eq!(56, offset_of(&report, &mcu_report.u.state_report.state));
         assert_eq!(52, offset_of(&report, &mcu_report.u.ir_data.frag_number));
         assert_eq!(
             53,

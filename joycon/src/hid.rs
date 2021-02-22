@@ -202,7 +202,7 @@ impl JoyCon {
         for _ in 0..WAIT_TIMEOUT {
             let in_report = self.recv()?;
             if let Some(reply) = in_report.subcmd_reply() {
-                if &reply.id() == subcmd.id() {
+                if reply.id() == subcmd.id() {
                     ensure!(reply.ack.is_ok(), "subcmd reply is nack");
                     return Ok(*reply);
                 }
@@ -291,7 +291,7 @@ impl JoyCon {
     fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
-            if let Some(status) = r.as_status() {
+            if let Some(status) = r.state_report() {
                 mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
                 true
             } else {
@@ -306,7 +306,7 @@ impl JoyCon {
         self.call_subcmd_wait(mcu_cmd)?;
 
         self.wait_mcu_cond(IRRequestEnum::GetState(()), |r| {
-            r.as_ir_status()
+            r.ir_status()
                 .map(|status| dbg!(status.ir_mode) == ir_mode)
                 .unwrap_or(false)
         })
@@ -328,7 +328,7 @@ impl JoyCon {
             });
             let mcu_report = self
                 .wait_mcu_cond(request, |mcu_report| {
-                    if let Some(reg_slice) = mcu_report.as_ir_registers() {
+                    if let Some(reg_slice) = mcu_report.ir_registers() {
                         reg_slice.page == page
                             && reg_slice.offset == offset
                             && reg_slice.nb_registers == nb_registers
@@ -337,9 +337,7 @@ impl JoyCon {
                     }
                 })
                 .context("get IR registers slice")?;
-            let reg_slice = mcu_report
-                .as_ir_registers()
-                .expect("already validated above");
+            let reg_slice = mcu_report.ir_registers().expect("already validated above");
             registers.extend(Register::decode_raw(
                 page,
                 offset,
@@ -382,7 +380,7 @@ impl JoyCon {
     fn set_ir_wait_conf(&mut self) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
-            if let Some(status) = r.as_status() {
+            if let Some(status) = r.state_report() {
                 mcu_fw_version = (status.fw_major_version, status.fw_minor_version);
                 true
             } else {
@@ -397,7 +395,7 @@ impl JoyCon {
         self.call_subcmd_wait(mcu_cmd)?;
 
         self.wait_mcu_cond(IRRequestEnum::GetState(()), |r| {
-            r.as_ir_status()
+            r.ir_status()
                 .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
                 .unwrap_or(false)
         })
@@ -438,7 +436,7 @@ impl JoyCon {
     fn wait_mcu_status(&mut self, mode: MCUMode) -> Result<MCUReport> {
         self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |report| {
             report
-                .as_status()
+                .state_report()
                 .map(|status| dbg!(status.state) == mode)
                 .unwrap_or(false)
         })
@@ -478,7 +476,7 @@ impl JoyCon {
         self.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Standby.into()))?;
         loop {
             let out = self.call_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::MaybeRingcon))?;
-            if out.mcu_report().unwrap().as_status().unwrap().state == MCUMode::MaybeRingcon {
+            if out.mcu_report().unwrap().state_report().unwrap().state == MCUMode::MaybeRingcon {
                 break;
             }
         }
@@ -516,8 +514,7 @@ impl JoyCon {
         loop {
             let report = self.recv()?;
             if let Some(x) = report.mcu_report() {
-                dbg!(x.id);
-                if x.id != MCUReportId::BusyInitializing {
+                if x.id() != MCUReportId::BusyInitializing {
                     return Ok(());
                 }
             }

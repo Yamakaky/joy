@@ -88,7 +88,7 @@ pub struct MCUIRModeData {
 }
 
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct IRStatus {
     _unknown_0x00: u8,
     pub ir_mode: MCUIRMode,
@@ -96,8 +96,9 @@ pub struct IRStatus {
     pub required_fw_minor_version: U16LE,
 }
 
+// TODO: better debug
 #[repr(packed)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct IRRegistersSlice {
     _unknown_0x00: u8,
     pub page: u8,

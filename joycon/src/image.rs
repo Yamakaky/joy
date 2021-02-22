@@ -27,7 +27,7 @@ impl Image {
 
     pub fn handle(&mut self, report: &MCUReport) -> [Option<OutputReport>; 2] {
         // TODO: handle lossed packets
-        if let Some(packet) = report.as_ir_data() {
+        if let Some(packet) = report.ir_data() {
             if self.changing_resolution {
                 if packet.frag_number != 0 {
                     return [Some(OutputReport::ir_ack(packet.frag_number)), None];
@@ -68,12 +68,12 @@ impl Image {
                 self.prev_fragment_id = packet.frag_number;
             }
             [Some(OutputReport::ir_ack(packet.frag_number)), resend]
-        } else if report.id == MCUReportId::Empty {
+        } else if report.id() == MCUReportId::Empty {
             [
                 Some(OutputReport::ir_resend(self.prev_fragment_id + 1)),
                 None,
             ]
-        } else if report.id == MCUReportId::EmptyAwaitingCmd {
+        } else if report.id() == MCUReportId::EmptyAwaitingCmd {
             [Some(OutputReport::ir_ack(self.prev_fragment_id)), None]
         } else {
             [None, None]
