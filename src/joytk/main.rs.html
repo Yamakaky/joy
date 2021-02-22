@@ -911,9 +911,9 @@
             <span class="kw">let</span> <span class="ident">raw_report</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">as_bytes_mut</span>();
             <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">raw_report</span>.<span class="ident">len</span>().<span class="ident">min</span>(<span class="ident">hex</span>.<span class="ident">len</span>());
             <span class="ident">raw_report</span>[..<span class="ident">len</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">hex</span>[..<span class="ident">len</span>]);
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">subcmd</span>)) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">rumble_subcmd</span>() {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subcmd</span>) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">rumble_subcmd</span>() {
                 <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{} {:?}&quot;</span>, <span class="ident">time</span>, <span class="ident">subcmd</span>);
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">mcu</span>)) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">request_mcu_data</span>() {
+            } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mcu</span>) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">request_mcu_data</span>() {
                 <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{} {:?}&quot;</span>, <span class="ident">time</span>, <span class="ident">mcu</span>);
             }
         }
@@ -931,7 +931,7 @@
                 <span class="string">&quot;Stored steps: {}&quot;</span>,
                 <span class="ident">joycon</span>
                     .<span class="ident">call_subcmd_wait</span>(<span class="ident">AccessoryCommand</span>::<span class="ident">get_offline_steps</span>())<span class="question-mark">?</span>
-                    .<span class="ident">accessory_response</span>()
+                    .<span class="ident">maybe_accessory</span>()
                     .<span class="ident">unwrap</span>()
                     .<span class="ident">offline_steps</span>()<span class="question-mark">?</span>
                     .<span class="ident">steps</span>

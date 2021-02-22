@@ -255,9 +255,9 @@
 
                     <span class="kw">let</span> <span class="ident">elapsed</span> <span class="op">=</span> <span class="ident">start</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>();
 
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">subcmd</span>)) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">rumble_subcmd</span>() {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subcmd</span>) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">rumble_subcmd</span>() {
                         <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{:0&gt;9.4} {:?}&quot;</span>, <span class="ident">elapsed</span>, <span class="ident">subcmd</span>);
-                    } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">mcu</span>)) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">request_mcu_data</span>() {
+                    } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mcu</span>) <span class="op">=</span> <span class="ident">report</span>.<span class="ident">request_mcu_data</span>() {
                         <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{:0&gt;9.4} {:?}&quot;</span>, <span class="ident">elapsed</span>, <span class="ident">mcu</span>);
                     }
 

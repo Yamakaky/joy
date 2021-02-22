@@ -353,7 +353,6 @@
 <span id="350">350</span>
 <span id="351">351</span>
 <span id="352">352</span>
-<span id="353">353</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Structs binary compatible with the HID output reports</span>
 <span class="doccomment">//!</span>
@@ -387,13 +386,14 @@
 <span class="comment">// ```</span>
 <span class="macro">raw_enum</span><span class="macro">!</span> {
     <span class="attribute">#[<span class="ident">id</span>: <span class="ident">OutputReportId</span>]</span>
+    <span class="attribute">#[<span class="ident">post_id</span> <span class="ident">rumble</span> <span class="ident">rumble_mut</span>: <span class="ident">Rumble</span>]</span>
     <span class="attribute">#[<span class="ident">union</span>: <span class="ident">OutputReportUnion</span>]</span>
     <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">OutputReport</span>]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">OutputReportEnum</span> {
-        <span class="ident">rumble_subcmd</span> <span class="ident">rumble_subcmd_mut</span>: <span class="ident">RumbleAndSubcmd</span> <span class="op">=</span> (<span class="ident">Rumble</span>, <span class="ident">SubcommandRequest</span>),
+        <span class="ident">rumble_subcmd</span> <span class="ident">rumble_subcmd_mut</span>: <span class="ident">RumbleAndSubcmd</span> <span class="op">=</span> <span class="ident">SubcommandRequest</span>,
         <span class="ident">mcu_fw_update</span> <span class="ident">mcu_fw_update_mut</span>: <span class="ident">MCUFwUpdate</span> <span class="op">=</span> (),
-        <span class="ident">rumble_only</span> <span class="ident">rumble_only_mut</span>: <span class="ident">RumbleOnly</span> <span class="op">=</span> <span class="ident">Rumble</span>,
-        <span class="ident">request_mcu_data</span> <span class="ident">request_mcu_data_mut</span>: <span class="ident">RequestMCUData</span> <span class="op">=</span> (<span class="ident">Rumble</span>, <span class="ident">MCURequest</span>)
+        <span class="ident">rumble_only</span> <span class="ident">rumble_only_mut</span>: <span class="ident">RumbleOnly</span> <span class="op">=</span> (),
+        <span class="ident">request_mcu_data</span> <span class="ident">request_mcu_data_mut</span>: <span class="ident">RequestMCUData</span> <span class="op">=</span> <span class="ident">MCURequest</span>
     }
 }
 
@@ -406,7 +406,7 @@
 
 <span class="kw">impl</span> <span class="ident">OutputReport</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">packet_counter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">u8</span> {
-        <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">u</span>.<span class="ident">rumble_only</span>.<span class="ident">packet_counter</span> }
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rumble</span>.<span class="ident">packet_counter</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_special</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
@@ -445,12 +445,10 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_rumble</span>(<span class="ident">rumble</span>: <span class="ident">RumbleData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OutputReport</span> {
-        <span class="ident">OutputReportEnum</span>::<span class="ident">RumbleOnly</span>(<span class="ident">Rumble</span> {
-            <span class="ident">packet_counter</span>: <span class="number">0</span>,
-            <span class="ident">rumble_data</span>: <span class="ident">rumble</span>,
-        })
-        .<span class="ident">into</span>()
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_rumble</span>(<span class="ident">rumble_data</span>: <span class="ident">RumbleData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OutputReport</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">report</span>: <span class="ident">OutputReport</span> <span class="op">=</span> <span class="ident">OutputReportEnum</span>::<span class="ident">RumbleOnly</span>(()).<span class="ident">into</span>();
+        <span class="ident">report</span>.<span class="ident">rumble</span>.<span class="ident">rumble_data</span> <span class="op">=</span> <span class="ident">rumble_data</span>;
+        <span class="ident">report</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
@@ -473,18 +471,18 @@
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_mcu_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">MCURequest</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">request_mcu_data</span>.<span class="number">1</span>
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">request_mcu_data</span>
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_mcu_cmd</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">MCUCommand</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">rumble_subcmd</span>.<span class="number">1</span>.<span class="ident">u</span>.<span class="ident">set_mcu_conf</span>
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">rumble_subcmd</span>.<span class="ident">u</span>.<span class="ident">set_mcu_conf</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SubcommandRequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">OutputReport</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">subcmd</span>: <span class="ident">SubcommandRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">OutputReportEnum</span>::<span class="ident">RumbleAndSubcmd</span>((<span class="ident">Rumble</span>::<span class="ident">default</span>(), <span class="ident">subcmd</span>)).<span class="ident">into</span>()
+        <span class="ident">OutputReportEnum</span>::<span class="ident">RumbleAndSubcmd</span>(<span class="ident">subcmd</span>).<span class="ident">into</span>()
     }
 }
 
@@ -496,7 +494,7 @@
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">MCURequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">OutputReport</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">mcu_request</span>: <span class="ident">MCURequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">OutputReportEnum</span>::<span class="ident">RequestMCUData</span>((<span class="ident">Rumble</span>::<span class="ident">default</span>(), <span class="ident">mcu_request</span>)).<span class="ident">into</span>()
+        <span class="ident">OutputReportEnum</span>::<span class="ident">RequestMCUData</span>(<span class="ident">mcu_request</span>).<span class="ident">into</span>()
     }
 }
 
@@ -702,8 +700,8 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check_layout</span>() {
     <span class="kw">unsafe</span> {
         <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">OutputReport</span>::<span class="ident">new</span>();
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">2</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">rumble_only</span>.<span class="ident">rumble_data</span>));
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">10</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">rumble_subcmd</span>.<span class="number">1</span>));
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">2</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">rumble</span>.<span class="ident">rumble_data</span>));
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">10</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">u</span>.<span class="ident">rumble_subcmd</span>));
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">11</span>, <span class="ident">offset_of</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>, <span class="ident">report</span>.<span class="ident">as_mcu_cmd</span>()));
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="number">49</span>, <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">size_of_val</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>));
     }
