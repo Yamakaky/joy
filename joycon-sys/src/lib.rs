@@ -106,9 +106,9 @@ macro_rules! raw_enum {
 
         impl ::std::fmt::Debug for $struct {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> std::fmt::Result {
-                let mut out = f.debug_tuple(stringify!($struct));
+                let mut out = f.debug_struct(stringify!($struct));
                 match self.id.try_into() {
-                    $(Some($tyid::$id) => out.field(unsafe { &self.u.$varname })),*,
+                    $(Some($tyid::$id) => out.field(::std::stringify!($varname), unsafe { &self.u.$varname })),*,
                     None => unimplemented!(),
                 };
                 out.finish()
