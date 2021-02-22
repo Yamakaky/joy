@@ -25,7 +25,7 @@ raw_enum! {
     #[id: MCUReportId]
     #[union: MCUReportUnion]
     #[struct: MCUReport]
-    #[field raw raw_mut: [u8; 312]]
+    #[raw [u8; 312]]
     pub enum MCUReportEnum {
         empty empty_mut: Empty = (),
         state_report state_report_mut: StateReport = MCUStatus,
@@ -147,7 +147,7 @@ impl fmt::Debug for MCUCommand {
         let mut out = f.debug_struct("MCUCommand");
         match (self.cmd_id.try_into(), self.subcmd_id.try_into()) {
             (Some(MCUCommandId::ConfigureIR), Some(MCUSubCommandId::SetIRMode)) => {
-                out.field("set_ir_mode", unsafe { &self.u.ir_mode })
+                out.field("set_ir_ir_mode", unsafe { &self.u.ir_mode })
             }
             (Some(MCUCommandId::ConfigureIR), Some(MCUSubCommandId::WriteIRRegisters)) => {
                 out.field("cmd", unsafe { &self.u.regs })
@@ -156,7 +156,7 @@ impl fmt::Debug for MCUCommand {
                 out.field("set_mcu_mode", unsafe { &self.u.mcu_mode })
             }
             (Some(MCUCommandId::ConfigureMCU), Some(MCUSubCommandId::SetIRMode)) => {
-                out.field("set_ir_mode", unsafe { &self.u.ir_mode })
+                out.field("set_mcu_ir_mode", unsafe { &self.u.ir_mode })
             }
             _ => out.field("subcommand", &(self.cmd_id, self.subcmd_id)),
         };
@@ -227,6 +227,7 @@ raw_enum! {
     #[id: MCURequestId]
     #[union: MCURequestUnion]
     #[struct: MCURequest]
+    #[raw [u8; 38]]
     #[field crc crc_mut: MCURequestCRC]
     pub enum MCURequestEnum {
         get_mcu_status get_mcu_status_mut: GetMCUStatus = (),

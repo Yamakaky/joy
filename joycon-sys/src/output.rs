@@ -148,6 +148,7 @@ raw_enum! {
     #[id: SubcommandId]
     #[union: SubcommandRequestUnion]
     #[struct: SubcommandRequest]
+    #[raw [u8; 38]]
     pub enum SubcommandRequestEnum {
         get_only_controller_state get_only_controller_state_mut: GetOnlyControllerState = (),
         bluetooth_manual_pairing bluetooth_manual_pairing_mut: BluetoothManualPairing = (),

@@ -25,6 +25,7 @@ macro_rules! raw_enum {
         #[id: $tyid:ident]
         #[union: $union:ident]
         #[struct: $struct:ident]
+        $(#[raw $rawty:ty])?
         $(#[field $field:ident $fieldmut:ident: $fieldty:ty])*
         pub enum $name:ident {
             $($varname:ident $varnamemut:ident: $id:ident = $var:ty),+
@@ -40,6 +41,7 @@ macro_rules! raw_enum {
         #[derive(Copy, Clone)]
         union $union {
             $($varname: $var),*,
+            $(raw: $rawty,)?
             $($field: $fieldty),*
         }
         #[derive(Copy, Clone, Debug)]
@@ -108,8 +110,13 @@ macro_rules! raw_enum {
             fn fmt(&self, f: &mut ::std::fmt::Formatter) -> std::fmt::Result {
                 let mut out = f.debug_struct(stringify!($struct));
                 match self.id.try_into() {
-                    $(Some($tyid::$id) => out.field(::std::stringify!($varname), unsafe { &self.u.$varname })),*,
-                    None => unimplemented!(),
+                    $(Some($tyid::$id) => {
+                        out.field(::std::stringify!($varname), unsafe { &self.u.$varname });
+                    }),*
+                    None => {
+                        out.field("id", &self.id);
+                        $(out.field("raw", unsafe { &self.u.raw as &$rawty });)?
+                    }
                 };
                 out.finish()
             }

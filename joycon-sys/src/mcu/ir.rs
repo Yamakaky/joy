@@ -91,7 +91,7 @@ pub struct MCUIRModeData {
 #[derive(Copy, Clone, Debug)]
 pub struct IRStatus {
     _unknown_0x00: u8,
-    pub ir_mode: MCUIRMode,
+    pub ir_mode: RawId<MCUIRMode>,
     pub required_fw_major_version: U16LE,
     pub required_fw_minor_version: U16LE,
 }

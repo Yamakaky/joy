@@ -1,6 +1,6 @@
 use cgmath::Vector3;
 use num::{FromPrimitive, ToPrimitive};
-use std::{fmt, marker::PhantomData};
+use std::{any::type_name, fmt, marker::PhantomData};
 
 pub const NINTENDO_VENDOR_ID: u16 = 1406;
 
@@ -180,7 +180,7 @@ impl<Id: fmt::Debug + FromPrimitive + Copy> fmt::Debug for RawId<Id> {
         if let Some(id) = self.try_into() {
             write!(f, "{:?}", id)
         } else {
-            f.debug_tuple("RawId")
+            f.debug_tuple(&format!("RawId<{}>", type_name::<Id>()))
                 .field(&format!("0x{:x}", self.0))
                 .finish()
         }
