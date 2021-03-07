@@ -117,10 +117,28 @@ pub enum RingconE {
 
 #[derive(Clap)]
 pub struct Relay {
+    /// Bluetooth MAC address of the Switch
+    #[clap(short, long, validator(is_mac))]
+    pub address: String,
     /// Location of the log to write
     #[clap(short, long)]
     pub output: Option<PathBuf>,
     /// Decode important HID reports and print them to stdout
     #[clap(short, long)]
     pub verbose: bool,
+}
+
+fn is_mac(input: &str) -> Result<(), String> {
+    let mut i = 0;
+    for x in input.split(":").map(|x| u8::from_str_radix(x, 16)) {
+        match x {
+            Ok(_) => i += 1,
+            Err(e) => return Err(format!("MAC parsing error: {}", e)),
+        }
+    }
+    if i == 6 {
+        Ok(())
+    } else {
+        Err("invalid MAC address".to_string())
+    }
 }

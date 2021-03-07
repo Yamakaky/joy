@@ -33,7 +33,7 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
                 .context("opening the log file")
         })
         .transpose()?;
-    let (mut _client_ctl, mut client_itr) = connect_switch()?;
+    let (mut _client_ctl, mut client_itr) = connect_switch(&opts.address)?;
 
     // Force input reports to be generated so that we don't have to manually click on a button.
     device.write(
@@ -71,7 +71,7 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
                 if let Err(e) = client_itr.send(&buf[..len + 1]) {
                     if e.raw_os_error() == Some(107) {
                         eprintln!("Reconnecting the switch");
-                        let x = connect_switch()?;
+                        let x = connect_switch(&opts.address)?;
                         _client_ctl = x.0;
                         client_itr = x.1;
 
@@ -114,7 +114,7 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
     }
 }
 
-fn connect_switch() -> anyhow::Result<(Socket, Socket)> {
+fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
     let client_ctl = Socket::new(
         (AF_BLUETOOTH as i32).into(),
         (__socket_type_SOCK_SEQPACKET as i32).into(),
@@ -133,7 +133,7 @@ fn connect_switch() -> anyhow::Result<(Socket, Socket)> {
             l2_psm: 17u16.to_le(),
             ..zeroed()
         };
-        let sa = CString::new("58:2F:40:DF:31:31")?;
+        let sa = CString::new(address)?;
         str2ba(sa.as_ptr(), &mut addr.l2_bdaddr);
         let ctl_addr = SockAddr::from_raw_parts(
             &addr as *const _ as *const sockaddr,
