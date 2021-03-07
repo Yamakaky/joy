@@ -54,11 +54,11 @@ macro_rules! raw_enum {
         }
 
         impl ::std::convert::TryFrom<$struct> for $name {
-            type Error = ();
+            type Error = $struct;
             fn try_from(x: $struct) -> Result<Self, Self::Error> {
                 match x.id.try_into() {
                     $(Some($tyid::$id) => Ok(Self::$id(unsafe {x.u.$varname}))),*,
-                    None => Err(()),
+                    None => Err(x),
                 }
             }
         }
