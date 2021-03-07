@@ -139,16 +139,24 @@ fn connect_switch() -> anyhow::Result<(Socket, Socket)> {
             &addr as *const _ as *const sockaddr,
             size_of_val(&addr) as u32,
         );
-        client_ctl.connect(&ctl_addr)?;
-        client_ctl.set_nonblocking(true)?;
+        client_ctl
+            .connect(&ctl_addr)
+            .context("error connecting psm 17")?;
+        client_ctl
+            .set_nonblocking(true)
+            .context("non blocking error")?;
 
         addr.l2_psm = 19u16.to_le();
         let itr_addr = SockAddr::from_raw_parts(
             &addr as *const _ as *const sockaddr,
             size_of_val(&addr) as u32,
         );
-        client_itr.connect(&itr_addr)?;
-        client_itr.set_nonblocking(true)?;
+        client_itr
+            .connect(&itr_addr)
+            .context("error connecting psm 17")?;
+        client_itr
+            .set_nonblocking(true)
+            .context("non blocking error")?;
     }
 
     Ok((client_ctl, client_itr))
