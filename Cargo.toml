@@ -6,7 +6,8 @@ members = [
     "hid-gamepad-sys",
     "joycon-sys",
     "joycon",
-    "joy-infrared",
+    # removed for huge number of deps
+    #"joy-infrared",
     "joy-music",
     "joytk",
     "gyromouse",
