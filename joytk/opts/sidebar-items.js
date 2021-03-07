@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["CalibrateE",""],["RingconE",""],["SetE",""],["SubCommand",""]],"struct":[["Calibrate",""],["Opts","Access every feature of the Nintendo Switch controllers"],["Relay",""],["Ringcon",""],["Set",""],["SetColor",""]]});
+initSidebarItems({"enum":[["CalibrateE",""],["RingconE",""],["SetE",""],["SubCommand",""]],"fn":[["is_mac",""]],"struct":[["Calibrate",""],["Opts","Access every feature of the Nintendo Switch controllers"],["Relay",""],["Ringcon",""],["Set",""],["SetColor",""]]});

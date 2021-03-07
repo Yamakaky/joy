@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["BoundBuffer",""]],"trait":[["Staged",""]]});
