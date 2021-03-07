@@ -5,8 +5,9 @@ use joycon::{
     hidapi::HidApi,
     joycon_sys::{
         accessory::AccessoryCommand,
-        input::{BatteryLevel, Stick, UseSPIColors, WhichController},
+        input::{BatteryLevel, InputReportEnum, Stick, UseSPIColors, WhichController},
         light::{self, PlayerLight},
+        output::OutputReportEnum,
         spi::{
             ControllerColor, SPIRange, SensorCalibration, SticksCalibration, UserSensorCalibration,
             UserSticksCalibration,
@@ -16,6 +17,7 @@ use joycon::{
     JoyCon,
 };
 use std::{
+    convert::TryFrom,
     fs::OpenOptions,
     io::{BufRead, Write},
     time::Duration,
@@ -420,25 +422,33 @@ fn decode() -> anyhow::Result<()> {
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            if let Some(subcmd) = report.subcmd_reply() {
-                println!("{} {:?}", time, subcmd);
-            } else if let Some(mcu) = report.mcu_report() {
-                println!("{} {:?}", time, mcu);
-                image.handle(mcu);
-                if let Some(img) = image.last_image.take() {
-                    img.save("/tmp/out.png")?;
-                    dbg!("new image");
+            match InputReportEnum::try_from(report) {
+                Ok(InputReportEnum::StandardAndSubcmd((_, subcmd))) => {
+                    println!("{} {:?}", time, subcmd);
                 }
+                Ok(InputReportEnum::StandardFullMCU((_, _, mcu))) => {
+                    println!("{} {:?}", time, mcu);
+                    image.handle(&mcu);
+                    if let Some(img) = image.last_image.take() {
+                        img.save("/tmp/out.png")?;
+                        dbg!("new image");
+                    }
+                }
+                _ => {}
             }
         } else {
             let mut report = OutputReport::new();
             let raw_report = report.as_bytes_mut();
             let len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(&hex[..len]);
-            if let Some(subcmd) = report.rumble_subcmd() {
-                println!("{} {:?}", time, subcmd);
-            } else if let Some(mcu) = report.request_mcu_data() {
-                println!("{} {:?}", time, mcu);
+            match OutputReportEnum::try_from(report) {
+                Ok(OutputReportEnum::RumbleAndSubcmd(subcmd)) => {
+                    println!("{} {:?}", time, subcmd);
+                }
+                Ok(OutputReportEnum::RequestMCUData(mcu)) => {
+                    println!("{} {:?}", time, mcu);
+                }
+                _ => {}
             }
         }
     }
