@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use cgmath::{Deg, Euler, One, Quaternion, Vector3};
 use clap::Clap;
 use joycon::{
@@ -60,10 +60,13 @@ fn main() -> Result<()> {
             let device = device_info.open_device(&api)?;
 
             if let SubCommand::Relay(ref r) = opts.subcmd {
-                if cfg!(target_os = "linux") {
+                #[cfg(target_os = "linux")]
+                {
                     relay::relay(device, r)?;
-                } else {
-                    bail!("relaying only works on linux");
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    anyhow::bail!("relaying only works on linux");
                 }
             } else {
                 let joycon = JoyCon::new(device, device_info.clone())?;
