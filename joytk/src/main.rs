@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use cgmath::{Deg, Euler, One, Quaternion, Vector3};
 use clap::Clap;
 use joycon::{
@@ -57,12 +57,14 @@ fn main() -> Result<()> {
             .device_list()
             .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID && HID_IDS.contains(&x.product_id()))
         {
-            let device = device_info.open_device(&api)?;
+            let device = device_info
+                .open_device(&api)
+                .with_context(|| format!("error opening the HID device {:?}", device_info))?;
 
             if let SubCommand::Relay(ref r) = opts.subcmd {
                 #[cfg(target_os = "linux")]
                 {
-                    relay::relay(device, r)?;
+                    relay::relay(device, r).context("error during the relay")?;
                 }
                 #[cfg(not(target_os = "linux"))]
                 {
@@ -71,7 +73,7 @@ fn main() -> Result<()> {
             } else {
                 let joycon = JoyCon::new(device, device_info.clone())?;
 
-                hid_main(joycon, &opts)?;
+                hid_main(joycon, &opts).context("error running the command")?;
             }
 
             break;
