@@ -9,6 +9,13 @@ pub const JOYCON_R_BT: u16 = 0x2007;
 pub const PRO_CONTROLLER: u16 = 0x2009;
 pub const JOYCON_CHARGING_GRIP: u16 = 0x200e;
 
+pub const HID_IDS: &[u16] = &[
+    JOYCON_L_BT,
+    JOYCON_R_BT,
+    PRO_CONTROLLER,
+    JOYCON_CHARGING_GRIP,
+];
+
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, Eq)]
 pub enum InputReportId {

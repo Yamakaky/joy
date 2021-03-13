@@ -12,7 +12,7 @@ use joycon::{
             ControllerColor, SPIRange, SensorCalibration, SticksCalibration, UserSensorCalibration,
             UserSticksCalibration,
         },
-        InputReport, OutputReport, NINTENDO_VENDOR_ID,
+        InputReport, OutputReport, HID_IDS, NINTENDO_VENDOR_ID,
     },
     JoyCon,
 };
@@ -55,7 +55,7 @@ fn main() -> Result<()> {
     loop {
         if let Some(device_info) = api
             .device_list()
-            .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID)
+            .find(|x| x.vendor_id() == NINTENDO_VENDOR_ID && HID_IDS.contains(&x.product_id()))
         {
             let device = device_info.open_device(&api)?;
 
