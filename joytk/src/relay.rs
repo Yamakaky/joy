@@ -6,14 +6,15 @@ use joycon::{
         output::SubcommandRequestEnum, InputReport, InputReportId::StandardFull, OutputReport,
     },
 };
-use libc::sockaddr;
+use libc::sockaddr_storage;
 use socket2::{SockAddr, Socket};
 use std::{
     convert::TryInto,
     ffi::CString,
     fs::OpenOptions,
+    intrinsics::transmute,
     io::Write,
-    mem::{size_of_val, zeroed},
+    mem::{size_of_val, zeroed, MaybeUninit},
     thread::sleep,
     time::{Duration, Instant},
 };
@@ -87,9 +88,10 @@ pub fn relay(device: HidDevice, opts: &Relay) -> anyhow::Result<()> {
             }
         }
         {
-            let mut buf = [0; 500];
+            let mut buf = [MaybeUninit::uninit(); 500];
             if let Ok(len) = client_itr.recv(&mut buf).context("switch recv") {
                 if len > 0 {
+                    let buf: [u8; 500] = unsafe { transmute(buf) };
                     let mut report = OutputReport::new();
                     let raw_report = report.as_bytes_mut();
                     raw_report.copy_from_slice(&buf[1..raw_report.len() + 1]);
@@ -127,18 +129,7 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
     )?;
 
     unsafe {
-        let mut addr = sockaddr_l2 {
-            l2_family: AF_BLUETOOTH.try_into().unwrap(),
-            // todo: watch out endian
-            l2_psm: 17u16.to_le(),
-            ..zeroed()
-        };
-        let sa = CString::new(address)?;
-        str2ba(sa.as_ptr(), &mut addr.l2_bdaddr);
-        let ctl_addr = SockAddr::from_raw_parts(
-            &addr as *const _ as *const sockaddr,
-            size_of_val(&addr) as u32,
-        );
+        let ctl_addr = create_sockaddr(address, 17)?.1;
         client_ctl
             .connect(&ctl_addr)
             .context("error connecting psm 17")?;
@@ -146,11 +137,7 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
             .set_nonblocking(true)
             .context("non blocking error")?;
 
-        addr.l2_psm = 19u16.to_le();
-        let itr_addr = SockAddr::from_raw_parts(
-            &addr as *const _ as *const sockaddr,
-            size_of_val(&addr) as u32,
-        );
+        let itr_addr = create_sockaddr(address, 19)?.1;
         client_itr
             .connect(&itr_addr)
             .context("error connecting psm 17")?;
@@ -160,4 +147,24 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
     }
 
     Ok((client_ctl, client_itr))
+}
+
+unsafe fn create_sockaddr(address: &str, psm: u16) -> Result<((), SockAddr), anyhow::Error> {
+    let mut addr = sockaddr_l2 {
+        l2_family: AF_BLUETOOTH.try_into().unwrap(),
+        // todo: watch out endian
+        l2_psm: psm.to_le(),
+        ..zeroed()
+    };
+    let sa = CString::new(address)?;
+    str2ba(sa.as_ptr(), &mut addr.l2_bdaddr);
+    Ok(SockAddr::init(|storage, len| {
+        *len = size_of_val(&addr) as u32;
+        std::ptr::copy_nonoverlapping(
+            (&addr as *const sockaddr_l2).cast::<sockaddr_storage>(),
+            storage,
+            *len as usize,
+        );
+        Ok(())
+    })?)
 }

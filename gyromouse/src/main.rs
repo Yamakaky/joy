@@ -96,7 +96,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
         S = none gyro_on\\",
         &mut bindings,
     )?;
-    let mut last_buttons = EnumMap::new();
+    let mut last_buttons = EnumMap::default();
 
     let mut lstick = FlickStick::default();
     let mut rstick = ButtonStick::right(true);
