@@ -160,6 +160,7 @@ raw_enum! {
         spi_write spi_write_mut: SPIWrite = SPIWriteRequest,
         set_mcu_conf set_mcu_conf_mut: SetMCUConf = MCUCommand,
         set_mcu_state set_mcu_state_mut: SetMCUState = RawId<MCUMode>,
+        set_unknown_data set_unknown_data_mut: SetUnknownData = [u8; 38],
         set_player_lights set_player_lights_mut: SetPlayerLights = light::PlayerLights,
         set_home_light set_home_light_mut: SetHomeLight = light::HomeLight,
         set_imu_mode set_imu_mode_mut: SetIMUMode = RawId<IMUMode>,

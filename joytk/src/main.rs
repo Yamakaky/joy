@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use cgmath::{Deg, Euler, One, Quaternion, Vector3};
 use clap::Clap;
+use colored::Colorize;
 use joycon::{
     hidapi::HidApi,
     joycon_sys::{
@@ -429,10 +430,10 @@ fn decode() -> anyhow::Result<()> {
             raw_report[..len].copy_from_slice(&hex[..len]);
             match InputReportEnum::try_from(report) {
                 Ok(InputReportEnum::StandardAndSubcmd((_, subcmd))) => {
-                    println!("{} {:?}", time, subcmd);
+                    println!("{} {}", time.blue(), format!("{:?}", subcmd).green());
                 }
                 Ok(InputReportEnum::StandardFullMCU((_, _, mcu))) => {
-                    println!("{} {:?}", time, mcu);
+                    println!("{} {:?}", time.blue(), mcu);
                     image.handle(&mcu);
                     if let Some(img) = image.last_image.take() {
                         img.save("/tmp/out.png")?;
@@ -448,10 +449,10 @@ fn decode() -> anyhow::Result<()> {
             raw_report[..len].copy_from_slice(&hex[..len]);
             match OutputReportEnum::try_from(report) {
                 Ok(OutputReportEnum::RumbleAndSubcmd(subcmd)) => {
-                    println!("{} {:?}", time, subcmd);
+                    println!("{} {}", time.blue(), format!("{:?}", subcmd).red());
                 }
                 Ok(OutputReportEnum::RequestMCUData(mcu)) => {
-                    println!("{} {:?}", time, mcu);
+                    println!("{} {}", time.blue(), format!("{:?}", mcu).yellow());
                 }
                 _ => {}
             }

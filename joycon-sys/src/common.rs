@@ -42,6 +42,7 @@ pub enum SubcommandId {
     SPIWrite = 0x11,
     SetMCUConf = 0x21,
     SetMCUState = 0x22,
+    SetUnknownData = 0x24,
     SetPlayerLights = 0x30,
     SetHomeLight = 0x38,
     SetIMUMode = 0x40,

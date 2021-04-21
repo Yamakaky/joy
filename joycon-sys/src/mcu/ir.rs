@@ -75,6 +75,8 @@ pub enum MCUIRMode {
     HandAnalysisImage = 9,
     HandAnalysisSilhouetteImage = 10,
     Unknown11 = 11,
+    /// Used in ringfit for pulse rate detection
+    PulseRate = 0xd,
 }
 
 #[repr(packed)]

@@ -148,6 +148,7 @@ raw_enum! {
         spi_write_result spi_write_result_mut: SPIWrite = SPIWriteResult,
         mcu_report mcu_report_mut: SetMCUConf = MCUReport,
         mcu_state_result mcu_state_result_mut: SetMCUState = (),
+        set_unknown_data set_unknown_data_mut: SetUnknownData = (),
         player_lights_result player_lights_result_mut: SetPlayerLights = (),
         home_light_result home_light_result_mut: SetHomeLight = (),
         imu_mode_result imu_mode_result_mut: SetIMUMode = (),
