@@ -36,6 +36,7 @@ pub enum SubCommand {
     Set(Set),
     /// Show live inputs from the controller
     Monitor,
+    PulseRate,
     /// Dump the memory of the controller to a binary file
     Dump,
     /// Restore the memory of the controller from a dump file

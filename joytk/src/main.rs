@@ -124,8 +124,28 @@ fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
         SubCommand::Restore => restore(&mut joycon)?,
         SubCommand::Ringcon(ref cmd) => ringcon(&mut joycon, cmd)?,
         SubCommand::Decode | SubCommand::Relay(_) => unreachable!(),
+        SubCommand::PulseRate => pulse_rate(&mut joycon)?,
     }
     Ok(())
+}
+
+fn pulse_rate(joycon: &mut JoyCon) -> Result<()> {
+    joycon.enable_pulserate()?;
+    println!("pote");
+    let mut i = 0;
+    loop {
+        let report = joycon.recv()?;
+        if let Some(mcu) = report.mcu_report() {
+            if let Some(frame) = mcu.ir_data() {
+                if let Some(img) =
+                    image::GrayImage::from_raw(11, 27, frame.img_fragment[0..11 * 27].to_vec())
+                {
+                    img.save(format!("/tmp/pulse{:05}.png", i))?;
+                    i += 1;
+                }
+            }
+        }
+    }
 }
 
 fn reset_calibration(joycon: &mut JoyCon) -> Result<()> {

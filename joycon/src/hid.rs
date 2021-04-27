@@ -262,6 +262,19 @@ impl JoyCon {
     }
 
     #[instrument(level = "info", skip(self), err)]
+    pub fn enable_pulserate(&mut self) -> Result<()> {
+        self.enable_mcu()?;
+        self.set_mcu_mode_ir()?;
+        self.set_ir_image_mode(MCUIRMode::PulseRate, 1)?;
+        self.call_subcmd_wait(SubcommandRequestEnum::SetUnknownData([
+            3, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            255, 9,
+        ]))?;
+        Ok(())
+    }
+
+    #[instrument(level = "info", skip(self), err)]
     fn enable_mcu(&mut self) -> Result<()> {
         self.set_report_mode_mcu()?;
         self.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Standby.into()))?;
@@ -437,7 +450,7 @@ impl JoyCon {
         self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |report| {
             report
                 .state_report()
-                .map(|status| dbg!(status.state) == mode)
+                .map(|status| status.state == mode)
                 .unwrap_or(false)
         })
     }
