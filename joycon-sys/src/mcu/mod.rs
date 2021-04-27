@@ -248,7 +248,7 @@ impl From<IRRequest> for MCURequest {
 
 impl From<IRRequestEnum> for MCURequest {
     fn from(ir_request: IRRequestEnum) -> Self {
-        ir_request.into()
+        IRRequest::from(ir_request).into()
     }
 }
 

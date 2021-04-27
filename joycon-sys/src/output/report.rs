@@ -133,7 +133,7 @@ impl From<SubcommandRequest> for OutputReport {
 
 impl From<SubcommandRequestEnum> for OutputReport {
     fn from(subcmd: SubcommandRequestEnum) -> Self {
-        subcmd.into()
+        SubcommandRequest::from(subcmd).into()
     }
 }
 
