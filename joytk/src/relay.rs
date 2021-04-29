@@ -129,7 +129,7 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
     )?;
 
     unsafe {
-        let ctl_addr = create_sockaddr(address, 17)?.1;
+        let ctl_addr = create_sockaddr(address, 17)?;
         client_ctl
             .connect(&ctl_addr)
             .context("error connecting psm 17")?;
@@ -137,7 +137,7 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
             .set_nonblocking(true)
             .context("non blocking error")?;
 
-        let itr_addr = create_sockaddr(address, 19)?.1;
+        let itr_addr = create_sockaddr(address, 19)?;
         client_itr
             .connect(&itr_addr)
             .context("error connecting psm 17")?;
@@ -149,22 +149,19 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
     Ok((client_ctl, client_itr))
 }
 
-unsafe fn create_sockaddr(address: &str, psm: u16) -> Result<((), SockAddr), anyhow::Error> {
-    let mut addr = sockaddr_l2 {
-        l2_family: AF_BLUETOOTH.try_into().unwrap(),
-        // todo: watch out endian
-        l2_psm: psm.to_le(),
-        ..zeroed()
-    };
-    let sa = CString::new(address)?;
-    str2ba(sa.as_ptr(), &mut addr.l2_bdaddr);
+unsafe fn create_sockaddr(address: &str, psm: u16) -> Result<SockAddr, anyhow::Error> {
     Ok(SockAddr::init(|storage, len| {
-        *len = size_of_val(&addr) as u32;
-        std::ptr::copy_nonoverlapping(
-            (&addr as *const sockaddr_l2).cast::<sockaddr_storage>(),
-            storage,
-            *len as usize,
-        );
+        let storage = unsafe { &mut *storage.cast::<sockaddr_l2>() };
+        *len = size_of_val(storage) as u32;
+        *storage = sockaddr_l2 {
+            l2_family: AF_BLUETOOTH.try_into().unwrap(),
+            // todo: watch out endian
+            l2_psm: psm.to_le(),
+            ..zeroed()
+        };
+        let sa = CString::new(address)?;
+        str2ba(sa.as_ptr(), &mut storage.l2_bdaddr);
         Ok(())
-    })?)
+    })?
+    .1)
 }
