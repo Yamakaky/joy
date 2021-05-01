@@ -8,6 +8,7 @@ use joycon::{
         accessory::AccessoryCommand,
         input::{BatteryLevel, InputReportEnum, Stick, UseSPIColors, WhichController},
         light::{self, PlayerLight},
+        mcu::ir::Resolution,
         output::OutputReportEnum,
         spi::{
             ControllerColor, SPIRange, SensorCalibration, SticksCalibration, UserSensorCalibration,
@@ -29,6 +30,7 @@ use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 mod opts;
 #[cfg(target_os = "linux")]
 mod relay;
+mod camera;
 
 use opts::*;
 
@@ -125,6 +127,7 @@ fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
         SubCommand::Ringcon(ref cmd) => ringcon(&mut joycon, cmd)?,
         SubCommand::Decode | SubCommand::Relay(_) => unreachable!(),
         SubCommand::PulseRate => pulse_rate(&mut joycon)?,
+        SubCommand::Camera => camera::run(joycon)?,
     }
     Ok(())
 }
@@ -436,7 +439,7 @@ fn monitor(joycon: &mut JoyCon) -> Result<()> {
 fn decode() -> anyhow::Result<()> {
     let stdin = std::io::stdin();
     let mut image = joycon::Image::new();
-    image.change_resolution(joycon::joycon_sys::mcu::ir::Resolution::R320x240);
+    image.change_resolution(Resolution::R320x240);
     for line in stdin.lock().lines() {
         let line = line?;
         let fragments: Vec<&str> = line.split(" ").collect();

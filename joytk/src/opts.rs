@@ -56,6 +56,7 @@ pub enum SubCommand {
     Relay(Relay),
     /// Ringcon-specific actions
     Ringcon(Ringcon),
+    Camera,
 }
 
 #[derive(Clap)]
