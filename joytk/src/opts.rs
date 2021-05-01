@@ -37,6 +37,8 @@ pub enum SubCommand {
     /// Show live inputs from the controller
     Monitor,
     PulseRate,
+    #[cfg(feature = "interface")]
+    Tui,
     /// Dump the memory of the controller to a binary file
     Dump,
     /// Restore the memory of the controller from a dump file

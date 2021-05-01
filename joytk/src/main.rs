@@ -27,10 +27,12 @@ use std::{
 use std::{thread::sleep, time::Instant};
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 
+mod camera;
+#[cfg(feature = "interface")]
+mod interface;
 mod opts;
 #[cfg(target_os = "linux")]
 mod relay;
-mod camera;
 
 use opts::*;
 
@@ -52,6 +54,11 @@ fn main() -> Result<()> {
 
     if let SubCommand::Decode = opts.subcmd {
         return decode();
+    }
+
+    #[cfg(feature = "interface")]
+    if let SubCommand::Tui = opts.subcmd {
+        return interface::run();
     }
 
     let api = HidApi::new()?;
@@ -127,6 +134,8 @@ fn hid_main(mut joycon: JoyCon, opts: &Opts) -> Result<()> {
         SubCommand::Ringcon(ref cmd) => ringcon(&mut joycon, cmd)?,
         SubCommand::Decode | SubCommand::Relay(_) => unreachable!(),
         SubCommand::PulseRate => pulse_rate(&mut joycon)?,
+        #[cfg(feature = "interface")]
+        SubCommand::Tui => unreachable!(),
         SubCommand::Camera => camera::run(joycon)?,
     }
     Ok(())
