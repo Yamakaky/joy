@@ -6,7 +6,6 @@ use joycon::{
         output::SubcommandRequestEnum, InputReport, InputReportId::StandardFull, OutputReport,
     },
 };
-use libc::sockaddr_storage;
 use socket2::{SockAddr, Socket};
 use std::{
     convert::TryInto,
@@ -151,7 +150,7 @@ fn connect_switch(address: &str) -> anyhow::Result<(Socket, Socket)> {
 
 unsafe fn create_sockaddr(address: &str, psm: u16) -> Result<SockAddr, anyhow::Error> {
     Ok(SockAddr::init(|storage, len| {
-        let storage = unsafe { &mut *storage.cast::<sockaddr_l2>() };
+        let storage = &mut *storage.cast::<sockaddr_l2>();
         *len = size_of_val(storage) as u32;
         *storage = sockaddr_l2 {
             l2_family: AF_BLUETOOTH.try_into().unwrap(),
