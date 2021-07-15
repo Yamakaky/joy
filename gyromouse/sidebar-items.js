@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ClickType",""]],"fn":[["diff",""],["hid_main",""],["main",""]],"mod":[["gyromouse",""],["joystick",""],["mapping",""],["mouse",""],["parse",""]]});
+initSidebarItems({"enum":[["ClickType",""]],"fn":[["diff",""],["hid_main",""],["main",""]],"mod":[["gyromouse",""],["joystick",""],["mapping",""],["mouse",""],["parse",""],["space_mapper",""]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["connect_switch",""],["relay",""]]});
+initSidebarItems({"fn":[["connect_switch",""],["create_sockaddr",""],["relay",""]]});

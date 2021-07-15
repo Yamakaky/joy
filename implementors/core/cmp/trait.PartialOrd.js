@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["joycon_sys"] = [{"text":"impl PartialOrd&lt;BatteryLevel&gt; for BatteryLevel","synthetic":false,"types":[]}];
+implementors["joycon_sys"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/cmp/trait.PartialOrd.html\" title=\"trait core::cmp::PartialOrd\">PartialOrd</a>&lt;<a class=\"enum\" href=\"joycon_sys/input/enum.BatteryLevel.html\" title=\"enum joycon_sys::input::BatteryLevel\">BatteryLevel</a>&gt; for <a class=\"enum\" href=\"joycon_sys/input/enum.BatteryLevel.html\" title=\"enum joycon_sys::input::BatteryLevel\">BatteryLevel</a>","synthetic":false,"types":["joycon_sys::input::values::BatteryLevel"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

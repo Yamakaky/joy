@@ -1,7 +1,7 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `gyromouse/src/main.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>main.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `gyromouse/src/main.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>main.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
 <link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../gyromouse/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
-                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../gyromouse/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -194,32 +194,43 @@
 <span id="191">191</span>
 <span id="192">192</span>
 <span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">mod</span> <span class="ident">gyromouse</span>;
 <span class="kw">mod</span> <span class="ident">joystick</span>;
 <span class="kw">mod</span> <span class="ident">mapping</span>;
 <span class="kw">mod</span> <span class="ident">mouse</span>;
 <span class="kw">mod</span> <span class="ident">parse</span>;
+<span class="kw">mod</span> <span class="ident">space_mapper</span>;
 
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>};
+<span class="kw">use</span> <span class="ident">std::time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>};
 
-<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">vec2</span>, <span class="ident">Vector2</span>, <span class="ident">Zero</span>};
+<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Vector2</span>, <span class="ident">Zero</span>};
 <span class="kw">use</span> <span class="ident">enigo</span>::{<span class="ident">KeyboardControllable</span>, <span class="ident">MouseControllable</span>};
-<span class="kw">use</span> <span class="ident">enum_map</span>::<span class="ident">EnumMap</span>;
-<span class="kw">use</span> <span class="ident">gyromouse</span>::<span class="ident">GyroMouse</span>;
-<span class="kw">use</span> <span class="ident">hid_gamepad</span>::<span class="ident">sys</span>::{<span class="ident">GamepadDevice</span>, <span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span>};
+<span class="kw">use</span> <span class="ident">enum_map::EnumMap</span>;
+<span class="kw">use</span> <span class="ident">gyromouse::GyroMouse</span>;
+<span class="kw">use</span> <span class="ident">hid_gamepad::sys</span>::{<span class="ident">GamepadDevice</span>, <span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span>};
 <span class="kw">use</span> <span class="ident">joycon</span>::{
-    <span class="ident">hidapi</span>::<span class="ident">HidApi</span>,
+    <span class="ident">hidapi::HidApi</span>,
     <span class="ident">joycon_sys</span>::{
-        <span class="ident">input</span>::<span class="ident">BatteryLevel</span>,
+        <span class="ident">input::BatteryLevel</span>,
         <span class="ident">light</span>::{<span class="self">self</span>, <span class="ident">PlayerLight</span>},
     },
     <span class="ident">JoyCon</span>,
 };
 <span class="kw">use</span> <span class="ident">joystick</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">mapping</span>::{<span class="ident">Buttons</span>, <span class="ident">ExtAction</span>};
-<span class="kw">use</span> <span class="ident">mouse</span>::<span class="ident">Mouse</span>;
-<span class="kw">use</span> <span class="ident">parse</span>::<span class="ident">parse_file</span>;
+<span class="kw">use</span> <span class="ident">mouse::Mouse</span>;
+<span class="kw">use</span> <span class="ident">parse::parse_file</span>;
+
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::space_mapper</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ClickType</span> {
@@ -232,30 +243,30 @@
 <span class="kw">impl</span> <span class="ident">ClickType</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">val</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ClickType</span>::<span class="ident">Press</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
-            <span class="ident">ClickType</span>::<span class="ident">Release</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">ClickType</span>::<span class="ident">Click</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented</span><span class="macro">!</span>(),
-            <span class="ident">ClickType</span>::<span class="ident">Toggle</span> <span class="op">=</span><span class="op">&gt;</span> <span class="op">!</span><span class="ident">val</span>,
+            <span class="ident">ClickType::Press</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            <span class="ident">ClickType::Release</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">ClickType::Click</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
+            <span class="ident">ClickType::Toggle</span> <span class="op">=</span><span class="op">&gt;</span> <span class="op">!</span><span class="ident">val</span>,
         }
     }
 }
 
-<span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">HidApi</span>::<span class="ident">new</span>()<span class="question-mark">?</span>;
+<span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">HidApi::new</span>()<span class="question-mark">?</span>;
     <span class="kw">loop</span> {
         <span class="ident">api</span>.<span class="ident">refresh_devices</span>()<span class="question-mark">?</span>;
         <span class="kw">for</span> <span class="ident">device_info</span> <span class="kw">in</span> <span class="ident">api</span>.<span class="ident">device_list</span>() {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">gamepad</span>) <span class="op">=</span> <span class="ident">hid_gamepad</span>::<span class="ident">open_gamepad</span>(<span class="kw-2">&amp;</span><span class="ident">api</span>, <span class="ident">device_info</span>)<span class="question-mark">?</span> {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">gamepad</span>) <span class="op">=</span> <span class="ident">hid_gamepad::open_gamepad</span>(<span class="kw-2">&amp;</span><span class="ident">api</span>, <span class="ident">device_info</span>)<span class="question-mark">?</span> {
                 <span class="kw">return</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>.<span class="ident">as_mut</span>());
             }
         }
-        <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">sleep</span>(<span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>));
+        <span class="ident">std::thread::sleep</span>(<span class="ident">std::time::Duration::from_secs</span>(<span class="number">1</span>));
     }
 }
 
-<span class="kw">fn</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">GamepadDevice</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">GamepadDevice</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">joycon</span>) <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">as_any</span>().<span class="ident">downcast_mut</span>::<span class="op">&lt;</span><span class="ident">JoyCon</span><span class="op">&gt;</span>() {
-        <span class="macro">dbg</span><span class="macro">!</span>(<span class="ident">joycon</span>.<span class="ident">set_home_light</span>(<span class="ident">light</span>::<span class="ident">HomeLight</span>::<span class="ident">new</span>(
+        <span class="macro">dbg!</span>(<span class="ident">joycon</span>.<span class="ident">set_home_light</span>(<span class="ident">light::HomeLight::new</span>(
             <span class="number">0x8</span>,
             <span class="number">0x2</span>,
             <span class="number">0x0</span>,
@@ -264,24 +275,24 @@
 
         <span class="kw">let</span> <span class="ident">battery_level</span> <span class="op">=</span> <span class="ident">joycon</span>.<span class="ident">tick</span>()<span class="question-mark">?</span>.<span class="ident">info</span>.<span class="ident">battery_level</span>();
 
-        <span class="ident">joycon</span>.<span class="ident">set_player_light</span>(<span class="ident">light</span>::<span class="ident">PlayerLights</span>::<span class="ident">new</span>(
-            (<span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel</span>::<span class="ident">Full</span>).<span class="ident">into</span>(),
-            (<span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel</span>::<span class="ident">Medium</span>).<span class="ident">into</span>(),
-            (<span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel</span>::<span class="ident">Low</span>).<span class="ident">into</span>(),
-            <span class="kw">if</span> <span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel</span>::<span class="ident">Low</span> {
-                <span class="ident">PlayerLight</span>::<span class="ident">On</span>
+        <span class="ident">joycon</span>.<span class="ident">set_player_light</span>(<span class="ident">light::PlayerLights::new</span>(
+            (<span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel::Full</span>).<span class="ident">into</span>(),
+            (<span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel::Medium</span>).<span class="ident">into</span>(),
+            (<span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel::Low</span>).<span class="ident">into</span>(),
+            <span class="kw">if</span> <span class="ident">battery_level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BatteryLevel::Low</span> {
+                <span class="ident">PlayerLight::On</span>
             } <span class="kw">else</span> {
-                <span class="ident">PlayerLight</span>::<span class="ident">Blinking</span>
+                <span class="ident">PlayerLight::Blinking</span>
             },
         ))<span class="question-mark">?</span>;
     }
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gyromouse</span> <span class="op">=</span> <span class="ident">GyroMouse</span>::<span class="ident">d2</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mouse</span> <span class="op">=</span> <span class="ident">Mouse</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gyromouse</span> <span class="op">=</span> <span class="ident">GyroMouse::d2</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mouse</span> <span class="op">=</span> <span class="ident">Mouse::new</span>();
 
     <span class="kw">const</span> <span class="ident">SMOOTH_RATE</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bindings</span> <span class="op">=</span> <span class="ident">Buttons</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bindings</span> <span class="op">=</span> <span class="ident">Buttons::new</span>();
     <span class="ident">parse_file</span>(
         <span class="string">&quot;RLeft = left
         RRight = right
@@ -293,37 +304,40 @@
         S = none gyro_on\\&quot;</span>,
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>,
     )<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_buttons</span> <span class="op">=</span> <span class="ident">EnumMap</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_buttons</span> <span class="op">=</span> <span class="ident">EnumMap::default</span>();
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lstick</span> <span class="op">=</span> <span class="ident">FlickStick</span>::<span class="ident">default</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rstick</span> <span class="op">=</span> <span class="ident">ButtonStick</span>::<span class="ident">right</span>(<span class="bool-val">true</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lstick</span> <span class="op">=</span> <span class="ident">FlickStick::default</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rstick</span> <span class="op">=</span> <span class="ident">ButtonStick::right</span>(<span class="bool-val">true</span>);
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gyro_enabled</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sensor_fusion</span> <span class="op">=</span> <span class="ident">SimpleFusion::new</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">space_mapper</span> <span class="op">=</span> <span class="ident">WorldSpace::default</span>();
+
     <span class="kw">loop</span> {
         <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">recv</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
+        <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
 
         <span class="ident">diff</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>, <span class="kw-2">&amp;</span><span class="ident">last_buttons</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">keys</span>);
         <span class="ident">last_buttons</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">keys</span>;
 
         <span class="kw">for</span> <span class="ident">action</span> <span class="kw">in</span> <span class="ident">bindings</span>.<span class="ident">tick</span>(<span class="ident">now</span>).<span class="ident">drain</span>(..) {
             <span class="kw">match</span> <span class="ident">action</span> {
-                <span class="ident">ExtAction</span>::<span class="ident">GyroOn</span>(<span class="ident">ClickType</span>::<span class="ident">Press</span>) <span class="op">|</span> <span class="ident">ExtAction</span>::<span class="ident">GyroOff</span>(<span class="ident">ClickType</span>::<span class="ident">Release</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">ExtAction::GyroOn</span>(<span class="ident">ClickType::Press</span>) <span class="op">|</span> <span class="ident">ExtAction::GyroOff</span>(<span class="ident">ClickType::Release</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="ident">gyro_enabled</span> <span class="op">=</span> <span class="bool-val">true</span>
                 }
-                <span class="ident">ExtAction</span>::<span class="ident">GyroOn</span>(<span class="ident">ClickType</span>::<span class="ident">Release</span>) <span class="op">|</span> <span class="ident">ExtAction</span>::<span class="ident">GyroOff</span>(<span class="ident">ClickType</span>::<span class="ident">Press</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">ExtAction::GyroOn</span>(<span class="ident">ClickType::Release</span>) <span class="op">|</span> <span class="ident">ExtAction::GyroOff</span>(<span class="ident">ClickType::Press</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="ident">gyro_enabled</span> <span class="op">=</span> <span class="bool-val">false</span>
                 }
-                <span class="ident">ExtAction</span>::<span class="ident">GyroOn</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExtAction</span>::<span class="ident">GyroOff</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented</span><span class="macro">!</span>(),
-                <span class="ident">ExtAction</span>::<span class="ident">KeyPress</span>(<span class="ident">c</span>, <span class="ident">ClickType</span>::<span class="ident">Click</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">key_click</span>(<span class="ident">c</span>),
-                <span class="ident">ExtAction</span>::<span class="ident">KeyPress</span>(<span class="ident">c</span>, <span class="ident">ClickType</span>::<span class="ident">Press</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">key_down</span>(<span class="ident">c</span>),
-                <span class="ident">ExtAction</span>::<span class="ident">KeyPress</span>(<span class="ident">c</span>, <span class="ident">ClickType</span>::<span class="ident">Release</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">key_up</span>(<span class="ident">c</span>),
-                <span class="ident">ExtAction</span>::<span class="ident">KeyPress</span>(<span class="kw">_</span>, <span class="ident">ClickType</span>::<span class="ident">Toggle</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented</span><span class="macro">!</span>(),
-                <span class="ident">ExtAction</span>::<span class="ident">MousePress</span>(<span class="ident">c</span>, <span class="ident">ClickType</span>::<span class="ident">Click</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">mouse_click</span>(<span class="ident">c</span>),
-                <span class="ident">ExtAction</span>::<span class="ident">MousePress</span>(<span class="ident">c</span>, <span class="ident">ClickType</span>::<span class="ident">Press</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">mouse_down</span>(<span class="ident">c</span>),
-                <span class="ident">ExtAction</span>::<span class="ident">MousePress</span>(<span class="ident">c</span>, <span class="ident">ClickType</span>::<span class="ident">Release</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">mouse_up</span>(<span class="ident">c</span>),
-                <span class="ident">ExtAction</span>::<span class="ident">MousePress</span>(<span class="kw">_</span>, <span class="ident">ClickType</span>::<span class="ident">Toggle</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented</span><span class="macro">!</span>(),
+                <span class="ident">ExtAction::GyroOn</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExtAction::GyroOff</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
+                <span class="ident">ExtAction::KeyPress</span>(<span class="ident">c</span>, <span class="ident">ClickType::Click</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">key_click</span>(<span class="ident">c</span>),
+                <span class="ident">ExtAction::KeyPress</span>(<span class="ident">c</span>, <span class="ident">ClickType::Press</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">key_down</span>(<span class="ident">c</span>),
+                <span class="ident">ExtAction::KeyPress</span>(<span class="ident">c</span>, <span class="ident">ClickType::Release</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">key_up</span>(<span class="ident">c</span>),
+                <span class="ident">ExtAction::KeyPress</span>(<span class="kw">_</span>, <span class="ident">ClickType::Toggle</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
+                <span class="ident">ExtAction::MousePress</span>(<span class="ident">c</span>, <span class="ident">ClickType::Click</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">mouse_click</span>(<span class="ident">c</span>),
+                <span class="ident">ExtAction::MousePress</span>(<span class="ident">c</span>, <span class="ident">ClickType::Press</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">mouse_down</span>(<span class="ident">c</span>),
+                <span class="ident">ExtAction::MousePress</span>(<span class="ident">c</span>, <span class="ident">ClickType::Release</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">enigo</span>().<span class="ident">mouse_up</span>(<span class="ident">c</span>),
+                <span class="ident">ExtAction::MousePress</span>(<span class="kw">_</span>, <span class="ident">ClickType::Toggle</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
             }
         }
 
@@ -331,15 +345,17 @@
         <span class="ident">rstick</span>.<span class="ident">handle</span>(<span class="ident">report</span>.<span class="ident">right_joystick</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">mouse</span>, <span class="ident">now</span>);
 
         <span class="kw">if</span> <span class="ident">gyro_enabled</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delta_position</span> <span class="op">=</span> <span class="ident">Vector2</span>::<span class="ident">zero</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delta_position</span> <span class="op">=</span> <span class="ident">Vector2::zero</span>();
             <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="number">1.</span> <span class="op">/</span> <span class="ident">report</span>.<span class="ident">frequency</span> <span class="kw">as</span> <span class="ident">f64</span>;
             <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">frame</span>) <span class="kw">in</span> <span class="ident">report</span>.<span class="ident">motion</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-                <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span>
-                    <span class="ident">gyromouse</span>.<span class="ident">process</span>(<span class="ident">vec2</span>(<span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">y</span>.<span class="number">0</span>, <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">x</span>.<span class="number">0</span>), <span class="ident">dt</span>);
+                <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span>
+                    <span class="ident">space_mapper::map_input</span>(<span class="ident">frame</span>, <span class="ident">dt</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sensor_fusion</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">space_mapper</span>)
+                        <span class="op">*</span> <span class="number">360.</span>;
+                <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">gyromouse</span>.<span class="ident">process</span>(<span class="ident">delta</span>, <span class="ident">dt</span>);
                 <span class="ident">delta_position</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">SMOOTH_RATE</span> {
                     <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span> <span class="number">0</span> {
-                        <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_secs_f64</span>(<span class="ident">dt</span>));
+                        <span class="ident">std::thread::sleep</span>(<span class="ident">Duration::from_secs_f64</span>(<span class="ident">dt</span>));
                     }
                     <span class="ident">mouse</span>.<span class="ident">mouse_move_relative</span>(<span class="ident">offset</span>);
                 }
@@ -351,11 +367,11 @@
     }
 }
 
-<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">diff</span> {
+<span class="macro">macro_rules!</span> <span class="ident">diff</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">mapping</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">now</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">old</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">new</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">ident</span>) <span class="op">=</span><span class="op">&gt;</span> {
         <span class="kw">match</span> (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">old</span>[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>], <span class="macro-nonterminal">$</span><span class="macro-nonterminal">new</span>[<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>]) {
-            (<span class="ident">KeyStatus</span>::<span class="ident">Released</span>, <span class="ident">KeyStatus</span>::<span class="ident">Pressed</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mapping</span>.<span class="ident">key_down</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">now</span>),
-            (<span class="ident">KeyStatus</span>::<span class="ident">Pressed</span>, <span class="ident">KeyStatus</span>::<span class="ident">Released</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mapping</span>.<span class="ident">key_up</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">now</span>),
+            (<span class="ident">KeyStatus::Released</span>, <span class="ident">KeyStatus::Pressed</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mapping</span>.<span class="ident">key_down</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">now</span>),
+            (<span class="ident">KeyStatus::Pressed</span>, <span class="ident">KeyStatus::Released</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mapping</span>.<span class="ident">key_up</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">now</span>),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
         }
     };
@@ -364,29 +380,30 @@
 <span class="kw">fn</span> <span class="ident">diff</span>(<span class="ident">mapping</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Buttons</span>, <span class="ident">old</span>: <span class="kw-2">&amp;</span><span class="ident">EnumMap</span><span class="op">&lt;</span><span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span><span class="op">&gt;</span>, <span class="ident">new</span>: <span class="kw-2">&amp;</span><span class="ident">EnumMap</span><span class="op">&lt;</span><span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span><span class="op">&gt;</span>) {
     <span class="kw">use</span> <span class="ident">JoyKey</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Up</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Down</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Left</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Right</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">L</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">ZL</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SL</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SR</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">L3</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">R3</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Minus</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Plus</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Capture</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Home</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">W</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">N</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">S</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">E</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">R</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">ZR</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SL</span>);
-    <span class="macro">diff</span><span class="macro">!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SR</span>);
+    <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Up</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Down</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Left</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Right</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">L</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">ZL</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SL</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SR</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">L3</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">R3</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Minus</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Plus</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Capture</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Home</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">W</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">N</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">S</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">E</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">R</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">ZR</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SL</span>);
+    <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">SR</span>);
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "gyromouse";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="gyromouse" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
+    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script></body></html>

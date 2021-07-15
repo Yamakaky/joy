@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["map_input",""]],"struct":[["LocalSpace",""],["PlayerSpace",""],["SimpleFusion",""],["WorldSpace",""]],"trait":[["SensorFusion",""],["SpaceMapper","Convert local space motion to 2D mouse-like motion."]]});

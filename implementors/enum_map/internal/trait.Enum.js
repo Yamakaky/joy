@@ -1,4 +1,4 @@
 (function() {var implementors = {};
-implementors["gyromouse"] = [{"text":"impl&lt;V&gt; Enum&lt;V&gt; for VirtualKey","synthetic":false,"types":[]},{"text":"impl&lt;V:&nbsp;Default&gt; Enum&lt;V&gt; for MapKey","synthetic":false,"types":[]}];
-implementors["hid_gamepad_sys"] = [{"text":"impl&lt;V&gt; Enum&lt;V&gt; for JoyKey","synthetic":false,"types":[]}];
+implementors["gyromouse"] = [{"text":"impl&lt;V&gt; Enum&lt;V&gt; for <a class=\"enum\" href=\"gyromouse/mapping/enum.VirtualKey.html\" title=\"enum gyromouse::mapping::VirtualKey\">VirtualKey</a>","synthetic":false,"types":["gyromouse::mapping::VirtualKey"]},{"text":"impl&lt;V:&nbsp;<a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a>&gt; Enum&lt;V&gt; for <a class=\"enum\" href=\"gyromouse/mapping/enum.MapKey.html\" title=\"enum gyromouse::mapping::MapKey\">MapKey</a>","synthetic":false,"types":["gyromouse::mapping::MapKey"]}];
+implementors["hid_gamepad_sys"] = [{"text":"impl&lt;V&gt; Enum&lt;V&gt; for <a class=\"enum\" href=\"hid_gamepad_sys/enum.JoyKey.html\" title=\"enum hid_gamepad_sys::JoyKey\">JoyKey</a>","synthetic":false,"types":["hid_gamepad_sys::JoyKey"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
