@@ -202,6 +202,10 @@
 <span id="199">199</span>
 <span id="200">200</span>
 <span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">mod</span> <span class="ident">gyromouse</span>;
 <span class="kw">mod</span> <span class="ident">joystick</span>;
@@ -318,7 +322,7 @@
         <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">recv</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
 
-        <span class="ident">diff</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>, <span class="kw-2">&amp;</span><span class="ident">last_buttons</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">keys</span>);
+        <span class="ident">diff</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>, <span class="ident">now</span>, <span class="kw-2">&amp;</span><span class="ident">last_buttons</span>, <span class="kw-2">&amp;</span><span class="ident">report</span>.<span class="ident">keys</span>);
         <span class="ident">last_buttons</span> <span class="op">=</span> <span class="ident">report</span>.<span class="ident">keys</span>;
 
         <span class="kw">for</span> <span class="ident">action</span> <span class="kw">in</span> <span class="ident">bindings</span>.<span class="ident">tick</span>(<span class="ident">now</span>).<span class="ident">drain</span>(..) {
@@ -377,10 +381,14 @@
     };
 }
 
-<span class="kw">fn</span> <span class="ident">diff</span>(<span class="ident">mapping</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Buttons</span>, <span class="ident">old</span>: <span class="kw-2">&amp;</span><span class="ident">EnumMap</span><span class="op">&lt;</span><span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span><span class="op">&gt;</span>, <span class="ident">new</span>: <span class="kw-2">&amp;</span><span class="ident">EnumMap</span><span class="op">&lt;</span><span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span><span class="op">&gt;</span>) {
+<span class="kw">fn</span> <span class="ident">diff</span>(
+    <span class="ident">mapping</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Buttons</span>,
+    <span class="ident">now</span>: <span class="ident">Instant</span>,
+    <span class="ident">old</span>: <span class="kw-2">&amp;</span><span class="ident">EnumMap</span><span class="op">&lt;</span><span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span><span class="op">&gt;</span>,
+    <span class="ident">new</span>: <span class="kw-2">&amp;</span><span class="ident">EnumMap</span><span class="op">&lt;</span><span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span><span class="op">&gt;</span>,
+) {
     <span class="kw">use</span> <span class="ident">JoyKey</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
     <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Up</span>);
     <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Down</span>);
     <span class="macro">diff!</span>(<span class="ident">mapping</span>, <span class="ident">now</span>, <span class="ident">old</span>, <span class="ident">new</span>, <span class="ident">Left</span>);

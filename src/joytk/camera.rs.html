@@ -216,7 +216,7 @@
             }
             <span class="comment">// Resize the window</span>
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">size</span>) <span class="op">=</span> <span class="ident">input</span>.<span class="ident">window_resized</span>() {
-                <span class="ident">pixels</span>.<span class="ident">resize</span>(<span class="ident">size</span>.<span class="ident">width</span>, <span class="ident">size</span>.<span class="ident">height</span>);
+                <span class="ident">pixels</span>.<span class="ident">resize_surface</span>(<span class="ident">size</span>.<span class="ident">width</span>, <span class="ident">size</span>.<span class="ident">height</span>);
             }
         } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Event::UserEvent</span>(<span class="ident">cmd</span>) <span class="op">=</span> <span class="ident">event</span> {
             <span class="kw">match</span> <span class="ident">cmd</span> {
