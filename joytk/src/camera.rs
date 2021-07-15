@@ -60,7 +60,7 @@ pub fn run(mut joycon: JoyCon) -> Result<()> {
             }
             // Resize the window
             if let Some(size) = input.window_resized() {
-                pixels.resize(size.width, size.height);
+                pixels.resize_surface(size.width, size.height);
             }
         } else if let Event::UserEvent(cmd) = event {
             match cmd {

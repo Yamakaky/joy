@@ -3,7 +3,7 @@ use crossterm::{
     event::{self, Event as CEvent, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode},
 };
-use hidapi::{DeviceInfo, HidDevice};
+use joycon::hidapi::{HidApi, DeviceInfo, HidDevice};
 use joycon::joycon_sys::{HID_IDS, NINTENDO_VENDOR_ID};
 use std::{
     collections::{HashMap, HashSet},
@@ -75,7 +75,7 @@ pub fn run() -> Result<()> {
                 .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
                 .split(chunks[1]);
             let (menu, display) = render_device(&menu_selected);
-            frame.render_stateful_widget(menu, display_chunks[0], menu_selected);
+            frame.render_stateful_widget(menu, display_chunks[0], &mut menu_selected);
             frame.render_widget(menu, display_chunks[1]);
         })?;
 
@@ -144,7 +144,7 @@ fn start_input_loop(tx: Sender<Event>) {
 }
 
 fn start_hidapi_loop(tx: Sender<Event>) -> Result<()> {
-    let mut api = hidapi::HidApi::new()?;
+    let mut api = HidApi::new()?;
     std::thread::spawn(move || {
         let mut known = HashSet::new();
         let mut new_known = HashSet::new();
