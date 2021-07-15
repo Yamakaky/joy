@@ -7,7 +7,7 @@ mod space_mapper;
 
 use std::time::{Duration, Instant};
 
-use cgmath::{vec2, vec3, Vector2, Zero};
+use cgmath::{Vector2, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
@@ -106,7 +106,8 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     let mut gyro_enabled = false;
 
-    let mut gravity = SensorFusionGravity::new();
+    let mut sensor_fusion = SimpleFusion::new();
+    let mut space_mapper = WorldSpace::default();
 
     loop {
         let report = gamepad.recv()?;
@@ -142,8 +143,9 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
             let mut delta_position = Vector2::zero();
             let dt = 1. / report.frequency as f64;
             for (i, frame) in report.motion.iter().enumerate() {
-                let delta = PlayerSpace.map_input(frame, &mut gravity, dt) * 360.;
-                //let delta = vec2(frame.rotation_speed.y.0, frame.rotation_speed.x.0);
+                let delta =
+                    space_mapper::map_input(frame, dt, &mut sensor_fusion, &mut space_mapper)
+                        * 360.;
                 let offset = gyromouse.process(delta, dt);
                 delta_position += offset;
                 if !SMOOTH_RATE {

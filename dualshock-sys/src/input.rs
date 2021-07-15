@@ -241,9 +241,9 @@ impl Gyro {
 #[repr(packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct Accel {
+    x: I16LE,
     y: I16LE,
     z: I16LE,
-    x: I16LE,
 }
 
 impl Accel {
