@@ -3,10 +3,11 @@ mod joystick;
 mod mapping;
 mod mouse;
 mod parse;
+mod space_mapper;
 
 use std::time::{Duration, Instant};
 
-use cgmath::{vec2, Vector2, Zero};
+use cgmath::{vec2, vec3, Vector2, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
@@ -23,6 +24,8 @@ use joystick::*;
 use mapping::{Buttons, ExtAction};
 use mouse::Mouse;
 use parse::parse_file;
+
+use crate::space_mapper::*;
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -103,6 +106,8 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
 
     let mut gyro_enabled = false;
 
+    let mut gravity = SensorFusionGravity::new();
+
     loop {
         let report = gamepad.recv()?;
         let now = Instant::now();
@@ -137,8 +142,9 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
             let mut delta_position = Vector2::zero();
             let dt = 1. / report.frequency as f64;
             for (i, frame) in report.motion.iter().enumerate() {
-                let offset =
-                    gyromouse.process(vec2(frame.rotation_speed.y.0, frame.rotation_speed.x.0), dt);
+                let delta = PlayerSpace.map_input(frame, &mut gravity, dt) * 360.;
+                //let delta = vec2(frame.rotation_speed.y.0, frame.rotation_speed.x.0);
+                let offset = gyromouse.process(delta, dt);
                 delta_position += offset;
                 if !SMOOTH_RATE {
                     if i > 0 {
