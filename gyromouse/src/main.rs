@@ -113,7 +113,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
         let report = gamepad.recv()?;
         let now = Instant::now();
 
-        diff(&mut bindings, &last_buttons, &report.keys);
+        diff(&mut bindings, now, &last_buttons, &report.keys);
         last_buttons = report.keys;
 
         for action in bindings.tick(now).drain(..) {
@@ -172,10 +172,14 @@ macro_rules! diff {
     };
 }
 
-fn diff(mapping: &mut Buttons, old: &EnumMap<JoyKey, KeyStatus>, new: &EnumMap<JoyKey, KeyStatus>) {
+fn diff(
+    mapping: &mut Buttons,
+    now: Instant,
+    old: &EnumMap<JoyKey, KeyStatus>,
+    new: &EnumMap<JoyKey, KeyStatus>,
+) {
     use JoyKey::*;
 
-    let now = Instant::now();
     diff!(mapping, now, old, new, Up);
     diff!(mapping, now, old, new, Down);
     diff!(mapping, now, old, new, Left);
