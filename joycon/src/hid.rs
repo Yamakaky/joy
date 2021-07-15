@@ -301,7 +301,7 @@ impl JoyCon {
     }
 
     #[instrument(level = "info", skip(self), err)]
-    fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
+    pub fn set_ir_image_mode(&mut self, ir_mode: MCUIRMode, frags: u8) -> Result<()> {
         let mut mcu_fw_version = Default::default();
         self.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
             if let Some(status) = r.state_report() {

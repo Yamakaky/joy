@@ -1,6 +1,9 @@
 use anyhow::Result;
 use image::GrayImage;
-use joycon::{joycon_sys::mcu::ir::Resolution, JoyCon};
+use joycon::{
+    joycon_sys::mcu::ir::{MCUIRMode, Resolution},
+    JoyCon,
+};
 use pixels::{Pixels, SurfaceTexture};
 use winit::{
     dpi::{LogicalPosition, LogicalSize, PhysicalSize},
@@ -16,8 +19,9 @@ enum Cmd {
 }
 
 pub fn run(mut joycon: JoyCon) -> Result<()> {
-    joycon.enable_imu()?;
-    joycon.enable_ir(Resolution::R160x120)?;
+    let res = Resolution::R160x120;
+    joycon.enable_ir(res)?;
+    joycon.set_ir_image_mode(MCUIRMode::HandAnalysisSilhouetteImage, 255)?;
 
     let event_loop = EventLoop::with_user_event();
 

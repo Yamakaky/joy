@@ -45,24 +45,20 @@ impl Image {
             } else {
                 None
             };
+            let (width, height) = self.resolution.size();
+            let mut buffer = Vec::with_capacity((width * height) as usize);
+            for fragment in self
+                .buffer
+                .iter()
+                .take(self.resolution.max_fragment_id() as usize + 1)
+            {
+                buffer.extend(fragment.iter());
+            }
+            self.last_image = Some(image::imageops::rotate90(
+                &image::GrayImage::from_raw(width, height, buffer).unwrap(),
+            ));
             //println!("got packet {}", packet.frag_number);
             if packet.frag_number == self.resolution.max_fragment_id() {
-                if self.prev_fragment_id != 0 {
-                    //println!("got complete packet");
-                    let (width, height) = self.resolution.size();
-                    let mut buffer = Vec::with_capacity((width * height) as usize);
-                    for fragment in self
-                        .buffer
-                        .iter()
-                        .take(self.resolution.max_fragment_id() as usize + 1)
-                    {
-                        buffer.extend(fragment.iter());
-                    }
-                    self.last_image = Some(image::imageops::rotate90(
-                        &image::GrayImage::from_raw(width, height, buffer).unwrap(),
-                    ));
-                    self.buffer = Box::new([[0; 300]; 0x100]);
-                }
                 self.prev_fragment_id = 0;
             } else {
                 self.prev_fragment_id = packet.frag_number;
