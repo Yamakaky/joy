@@ -273,6 +273,10 @@
 <span id="270">270</span>
 <span id="271">271</span>
 <span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 
@@ -366,7 +370,7 @@
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">FlickStick</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">FlickStick</span> {
-            <span class="ident">flick_time</span>: <span class="ident">Duration::from_millis</span>(<span class="number">100</span>),
+            <span class="ident">flick_time</span>: <span class="ident">Duration::from_millis</span>(<span class="number">200</span>),
             <span class="ident">threshold</span>: <span class="number">0.6</span>,
             <span class="ident">state</span>: <span class="ident">FlickStickState::Center</span>,
             <span class="ident">do_rotate</span>: <span class="bool-val">true</span>,
@@ -383,9 +387,11 @@
         <span class="ident">now</span>: <span class="ident">Instant</span>,
     ) {
         <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">state</span> {
-            <span class="kw">_</span> <span class="kw">if</span> <span class="ident">stick</span>.<span class="ident">magnitude</span>() <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">FlickStickState::Center</span> <span class="op">|</span> <span class="ident">FlickStickState::Rotating</span> { .. }
+                <span class="kw">if</span> <span class="ident">stick</span>.<span class="ident">magnitude</span>() <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">threshold</span> <span class="op">=</span><span class="op">&gt;</span>
+            {
                 <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">FlickStickState::Center</span>;
-                <span class="ident">Deg</span>(<span class="number">0.</span>)
+                <span class="prelude-val">None</span>
             }
             <span class="ident">FlickStickState::Center</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">stick</span>.<span class="ident">angle</span>(<span class="ident">Vector2::unit_y</span>()).<span class="ident">into</span>();
@@ -394,7 +400,7 @@
                     <span class="ident">last</span>: <span class="ident">Deg</span>(<span class="number">0.</span>),
                     <span class="ident">target</span>,
                 };
-                <span class="ident">Deg</span>(<span class="number">0.</span>)
+                <span class="prelude-val">None</span>
             }
             <span class="ident">FlickStickState::Flicking</span> {
                 <span class="ident">flick_start</span>,
@@ -413,7 +419,7 @@
                 } <span class="kw">else</span> {
                     <span class="kw-2">*</span><span class="ident">last</span> <span class="op">=</span> <span class="ident">current_angle</span>;
                 }
-                <span class="ident">delta</span>.<span class="ident">normalize_signed</span>()
+                <span class="prelude-val">Some</span>(<span class="ident">delta</span>.<span class="ident">normalize_signed</span>())
             }
             <span class="ident">FlickStickState::Rotating</span> {
                 <span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">old_rotation</span>,
@@ -422,13 +428,15 @@
                     <span class="kw">let</span> <span class="ident">angle</span> <span class="op">=</span> <span class="ident">stick</span>.<span class="ident">angle</span>(<span class="ident">Vector2::unit_y</span>()).<span class="ident">into</span>();
                     <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">angle</span> <span class="op">-</span> <span class="kw-2">*</span><span class="ident">old_rotation</span>;
                     <span class="kw-2">*</span><span class="ident">old_rotation</span> <span class="op">=</span> <span class="ident">angle</span>;
-                    <span class="ident">delta</span>.<span class="ident">normalize_signed</span>()
+                    <span class="prelude-val">Some</span>(<span class="ident">delta</span>.<span class="ident">normalize_signed</span>())
                 } <span class="kw">else</span> {
-                    <span class="ident">Deg</span>(<span class="number">0.</span>)
+                    <span class="prelude-val">None</span>
                 }
             }
         };
-        <span class="ident">mouse</span>.<span class="ident">mouse_move_relative</span>(<span class="ident">vec2</span>(<span class="ident">offset</span>.<span class="number">0</span>, <span class="number">0.</span>));
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">offset</span>) <span class="op">=</span> <span class="ident">offset</span> {
+            <span class="ident">mouse</span>.<span class="ident">mouse_move_relative</span>(<span class="ident">vec2</span>(<span class="ident">offset</span>.<span class="number">0</span>, <span class="number">0.</span>) <span class="op">*</span> <span class="number">30.</span>);
+        }
     }
 }
 

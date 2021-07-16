@@ -206,6 +206,26 @@
 <span id="203">203</span>
 <span id="204">204</span>
 <span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">mod</span> <span class="ident">gyromouse</span>;
 <span class="kw">mod</span> <span class="ident">joystick</span>;
@@ -291,32 +311,51 @@
         ))<span class="question-mark">?</span>;
     }
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gyromouse</span> <span class="op">=</span> <span class="ident">GyroMouse::d2</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gyromouse</span> <span class="op">=</span> <span class="ident">GyroMouse::d3</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mouse</span> <span class="op">=</span> <span class="ident">Mouse::new</span>();
 
     <span class="kw">const</span> <span class="ident">SMOOTH_RATE</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bindings</span> <span class="op">=</span> <span class="ident">Buttons::new</span>();
+    <span class="comment">//parse_file(</span>
+    <span class="comment">//    &quot;RLeft = left</span>
+    <span class="comment">//    RRight = right</span>
+    <span class="comment">//    RUp = up</span>
+    <span class="comment">//    RDown = down</span>
+    <span class="comment">//    W = lmouse</span>
+    <span class="comment">//    E = rmouse</span>
+    <span class="comment">//    N = escape</span>
+    <span class="comment">//    S = none gyro_on\\&quot;,</span>
+    <span class="comment">//    &amp;mut bindings,</span>
+    <span class="comment">//)?;</span>
     <span class="ident">parse_file</span>(
-        <span class="string">&quot;RLeft = left
-        RRight = right
-        RUp = up 
-        RDown = down
-        W = lmouse
-        E = rmouse
-        N = escape
-        S = none gyro_on\\&quot;</span>,
+        <span class="string">&quot;LLEFT = q\\
+LRIGHT = d\\
+LUP = z\\
+LDOWN = s\\
+RIGHT = h
+UP = SCROLLUP
+DOWN = c
+ZR = e
+ZL = SHIFT\\
+R = LMOUSE\\
+L = RMOUSE\\
+N = a
+W = r f
+E = none gyro_off\\
+S = SPACE\\
+&quot;</span>,
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>,
     )<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_buttons</span> <span class="op">=</span> <span class="ident">EnumMap::default</span>();
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lstick</span> <span class="op">=</span> <span class="ident">FlickStick::default</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rstick</span> <span class="op">=</span> <span class="ident">ButtonStick::right</span>(<span class="bool-val">true</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lstick</span> <span class="op">=</span> <span class="ident">ButtonStick::left</span>(<span class="bool-val">false</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rstick</span> <span class="op">=</span> <span class="ident">FlickStick::default</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gyro_enabled</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sensor_fusion</span> <span class="op">=</span> <span class="ident">SimpleFusion::new</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">space_mapper</span> <span class="op">=</span> <span class="ident">WorldSpace::default</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">space_mapper</span> <span class="op">=</span> <span class="ident">PlayerSpace::default</span>();
 
     <span class="kw">loop</span> {
         <span class="kw">let</span> <span class="ident">report</span> <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">recv</span>()<span class="question-mark">?</span>;
@@ -354,7 +393,8 @@
             <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">frame</span>) <span class="kw">in</span> <span class="ident">report</span>.<span class="ident">motion</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
                 <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span>
                     <span class="ident">space_mapper::map_input</span>(<span class="ident">frame</span>, <span class="ident">dt</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sensor_fusion</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">space_mapper</span>)
-                        <span class="op">*</span> <span class="number">360.</span>;
+                        <span class="op">*</span> <span class="number">360.</span>
+                        <span class="op">*</span> <span class="number">20.</span>;
                 <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">gyromouse</span>.<span class="ident">process</span>(<span class="ident">delta</span>, <span class="ident">dt</span>);
                 <span class="ident">delta_position</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">SMOOTH_RATE</span> {
