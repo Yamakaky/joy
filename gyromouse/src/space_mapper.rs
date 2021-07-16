@@ -53,6 +53,7 @@ impl SensorFusion for SimpleFusion {
     }
 }
 
+
 #[derive(Default)]
 pub struct LocalSpace;
 

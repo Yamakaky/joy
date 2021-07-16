@@ -90,7 +90,7 @@ pub struct FlickStick {
 impl Default for FlickStick {
     fn default() -> Self {
         FlickStick {
-            flick_time: Duration::from_millis(100),
+            flick_time: Duration::from_millis(200),
             threshold: 0.6,
             state: FlickStickState::Center,
             do_rotate: true,
@@ -107,9 +107,11 @@ impl Stick for FlickStick {
         now: Instant,
     ) {
         let offset = match self.state {
-            _ if stick.magnitude() < self.threshold => {
+            FlickStickState::Center | FlickStickState::Rotating { .. }
+                if stick.magnitude() < self.threshold =>
+            {
                 self.state = FlickStickState::Center;
-                Deg(0.)
+                None
             }
             FlickStickState::Center => {
                 let target = stick.angle(Vector2::unit_y()).into();
@@ -118,7 +120,7 @@ impl Stick for FlickStick {
                     last: Deg(0.),
                     target,
                 };
-                Deg(0.)
+                None
             }
             FlickStickState::Flicking {
                 flick_start,
@@ -137,7 +139,7 @@ impl Stick for FlickStick {
                 } else {
                     *last = current_angle;
                 }
-                delta.normalize_signed()
+                Some(delta.normalize_signed())
             }
             FlickStickState::Rotating {
                 ref mut old_rotation,
@@ -146,13 +148,15 @@ impl Stick for FlickStick {
                     let angle = stick.angle(Vector2::unit_y()).into();
                     let delta = angle - *old_rotation;
                     *old_rotation = angle;
-                    delta.normalize_signed()
+                    Some(delta.normalize_signed())
                 } else {
-                    Deg(0.)
+                    None
                 }
             }
         };
-        mouse.mouse_move_relative(vec2(offset.0, 0.));
+        if let Some(offset) = offset {
+            mouse.mouse_move_relative(vec2(offset.0, 0.) * 30.);
+        }
     }
 }
 

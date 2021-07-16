@@ -82,32 +82,51 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
         ))?;
     }
 
-    let mut gyromouse = GyroMouse::d2();
+    let mut gyromouse = GyroMouse::d3();
     let mut mouse = Mouse::new();
 
     const SMOOTH_RATE: bool = false;
 
     let mut bindings = Buttons::new();
+    //parse_file(
+    //    "RLeft = left
+    //    RRight = right
+    //    RUp = up
+    //    RDown = down
+    //    W = lmouse
+    //    E = rmouse
+    //    N = escape
+    //    S = none gyro_on\\",
+    //    &mut bindings,
+    //)?;
     parse_file(
-        "RLeft = left
-        RRight = right
-        RUp = up 
-        RDown = down
-        W = lmouse
-        E = rmouse
-        N = escape
-        S = none gyro_on\\",
+        "LLEFT = q\\
+LRIGHT = d\\
+LUP = z\\
+LDOWN = s\\
+RIGHT = h
+UP = SCROLLUP
+DOWN = c
+ZR = e
+ZL = SHIFT\\
+R = LMOUSE\\
+L = RMOUSE\\
+N = a
+W = r f
+E = none gyro_off\\
+S = SPACE\\
+",
         &mut bindings,
     )?;
     let mut last_buttons = EnumMap::default();
 
-    let mut lstick = FlickStick::default();
-    let mut rstick = ButtonStick::right(true);
+    let mut lstick = ButtonStick::left(false);
+    let mut rstick = FlickStick::default();
 
     let mut gyro_enabled = false;
 
     let mut sensor_fusion = SimpleFusion::new();
-    let mut space_mapper = WorldSpace::default();
+    let mut space_mapper = PlayerSpace::default();
 
     loop {
         let report = gamepad.recv()?;
@@ -145,7 +164,8 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
             for (i, frame) in report.motion.iter().enumerate() {
                 let delta =
                     space_mapper::map_input(frame, dt, &mut sensor_fusion, &mut space_mapper)
-                        * 360.;
+                        * 360.
+                        * 20.;
                 let offset = gyromouse.process(delta, dt);
                 delta_position += offset;
                 if !SMOOTH_RATE {
