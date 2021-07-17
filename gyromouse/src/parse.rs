@@ -42,8 +42,12 @@ fn map_key(layer: &mut Layer, actions: &Vec<JSMAction>) {
     for action in actions {
         match (
             action.event_mod.unwrap_or_else(|| {
-                if first && actions.len() > 1 {
-                    Tap
+                if first {
+                    if actions.len() == 1 {
+                        Start
+                    } else {
+                        Tap
+                    }
                 } else {
                     Hold
                 }
