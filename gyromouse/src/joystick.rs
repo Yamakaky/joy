@@ -155,7 +155,7 @@ impl Stick for FlickStick {
             }
         };
         if let Some(offset) = offset {
-            mouse.mouse_move_relative(vec2(offset.0, 0.) * 30.);
+            mouse.mouse_move_relative(vec2(offset.0, 0.) * 25.);
         }
     }
 }
