@@ -1,3 +1,4 @@
+mod calibration;
 mod gyromouse;
 mod joystick;
 mod mapping;
@@ -7,7 +8,7 @@ mod space_mapper;
 
 use std::time::{Duration, Instant};
 
-use cgmath::{Vector2, Zero};
+use cgmath::{vec3, Deg, Euler, Vector2, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
@@ -25,7 +26,7 @@ use mapping::{Buttons, ExtAction};
 use mouse::Mouse;
 use parse::parse_file;
 
-use crate::space_mapper::*;
+use crate::{calibration::Calibration, space_mapper::*};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -125,11 +126,26 @@ S = SPACE\\
 
     let mut gyro_enabled = false;
 
+    let mut calibration = Calibration::with_capacity(250 * 60);
     let mut sensor_fusion = SimpleFusion::new();
     let mut space_mapper = PlayerSpace::default();
 
-    loop {
+    println!("calibrating");
+    for _ in 0..1000 {
         let report = gamepad.recv()?;
+        for frame in report.motion.iter() {
+            let raw_rot = vec3(
+                frame.rotation_speed.x.0,
+                frame.rotation_speed.y.0,
+                frame.rotation_speed.z.0,
+            );
+            calibration.push(raw_rot);
+        }
+    }
+    println!("calibrating done");
+
+    loop {
+        let mut report = gamepad.recv()?;
         let now = Instant::now();
 
         diff(&mut bindings, now, &last_buttons, &report.keys);
@@ -161,7 +177,14 @@ S = SPACE\\
         if gyro_enabled {
             let mut delta_position = Vector2::zero();
             let dt = 1. / report.frequency as f64;
-            for (i, frame) in report.motion.iter().enumerate() {
+            for (i, frame) in report.motion.iter_mut().enumerate() {
+                let raw_rot = vec3(
+                    frame.rotation_speed.x.0,
+                    frame.rotation_speed.y.0,
+                    frame.rotation_speed.z.0,
+                );
+                let rot = raw_rot - calibration.get_average();
+                frame.rotation_speed = Euler::new(Deg(rot.x), Deg(rot.y), Deg(rot.z));
                 let delta =
                     space_mapper::map_input(frame, dt, &mut sensor_fusion, &mut space_mapper)
                         * 360.
