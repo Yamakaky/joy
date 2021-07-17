@@ -31,7 +31,7 @@ use joycon::{
 use joystick::*;
 use mapping::{Buttons, ExtAction};
 use mouse::Mouse;
-use opts::Opts;
+use opts::{Opts, Run};
 use parse::parse_file;
 
 use crate::{calibration::Calibration, space_mapper::*};
@@ -56,20 +56,31 @@ impl ClickType {
 }
 
 fn main() -> anyhow::Result<()> {
-    let opts = Opts::parse();
     let mut api = HidApi::new()?;
-    loop {
-        api.refresh_devices()?;
-        for device_info in api.device_list() {
-            if let Some(mut gamepad) = hid_gamepad::open_gamepad(&api, device_info)? {
-                return hid_main(gamepad.as_mut(), &opts);
+    let opts = Opts::parse();
+    match opts {
+        Opts::List => {
+            println!("Listing gamepads:");
+            for device_info in api.device_list() {
+                if hid_gamepad::open_gamepad(&api, device_info)?.is_some() {
+                    println!("Found one");
+                }
             }
         }
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        Opts::Run(run) => loop {
+            for device_info in api.device_list() {
+                if let Some(mut gamepad) = hid_gamepad::open_gamepad(&api, device_info)? {
+                    return hid_main(gamepad.as_mut(), &run);
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            api.refresh_devices()?;
+        },
     }
+    Ok(())
 }
 
-fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Opts) -> anyhow::Result<()> {
+fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
     if let Some(joycon) = gamepad.as_any().downcast_mut::<JoyCon>() {
         dbg!(joycon.set_home_light(light::HomeLight::new(
             0x8,
