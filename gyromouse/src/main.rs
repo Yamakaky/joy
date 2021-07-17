@@ -101,21 +101,21 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
     //    &mut bindings,
     //)?;
     parse_file(
-        "LLEFT = q\\
-LRIGHT = d\\
-LUP = z\\
-LDOWN = s\\
+        "LLEFT = q
+LRIGHT = d
+LUP = z
+LDOWN = s
 RIGHT = h
 UP = SCROLLUP
 DOWN = c
 ZR = e
-ZL = SHIFT\\
-R = LMOUSE\\
-L = RMOUSE\\
+ZL = SHIFT
+R = LMOUSE
+L = RMOUSE
 N = a
 W = r f
-E = none gyro_off\\
-S = SPACE\\
+E = none gyro_off
+S = SPACE
 ",
         &mut bindings,
     )?;

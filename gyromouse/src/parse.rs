@@ -41,9 +41,13 @@ fn map_key(layer: &mut Layer, actions: &Vec<JSMAction>) {
     let mut first = true;
     for action in actions {
         match (
-            action
-                .event_mod
-                .unwrap_or_else(|| if first { Tap } else { Hold }),
+            action.event_mod.unwrap_or_else(|| {
+                if first && actions.len() > 1 {
+                    Tap
+                } else {
+                    Hold
+                }
+            }),
             action.action_mod,
         ) {
             (Tap, modifier) => {
