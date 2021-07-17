@@ -245,19 +245,25 @@
 <span id="242">242</span>
 <span id="243">243</span>
 <span id="244">244</span>
-<span id="245">245</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">mod</span> <span class="ident">calibration</span>;
 <span class="kw">mod</span> <span class="ident">gyromouse</span>;
 <span class="kw">mod</span> <span class="ident">joystick</span>;
 <span class="kw">mod</span> <span class="ident">mapping</span>;
 <span class="kw">mod</span> <span class="ident">mouse</span>;
+<span class="kw">mod</span> <span class="ident">opts</span>;
 <span class="kw">mod</span> <span class="ident">parse</span>;
 <span class="kw">mod</span> <span class="ident">space_mapper</span>;
 
-<span class="kw">use</span> <span class="ident">std::time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+    <span class="ident">fs::File</span>,
+    <span class="ident">io::Read</span>,
+    <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
+};
 
+<span class="kw">use</span> <span class="ident">anyhow::Context</span>;
 <span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">vec3</span>, <span class="ident">Deg</span>, <span class="ident">Euler</span>, <span class="ident">Vector2</span>, <span class="ident">Zero</span>};
+<span class="kw">use</span> <span class="ident">clap::Clap</span>;
 <span class="kw">use</span> <span class="ident">enigo</span>::{<span class="ident">KeyboardControllable</span>, <span class="ident">MouseControllable</span>};
 <span class="kw">use</span> <span class="ident">enum_map::EnumMap</span>;
 <span class="kw">use</span> <span class="ident">gyromouse::GyroMouse</span>;
@@ -273,6 +279,7 @@
 <span class="kw">use</span> <span class="ident">joystick</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">mapping</span>::{<span class="ident">Buttons</span>, <span class="ident">ExtAction</span>};
 <span class="kw">use</span> <span class="ident">mouse::Mouse</span>;
+<span class="kw">use</span> <span class="ident">opts</span>::{<span class="ident">Opts</span>, <span class="ident">Run</span>};
 <span class="kw">use</span> <span class="ident">parse::parse_file</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">calibration::Calibration</span>, <span class="ident">space_mapper</span>::<span class="kw-2">*</span>};
@@ -298,18 +305,30 @@
 
 <span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">api</span> <span class="op">=</span> <span class="ident">HidApi::new</span>()<span class="question-mark">?</span>;
-    <span class="kw">loop</span> {
-        <span class="ident">api</span>.<span class="ident">refresh_devices</span>()<span class="question-mark">?</span>;
-        <span class="kw">for</span> <span class="ident">device_info</span> <span class="kw">in</span> <span class="ident">api</span>.<span class="ident">device_list</span>() {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">gamepad</span>) <span class="op">=</span> <span class="ident">hid_gamepad::open_gamepad</span>(<span class="kw-2">&amp;</span><span class="ident">api</span>, <span class="ident">device_info</span>)<span class="question-mark">?</span> {
-                <span class="kw">return</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>.<span class="ident">as_mut</span>());
+    <span class="kw">let</span> <span class="ident">opts</span> <span class="op">=</span> <span class="ident">Opts::parse</span>();
+    <span class="kw">match</span> <span class="ident">opts</span> {
+        <span class="ident">Opts::List</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="macro">println!</span>(<span class="string">&quot;Listing gamepads:&quot;</span>);
+            <span class="kw">for</span> <span class="ident">device_info</span> <span class="kw">in</span> <span class="ident">api</span>.<span class="ident">device_list</span>() {
+                <span class="kw">if</span> <span class="ident">hid_gamepad::open_gamepad</span>(<span class="kw-2">&amp;</span><span class="ident">api</span>, <span class="ident">device_info</span>)<span class="question-mark">?</span>.<span class="ident">is_some</span>() {
+                    <span class="macro">println!</span>(<span class="string">&quot;Found one&quot;</span>);
+                }
             }
         }
-        <span class="ident">std::thread::sleep</span>(<span class="ident">std::time::Duration::from_secs</span>(<span class="number">1</span>));
+        <span class="ident">Opts::Run</span>(<span class="ident">run</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">loop</span> {
+            <span class="kw">for</span> <span class="ident">device_info</span> <span class="kw">in</span> <span class="ident">api</span>.<span class="ident">device_list</span>() {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">gamepad</span>) <span class="op">=</span> <span class="ident">hid_gamepad::open_gamepad</span>(<span class="kw-2">&amp;</span><span class="ident">api</span>, <span class="ident">device_info</span>)<span class="question-mark">?</span> {
+                    <span class="kw">return</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>.<span class="ident">as_mut</span>(), <span class="kw-2">&amp;</span><span class="ident">run</span>);
+                }
+            }
+            <span class="ident">std::thread::sleep</span>(<span class="ident">std::time::Duration::from_secs</span>(<span class="number">1</span>));
+            <span class="ident">api</span>.<span class="ident">refresh_devices</span>()<span class="question-mark">?</span>;
+        },
     }
+    <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">GamepadDevice</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">hid_main</span>(<span class="ident">gamepad</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">GamepadDevice</span>, <span class="ident">opts</span>: <span class="kw-2">&amp;</span><span class="ident">Run</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">joycon</span>) <span class="op">=</span> <span class="ident">gamepad</span>.<span class="ident">as_any</span>().<span class="ident">downcast_mut</span>::<span class="op">&lt;</span><span class="ident">JoyCon</span><span class="op">&gt;</span>() {
         <span class="macro">dbg!</span>(<span class="ident">joycon</span>.<span class="ident">set_home_light</span>(<span class="ident">light::HomeLight::new</span>(
             <span class="number">0x8</span>,
@@ -338,36 +357,15 @@
     <span class="kw">const</span> <span class="ident">SMOOTH_RATE</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bindings</span> <span class="op">=</span> <span class="ident">Buttons::new</span>();
-    <span class="comment">//parse_file(</span>
-    <span class="comment">//    &quot;RLeft = left</span>
-    <span class="comment">//    RRight = right</span>
-    <span class="comment">//    RUp = up</span>
-    <span class="comment">//    RDown = down</span>
-    <span class="comment">//    W = lmouse</span>
-    <span class="comment">//    E = rmouse</span>
-    <span class="comment">//    N = escape</span>
-    <span class="comment">//    S = none gyro_on\\&quot;,</span>
-    <span class="comment">//    &amp;mut bindings,</span>
-    <span class="comment">//)?;</span>
-    <span class="ident">parse_file</span>(
-        <span class="string">&quot;LLEFT = q
-LRIGHT = d
-LUP = z
-LDOWN = s
-RIGHT = h
-UP = SCROLLUP
-DOWN = c
-ZR = e
-ZL = SHIFT
-R = LMOUSE
-L = RMOUSE
-N = a
-W = r f
-E = none gyro_off
-S = SPACE
-&quot;</span>,
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>,
-    )<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">content_file</span> <span class="op">=</span> <span class="ident">File::open</span>(<span class="kw-2">&amp;</span><span class="ident">opts</span>.<span class="ident">mapping_file</span>)
+        .<span class="ident">with_context</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;opening config file {}&quot;</span>, <span class="ident">opts</span>.<span class="ident">mapping_file</span>))<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">content</span> <span class="op">=</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">String::new</span>();
+        <span class="ident">content_file</span>.<span class="ident">read_to_string</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>)<span class="question-mark">?</span>;
+        <span class="ident">buf</span>
+    };
+    <span class="ident">parse_file</span>(<span class="kw-2">&amp;</span><span class="ident">content</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bindings</span>).<span class="ident">unwrap</span>();
+
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_buttons</span> <span class="op">=</span> <span class="ident">EnumMap::default</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lstick</span> <span class="op">=</span> <span class="ident">ButtonStick::left</span>(<span class="bool-val">false</span>);
