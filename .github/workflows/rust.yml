@@ -3,40 +3,67 @@ name: Build, test and doc
 on: [push, pull_request]
 
 jobs:
-  release:
-    name: Build, test and doc
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        platform: [linux, windows, macos]
+        include:
+          - platform: linux
+            os: ubuntu-latest
+          - platform: windows
+            os: windows-latest
+          - platform: macos
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/cache@v2
-      id: cache
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          ~/.local/share/cargo
-          target
-        key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
-  
-    - name: ⚙️ Install SDL dependencies
-      run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
-  
-    - name: 🔨 Build
-      run: cargo build --workspace --verbose
-  
-    - name: ⚙️ Run tests
-      run: cargo test --workspace --verbose
-  
-    - name: 🔨 Build Documentation
-      uses: actions-rs/cargo@v1
-      with:
-        command: doc
-        args: --workspace  --no-deps
-    
-    - name: ☁️ Deploy Documentation
-      uses: peaceiris/actions-gh-pages@v3
-      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./target/doc
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        id: cache
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.local/share/cargo
+            target
+          key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: ⚙️ Install dependencies
+        if: matrix.platform == 'linux'
+        run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
+
+      - name: 🔨 Build
+        run: cargo build --workspace --verbose
+
+      - name: ⚙️ Run tests
+        run: cargo test --workspace --verbose
+
+      - name: 🔨 Rename binaries
+        if: matrix.platform != 'windows'
+        env:
+          OS: ${{matrix.platform}}
+        run: |
+          cp target/release/gyromouse target/release/gyromouse-$OS
+
+      - name: ☁️ Upload gyromouse
+        uses: actions/upload-artifact@v2
+        with:
+          name: client
+          if-no-files-found: error
+          path: |
+            target/release/gyromouse-linux
+            target/release/gyromouse-macos
+            target/release/gyromouse.exe
+
+      - name: 🔨 Build Documentation
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --workspace  --no-deps
+
+      - name: ☁️ Deploy Documentation
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc
