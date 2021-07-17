@@ -174,33 +174,30 @@ S = SPACE
         lstick.handle(report.left_joystick, &mut bindings, &mut mouse, now);
         rstick.handle(report.right_joystick, &mut bindings, &mut mouse, now);
 
-        if gyro_enabled {
-            let mut delta_position = Vector2::zero();
-            let dt = 1. / report.frequency as f64;
-            for (i, frame) in report.motion.iter_mut().enumerate() {
-                let raw_rot = vec3(
-                    frame.rotation_speed.x.0,
-                    frame.rotation_speed.y.0,
-                    frame.rotation_speed.z.0,
-                );
-                let rot = raw_rot - calibration.get_average();
-                frame.rotation_speed = Euler::new(Deg(rot.x), Deg(rot.y), Deg(rot.z));
-                let delta =
-                    space_mapper::map_input(frame, dt, &mut sensor_fusion, &mut space_mapper)
-                        * 360.
-                        * 20.;
-                let offset = gyromouse.process(delta, dt);
-                delta_position += offset;
-                if !SMOOTH_RATE {
-                    if i > 0 {
-                        std::thread::sleep(Duration::from_secs_f64(dt));
-                    }
-                    mouse.mouse_move_relative(offset);
+        let mut delta_position = Vector2::zero();
+        let dt = 1. / report.frequency as f64;
+        for (i, frame) in report.motion.iter_mut().enumerate() {
+            let raw_rot = vec3(
+                frame.rotation_speed.x.0,
+                frame.rotation_speed.y.0,
+                frame.rotation_speed.z.0,
+            );
+            let rot = raw_rot - calibration.get_average();
+            frame.rotation_speed = Euler::new(Deg(rot.x), Deg(rot.y), Deg(rot.z));
+            let delta = space_mapper::map_input(frame, dt, &mut sensor_fusion, &mut space_mapper)
+                * 360.
+                * 20.;
+            let offset = gyromouse.process(delta, dt);
+            delta_position += offset;
+            if gyro_enabled && !SMOOTH_RATE {
+                if i > 0 {
+                    std::thread::sleep(Duration::from_secs_f64(dt));
                 }
+                mouse.mouse_move_relative(offset);
             }
-            if SMOOTH_RATE {
-                mouse.mouse_move_relative(delta_position);
-            }
+        }
+        if gyro_enabled && SMOOTH_RATE {
+            mouse.mouse_move_relative(delta_position);
         }
     }
 }
