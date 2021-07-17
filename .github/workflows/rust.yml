@@ -34,7 +34,7 @@ jobs:
         run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
 
       - name: 🔨 Build
-        run: cargo build --workspace --verbose
+        run: cargo build --release --workspace --verbose
 
       - name: ⚙️ Run tests
         run: cargo test --workspace --verbose
