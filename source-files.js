@@ -7,5 +7,5 @@ sourcesIndex["hid_gamepad_sys"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["joy_music"] = {"name":"","files":["main.rs"]};
 sourcesIndex["joycon"] = {"name":"","files":["calibration.rs","hid.rs","image.rs","imu_handler.rs","lib.rs"]};
 sourcesIndex["joycon_sys"] = {"name":"","dirs":[{"name":"input","files":["mod.rs","report.rs","values.rs"]},{"name":"mcu","files":["ir.rs","ir_register.rs","mod.rs"]},{"name":"output","files":["mod.rs","report.rs","rumble.rs"]}],"files":["accessory.rs","common.rs","imu.rs","lib.rs","light.rs","spi.rs"]};
-sourcesIndex["joytk"] = {"name":"","files":["camera.rs","main.rs","opts.rs","relay.rs"]};
+sourcesIndex["joytk"] = {"name":"","files":["camera.rs","main.rs","opts.rs"]};
 createSourceSidebar();
