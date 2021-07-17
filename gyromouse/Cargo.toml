@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 cgmath = "0.18"
+clap = "3.0.0-beta.2"
 enigo = "0.0"
 # see https://gitlab.com/KonradBorowski/enum-map/-/issues/20
 enum-map = "0.6"

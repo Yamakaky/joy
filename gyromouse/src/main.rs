@@ -3,12 +3,19 @@ mod gyromouse;
 mod joystick;
 mod mapping;
 mod mouse;
+mod opts;
 mod parse;
 mod space_mapper;
 
-use std::time::{Duration, Instant};
+use std::{
+    fs::File,
+    io::Read,
+    time::{Duration, Instant},
+};
 
+use anyhow::Context;
 use cgmath::{vec3, Deg, Euler, Vector2, Zero};
+use clap::Clap;
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use gyromouse::GyroMouse;
@@ -24,6 +31,7 @@ use joycon::{
 use joystick::*;
 use mapping::{Buttons, ExtAction};
 use mouse::Mouse;
+use opts::Opts;
 use parse::parse_file;
 
 use crate::{calibration::Calibration, space_mapper::*};
@@ -48,19 +56,20 @@ impl ClickType {
 }
 
 fn main() -> anyhow::Result<()> {
+    let opts = Opts::parse();
     let mut api = HidApi::new()?;
     loop {
         api.refresh_devices()?;
         for device_info in api.device_list() {
             if let Some(mut gamepad) = hid_gamepad::open_gamepad(&api, device_info)? {
-                return hid_main(gamepad.as_mut());
+                return hid_main(gamepad.as_mut(), &opts);
             }
         }
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
 
-fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
+fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Opts) -> anyhow::Result<()> {
     if let Some(joycon) = gamepad.as_any().downcast_mut::<JoyCon>() {
         dbg!(joycon.set_home_light(light::HomeLight::new(
             0x8,
@@ -89,36 +98,15 @@ fn hid_main(gamepad: &mut dyn GamepadDevice) -> anyhow::Result<()> {
     const SMOOTH_RATE: bool = false;
 
     let mut bindings = Buttons::new();
-    //parse_file(
-    //    "RLeft = left
-    //    RRight = right
-    //    RUp = up
-    //    RDown = down
-    //    W = lmouse
-    //    E = rmouse
-    //    N = escape
-    //    S = none gyro_on\\",
-    //    &mut bindings,
-    //)?;
-    parse_file(
-        "LLEFT = q
-LRIGHT = d
-LUP = z
-LDOWN = s
-RIGHT = h
-UP = SCROLLUP
-DOWN = c
-ZR = e
-ZL = SHIFT
-R = LMOUSE
-L = RMOUSE
-N = a
-W = r f
-E = none gyro_off
-S = SPACE
-",
-        &mut bindings,
-    )?;
+    let mut content_file = File::open(&opts.mapping_file)
+        .with_context(|| format!("opening config file {}", opts.mapping_file))?;
+    let content = {
+        let mut buf = String::new();
+        content_file.read_to_string(&mut buf)?;
+        buf
+    };
+    parse_file(&content, &mut bindings).unwrap();
+
     let mut last_buttons = EnumMap::default();
 
     let mut lstick = ButtonStick::left(false);

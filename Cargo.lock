@@ -1083,6 +1083,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cgmath",
+ "clap 3.0.0-beta.2",
  "enigo",
  "enum-map",
  "hid-gamepad",
