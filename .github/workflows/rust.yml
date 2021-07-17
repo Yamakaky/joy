@@ -26,11 +26,12 @@ jobs:
         id: cache
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.local/share/cargo
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v3-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v4-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
