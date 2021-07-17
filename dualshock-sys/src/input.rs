@@ -174,7 +174,7 @@ bitfield! {
     pub struct Buttons([u8]);
     impl Debug;
     u8;
-    pub into Dpad, dpad, _: 2, 0;
+    pub into Dpad, dpad, _: 3, 0;
     pub dpad_pressed, _: 3;
     pub square, _: 4;
     pub cross, _: 5;
