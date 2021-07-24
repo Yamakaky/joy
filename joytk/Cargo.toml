@@ -19,7 +19,7 @@ tracing = "0.1"
 tracing-subscriber = "0.2"
 crossterm = { version = "0.20", optional = true }
 tui = { version = "0.15", optional = true, default-features = false, features = ["crossterm"] }
-pixels = "0.4"
+pixels = "0.5"
 winit = "0.25"
 winit_input_helper = "0.10"
 

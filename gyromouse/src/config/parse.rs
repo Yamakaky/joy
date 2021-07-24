@@ -91,6 +91,14 @@ pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons) -> IResult<&'a st
                 map_key(mapping.get(k2, k1.to_layer()), actions);
             }
             Cmd::Map(Key::Simul(_k1, _k2), ref _actions) => unimplemented!(),
+            Cmd::Setting(setting) => match setting {
+                Setting::TriggerThreshold(_) => todo!(),
+                Setting::ZLMode(_) => todo!(),
+                Setting::ZRMode(_) => todo!(),
+                Setting::LeftStickMode(_) => todo!(),
+                Setting::RightStickMode(_) => todo!(),
+                Setting::StickSetting(_) => todo!(),
+            },
             _ => unimplemented!(),
         }
     }
@@ -156,8 +164,68 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
     Ok((input, Cmd::Map(key, actions)))
 }
 
+fn setting(input: &str) -> IResult<&str, Setting> {
+    alt((stick_mode, trigger_mode))(input)
+}
+
+fn stick_mode(input: &str) -> IResult<&str, Setting> {
+    let (input, key) = alt((
+        tag_no_case("LEFT_STICK_MODE"),
+        tag_no_case("RIGHT_STICK_MODE"),
+    ))(input)?;
+    let (input, _) = equal_with_space(input)?;
+    let (input, mode) = alt((
+        value(StickMode::Aim, tag_no_case("AIM")),
+        value(StickMode::Flick, tag_no_case("FLICK")),
+        value(StickMode::FlickOnly, tag_no_case("FLICK_ONLY")),
+        value(StickMode::MouseArea, tag_no_case("MOUSE_AREA")),
+        value(StickMode::MouseRing, tag_no_case("MOUSE_RING")),
+        value(StickMode::NoMouse, tag_no_case("NO_MOUSE")),
+        value(StickMode::RotateOnly, tag_no_case("ROTATE_ONLY")),
+        value(StickMode::ScrollWheel, tag_no_case("SCROLL_WHEEL")),
+    ))(input)?;
+    if key == "LEFT_STICK_MODE" {
+        Ok((input, Setting::LeftStickMode(mode)))
+    } else {
+        Ok((input, Setting::RightStickMode(mode)))
+    }
+}
+
+fn trigger_mode(input: &str) -> IResult<&str, Setting> {
+    let (input, key) = alt((tag_no_case("ZL_MODE"), tag_no_case("ZR_MODE")))(input)?;
+    let (input, _) = equal_with_space(input)?;
+    let (input, mode) = alt((
+        value(TriggerMode::MaySkip, tag_no_case("MAY_SKIP")),
+        value(TriggerMode::MaySkipR, tag_no_case("MAY_SKIP_R")),
+        value(TriggerMode::MustSkip, tag_no_case("MUST_SKIP")),
+        value(TriggerMode::MustSkipR, tag_no_case("MUST_SKIP_R")),
+        value(TriggerMode::NoFull, tag_no_case("NO_FULL")),
+        value(TriggerMode::NoSkip, tag_no_case("NO_SKIP")),
+        value(
+            TriggerMode::NoSkipExclusive,
+            tag_no_case("NO_SKIP_EXCLUSIVE"),
+        ),
+    ))(input)?;
+    if key == "ZR_MODE" {
+        Ok((input, Setting::ZRMode(mode)))
+    } else {
+        Ok((input, Setting::ZLMode(mode)))
+    }
+}
+
+fn equal_with_space(input: &str) -> IResult<&str, ()> {
+    let (input, _) = space0(input)?;
+    let (input, _) = tag("=")(input)?;
+    let (input, _) = space0(input)?;
+    Ok((input, ()))
+}
+
 fn cmd(input: &str) -> IResult<&str, Cmd> {
-    alt((binding, map(special, Cmd::Special)))(input)
+    alt((
+        binding,
+        map(special, Cmd::Special),
+        map(setting, Cmd::Setting),
+    ))(input)
 }
 
 fn comment(input: &str) -> IResult<&str, ()> {

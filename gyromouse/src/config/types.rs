@@ -1,3 +1,7 @@
+use std::time::Duration;
+
+use cgmath::Deg;
+
 use crate::{
     mapping::{ExtAction, MapKey},
     ClickType,
@@ -87,6 +91,12 @@ pub enum StickMode {
 
 #[derive(Debug, Copy, Clone)]
 pub enum StickSetting {
+    Aim(AimStickSetting),
+    Flick(FlickStickSetting),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum AimStickSetting {
     Sens(f64),
     Power(f64),
     InvertX,
@@ -95,6 +105,13 @@ pub enum StickSetting {
     AccelerationCap(f64),
     Deadzone(f64),
     FullZone(f64),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum FlickStickSetting {
+    FlickTime(Duration),
+    Exponent(f64),
+    ForwardDeadzoneArc(Deg<f64>),
 }
 
 #[derive(Debug, Copy, Clone)]
