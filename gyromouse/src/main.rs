@@ -1,10 +1,10 @@
 mod calibration;
+mod config;
 mod gyromouse;
 mod joystick;
 mod mapping;
 mod mouse;
 mod opts;
-mod parse;
 mod space_mapper;
 
 use std::{
@@ -32,7 +32,6 @@ use joystick::*;
 use mapping::{Buttons, ExtAction};
 use mouse::Mouse;
 use opts::{Opts, Run};
-use parse::parse_file;
 
 use crate::{calibration::Calibration, space_mapper::*};
 
@@ -119,7 +118,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
         content_file.read_to_string(&mut buf)?;
         buf
     };
-    parse_file(&content, &mut bindings).unwrap();
+    config::parse::parse_file(&content, &mut bindings).unwrap();
 
     let mut last_buttons = EnumMap::default();
 
