@@ -2,6 +2,7 @@ use clap::Clap;
 
 #[derive(Debug, Clap)]
 pub enum Opts {
+    FlickCalibrate,
     Run(Run),
     List,
 }
