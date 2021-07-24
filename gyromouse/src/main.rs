@@ -1,5 +1,6 @@
 mod calibration;
 mod config;
+mod engine;
 mod gyromouse;
 mod joystick;
 mod mapping;
@@ -7,18 +8,12 @@ mod mouse;
 mod opts;
 mod space_mapper;
 
-use std::{
-    fs::File,
-    io::Read,
-    time::{Duration, Instant},
-};
+use std::{fs::File, io::Read, time::Instant};
 
 use anyhow::Context;
-use cgmath::{vec3, Deg, Euler, Vector2, Zero};
+use cgmath::vec3;
 use clap::Clap;
-use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
-use gyromouse::GyroMouse;
 use hid_gamepad::sys::{GamepadDevice, JoyKey, KeyStatus};
 use joycon::{
     hidapi::HidApi,
@@ -28,12 +23,10 @@ use joycon::{
     },
     JoyCon,
 };
-use joystick::*;
-use mapping::{Buttons, ExtAction};
-use mouse::Mouse;
+use mapping::Buttons;
 use opts::{Opts, Run};
 
-use crate::{calibration::Calibration, space_mapper::*};
+use crate::{calibration::Calibration, engine::Engine};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -105,11 +98,6 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
         ))?;
     }
 
-    let mut gyromouse = GyroMouse::d3();
-    let mut mouse = Mouse::new();
-
-    const SMOOTH_RATE: bool = false;
-
     let mut bindings = Buttons::new();
     let mut content_file = File::open(&opts.mapping_file)
         .with_context(|| format!("opening config file {}", opts.mapping_file))?;
@@ -120,16 +108,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
     };
     config::parse::parse_file(&content, &mut bindings).unwrap();
 
-    let mut last_buttons = EnumMap::default();
-
-    let mut lstick = ButtonStick::left(false);
-    let mut rstick = FlickStick::default();
-
-    let mut gyro_enabled = false;
-
     let mut calibration = Calibration::with_capacity(250 * 60);
-    let mut sensor_fusion = SimpleFusion::new();
-    let mut space_mapper = PlayerSpace::default();
 
     println!("calibrating");
     for _ in 0..1000 {
@@ -144,62 +123,11 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
         }
     }
     println!("calibrating done");
+    let mut engine = Engine::new(bindings, calibration);
 
     loop {
-        let mut report = gamepad.recv()?;
-        let now = Instant::now();
-
-        diff(&mut bindings, now, &last_buttons, &report.keys);
-        last_buttons = report.keys;
-
-        for action in bindings.tick(now).drain(..) {
-            match action {
-                ExtAction::GyroOn(ClickType::Press) | ExtAction::GyroOff(ClickType::Release) => {
-                    gyro_enabled = true
-                }
-                ExtAction::GyroOn(ClickType::Release) | ExtAction::GyroOff(ClickType::Press) => {
-                    gyro_enabled = false
-                }
-                ExtAction::GyroOn(_) | ExtAction::GyroOff(_) => unimplemented!(),
-                ExtAction::KeyPress(c, ClickType::Click) => mouse.enigo().key_click(c),
-                ExtAction::KeyPress(c, ClickType::Press) => mouse.enigo().key_down(c),
-                ExtAction::KeyPress(c, ClickType::Release) => mouse.enigo().key_up(c),
-                ExtAction::KeyPress(_, ClickType::Toggle) => unimplemented!(),
-                ExtAction::MousePress(c, ClickType::Click) => mouse.enigo().mouse_click(c),
-                ExtAction::MousePress(c, ClickType::Press) => mouse.enigo().mouse_down(c),
-                ExtAction::MousePress(c, ClickType::Release) => mouse.enigo().mouse_up(c),
-                ExtAction::MousePress(_, ClickType::Toggle) => unimplemented!(),
-            }
-        }
-
-        lstick.handle(report.left_joystick, &mut bindings, &mut mouse, now);
-        rstick.handle(report.right_joystick, &mut bindings, &mut mouse, now);
-
-        let mut delta_position = Vector2::zero();
-        let dt = 1. / report.frequency as f64;
-        for (i, frame) in report.motion.iter_mut().enumerate() {
-            let raw_rot = vec3(
-                frame.rotation_speed.x.0,
-                frame.rotation_speed.y.0,
-                frame.rotation_speed.z.0,
-            );
-            let rot = raw_rot - calibration.get_average();
-            frame.rotation_speed = Euler::new(Deg(rot.x), Deg(rot.y), Deg(rot.z));
-            let delta = space_mapper::map_input(frame, dt, &mut sensor_fusion, &mut space_mapper)
-                * 360.
-                * 20.;
-            let offset = gyromouse.process(delta, dt);
-            delta_position += offset;
-            if gyro_enabled && !SMOOTH_RATE {
-                if i > 0 {
-                    std::thread::sleep(Duration::from_secs_f64(dt));
-                }
-                mouse.mouse_move_relative(offset);
-            }
-        }
-        if gyro_enabled && SMOOTH_RATE {
-            mouse.mouse_move_relative(delta_position);
-        }
+        let report = gamepad.recv()?;
+        engine.tick(report)?;
     }
 }
 
