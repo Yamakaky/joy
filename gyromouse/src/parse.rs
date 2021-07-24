@@ -155,10 +155,56 @@ pub enum SpecialKey {
     GyroTrackBall(bool),
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum TriggerMode {
+    NoFull,
+    NoSkip,
+    NoSkipExclusive,
+    MustSkip,
+    MaySkip,
+    MustSkipR,
+    MaySkipR,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum StickMode {
+    Aim,
+    Flick,
+    FlickOnly,
+    RotateOnly,
+    MouseRing,
+    MouseArea,
+    NoMouse,
+    ScrollWheel,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum StickSetting {
+    Sens(f64),
+    Power(f64),
+    InvertX,
+    InvertY,
+    AccelerationRate(f64),
+    AccelerationCap(f64),
+    Deadzone(f64),
+    FullZone(f64),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Setting {
+    TriggerThreshold(f64),
+    ZLMode(TriggerMode),
+    ZRMode(TriggerMode),
+    LeftStickMode(StickMode),
+    RightStickMode(StickMode),
+    StickSetting(StickSetting),
+}
+
 #[derive(Debug, Clone)]
 pub enum Cmd {
     Map(Key, Vec<JSMAction>),
     Special(SpecialKey),
+    Setting(Setting),
 }
 
 fn keys(input: &str) -> IResult<&str, Key> {
