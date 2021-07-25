@@ -99,6 +99,7 @@ impl Default for StickSettings {
 impl StickSettings {
     fn apply(&mut self, setting: StickSetting) {
         match setting {
+            StickSetting::Deadzone(d) => self.deadzone = d,
             StickSetting::Aim(s) => self.aim_stick.apply(s),
             StickSetting::Flick(s) => self.flick_stick.apply(s),
         }
@@ -139,7 +140,6 @@ impl AimStickSettings {
             AimStickSetting::InvertY => self.invert_y = true,
             AimStickSetting::AccelerationRate(s) => self.acceleration_rate = s,
             AimStickSetting::AccelerationCap(s) => self.acceleration_cap = s,
-            AimStickSetting::Deadzone(s) => self.deadzone = s,
             AimStickSetting::FullZone(s) => self.fullzone = s,
         }
     }
