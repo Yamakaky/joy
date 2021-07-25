@@ -33,7 +33,7 @@ pub struct Engine {
 impl Engine {
     pub fn new(settings: Settings, buttons: Buttons, calibration: Calibration) -> Self {
         Engine {
-            left_stick: Box::new(ButtonStick::left(false)),
+            left_stick: settings.new_left_stick(),
             right_stick: Box::new(FlickStick::default()),
             buttons,
             mouse: Mouse::new(),

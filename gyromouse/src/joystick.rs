@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use cgmath::{vec2, AbsDiffEq, Angle, Deg, InnerSpace, Rad, Vector2};
 
 use crate::{
+    config::settings::FlickStickSettings,
     mapping::{Buttons, VirtualKey},
     mouse::Mouse,
 };
@@ -94,6 +95,17 @@ impl Default for FlickStick {
             threshold: 0.6,
             state: FlickStickState::Center,
             do_rotate: true,
+        }
+    }
+}
+
+impl FlickStick {
+    pub fn new(settings: &FlickStickSettings, threshold: f64, flick: bool, rotate: bool) -> Self {
+        Self {
+            flick_time: settings.flick_time,
+            threshold,
+            state: FlickStickState::Center,
+            do_rotate: rotate,
         }
     }
 }

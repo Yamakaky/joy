@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use cgmath::Deg;
 
+use crate::joystick::{ButtonStick, FlickStick, Stick};
+
 use super::types::{
     AimStickSetting, FlickStickSetting, Setting, StickMode, StickSetting, TriggerMode,
 };
@@ -40,12 +42,58 @@ impl Settings {
             Setting::ZRMode(m) => self.zr_mode = m,
         }
     }
+
+    pub fn new_left_stick(&self) -> Box<dyn Stick> {
+        self.new_stick(self.left_stick_mode, true)
+    }
+
+    pub fn new_right_stick(&self) -> Box<dyn Stick> {
+        self.new_stick(self.right_stick_mode, false)
+    }
+
+    fn new_stick(&self, mode: StickMode, left: bool) -> Box<dyn Stick> {
+        match mode {
+            StickMode::Aim => todo!(),
+            StickMode::Flick | StickMode::FlickOnly | StickMode::RotateOnly => {
+                let flick = mode != StickMode::RotateOnly;
+                let rotate = mode != StickMode::FlickOnly;
+                Box::new(FlickStick::new(
+                    &self.stick_settings.flick_stick,
+                    self.stick_settings.deadzone,
+                    flick,
+                    rotate,
+                ))
+            }
+            StickMode::MouseRing => todo!(),
+            StickMode::MouseArea => todo!(),
+            StickMode::NoMouse => {
+                let inner_ring = todo!();
+                Box::new(if left {
+                    ButtonStick::left(inner_ring)
+                } else {
+                    ButtonStick::right(inner_ring)
+                })
+            }
+            StickMode::ScrollWheel => todo!(),
+        }
+    }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct StickSettings {
+    deadzone: f64,
     aim_stick: AimStickSettings,
     flick_stick: FlickStickSettings,
+}
+
+impl Default for StickSettings {
+    fn default() -> Self {
+        Self {
+            deadzone: 0.15,
+            aim_stick: Default::default(),
+            flick_stick: Default::default(),
+        }
+    }
 }
 
 impl StickSettings {
@@ -65,7 +113,6 @@ pub struct AimStickSettings {
     invert_y: bool,
     acceleration_rate: f64,
     acceleration_cap: f64,
-    deadzone: f64,
     fullzone: f64,
 }
 
@@ -78,7 +125,6 @@ impl Default for AimStickSettings {
             invert_y: false,
             acceleration_rate: 0.,
             acceleration_cap: 1000000.,
-            deadzone: 0.15,
             fullzone: 0.1,
         }
     }
@@ -101,9 +147,9 @@ impl AimStickSettings {
 
 #[derive(Debug, Clone)]
 pub struct FlickStickSettings {
-    flick_time: Duration,
-    exponent: f64,
-    forward_deadzone_arc: Deg<f64>,
+    pub flick_time: Duration,
+    pub exponent: f64,
+    pub forward_deadzone_arc: Deg<f64>,
 }
 
 impl Default for FlickStickSettings {
