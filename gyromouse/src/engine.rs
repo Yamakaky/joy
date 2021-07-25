@@ -10,6 +10,7 @@ use hid_gamepad::sys::{JoyKey, KeyStatus, Report};
 
 use crate::{
     calibration::Calibration,
+    config::settings::Settings,
     diff,
     gyromouse::GyroMouse,
     joystick::{ButtonStick, FlickStick, Stick},
@@ -30,7 +31,7 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(buttons: Buttons, calibration: Calibration) -> Self {
+    pub fn new(settings: Settings, buttons: Buttons, calibration: Calibration) -> Self {
         Engine {
             left_stick: Box::new(ButtonStick::left(false)),
             right_stick: Box::new(FlickStick::default()),
@@ -46,6 +47,7 @@ impl Engine {
             last_keys: EnumMap::default(),
         }
     }
+
     pub fn tick(&mut self, report: Report) -> anyhow::Result<()> {
         let now = Instant::now();
 

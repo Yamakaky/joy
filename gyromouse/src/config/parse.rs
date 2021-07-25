@@ -1,4 +1,4 @@
-use super::types::*;
+use super::{settings::Settings, types::*};
 use hid_gamepad::sys::JoyKey;
 use nom::{
     branch::alt,
@@ -80,7 +80,11 @@ fn map_key(layer: &mut Layer, actions: &Vec<JSMAction>) {
     }
 }
 
-pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons) -> IResult<&'a str, ()> {
+pub fn parse_file<'a>(
+    content: &'a str,
+    settings: &mut Settings,
+    mapping: &mut Buttons,
+) -> IResult<&'a str, ()> {
     for cmd in jsm_parse(content)?.1 {
         match cmd {
             Cmd::Map(Key::Simple(key), ref actions) => map_key(mapping.get(key, 0), actions),
@@ -91,14 +95,7 @@ pub fn parse_file<'a>(content: &'a str, mapping: &mut Buttons) -> IResult<&'a st
                 map_key(mapping.get(k2, k1.to_layer()), actions);
             }
             Cmd::Map(Key::Simul(_k1, _k2), ref _actions) => unimplemented!(),
-            Cmd::Setting(setting) => match setting {
-                Setting::TriggerThreshold(_) => todo!(),
-                Setting::ZLMode(_) => todo!(),
-                Setting::ZRMode(_) => todo!(),
-                Setting::LeftStickMode(_) => todo!(),
-                Setting::RightStickMode(_) => todo!(),
-                Setting::StickSetting(_) => todo!(),
-            },
+            Cmd::Setting(setting) => settings.apply(setting),
             _ => unimplemented!(),
         }
     }

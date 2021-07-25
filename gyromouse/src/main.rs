@@ -26,7 +26,7 @@ use joycon::{
 use mapping::Buttons;
 use opts::{Opts, Run};
 
-use crate::{calibration::Calibration, engine::Engine};
+use crate::{calibration::Calibration, config::settings::Settings, engine::Engine};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -98,6 +98,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
         ))?;
     }
 
+    let mut settings = Settings::default();
     let mut bindings = Buttons::new();
     let mut content_file = File::open(&opts.mapping_file)
         .with_context(|| format!("opening config file {}", opts.mapping_file))?;
@@ -106,7 +107,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
         content_file.read_to_string(&mut buf)?;
         buf
     };
-    config::parse::parse_file(&content, &mut bindings).unwrap();
+    config::parse::parse_file(&content, &mut settings, &mut bindings).unwrap();
 
     let mut calibration = Calibration::with_capacity(250 * 60);
 
@@ -123,7 +124,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
         }
     }
     println!("calibrating done");
-    let mut engine = Engine::new(bindings, calibration);
+    let mut engine = Engine::new(settings, bindings, calibration);
 
     loop {
         let report = gamepad.recv()?;
