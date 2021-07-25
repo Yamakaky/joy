@@ -5,22 +5,25 @@ use cgmath::Deg;
 use crate::joystick::{ButtonStick, FlickStick, Stick};
 
 use super::types::{
-    AimStickSetting, FlickStickSetting, Setting, StickMode, StickSetting, TriggerMode,
+    AimStickSetting, FlickStickSetting, GyroSetting, GyroSpace, Setting, StickMode, StickSetting,
+    TriggerMode,
 };
 
 #[derive(Debug, Clone)]
 pub struct Settings {
-    stick_settings: StickSettings,
-    left_stick_mode: StickMode,
-    right_stick_mode: StickMode,
-    trigger_threshold: f64,
-    zl_mode: TriggerMode,
-    zr_mode: TriggerMode,
+    pub gyro: GyroSettings,
+    pub stick_settings: StickSettings,
+    pub left_stick_mode: StickMode,
+    pub right_stick_mode: StickMode,
+    pub trigger_threshold: f64,
+    pub zl_mode: TriggerMode,
+    pub zr_mode: TriggerMode,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            gyro: GyroSettings::default(),
             stick_settings: StickSettings::default(),
             left_stick_mode: StickMode::NoMouse,
             right_stick_mode: StickMode::Aim,
@@ -34,6 +37,7 @@ impl Default for Settings {
 impl Settings {
     pub fn apply(&mut self, setting: Setting) {
         match setting {
+            Setting::Gyro(s) => self.gyro.apply(s),
             Setting::StickSetting(s) => self.stick_settings.apply(s),
             Setting::LeftStickMode(m) => self.left_stick_mode = m,
             Setting::RightStickMode(m) => self.right_stick_mode = m,
@@ -168,6 +172,50 @@ impl FlickStickSettings {
             FlickStickSetting::FlickTime(s) => self.flick_time = s,
             FlickStickSetting::Exponent(s) => self.exponent = s,
             FlickStickSetting::ForwardDeadzoneArc(s) => self.forward_deadzone_arc = s,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct GyroSettings {
+    pub sens: f64,
+    pub space: GyroSpace,
+    pub cutoff_speed: f64,
+    pub cutoff_recovery: f64,
+    pub smooth_threshold: f64,
+    pub smooth_time: Duration,
+    pub slow_threshold: f64,
+    pub slow_sens: f64,
+    pub fast_threshold: f64,
+    pub fast_sens: f64,
+}
+
+impl Default for GyroSettings {
+    fn default() -> Self {
+        Self {
+            sens: 1.,
+            space: GyroSpace::Local,
+            cutoff_speed: 0.,
+            cutoff_recovery: 0.,
+            smooth_threshold: 0.,
+            smooth_time: Duration::from_millis(125),
+            slow_sens: 0.,
+            slow_threshold: 0.,
+            fast_sens: 0.,
+            fast_threshold: 0.,
+        }
+    }
+}
+
+impl GyroSettings {
+    fn apply(&mut self, setting: GyroSetting) {
+        match setting {
+            GyroSetting::Sensitivity(s) => self.sens = s,
+            GyroSetting::Space(s) => self.space = s,
+            GyroSetting::CutoffSpeed(s) => self.cutoff_speed = s,
+            GyroSetting::CutoffRecovery(s) => self.cutoff_recovery = s,
+            GyroSetting::SmoothThreshold(s) => self.smooth_threshold = s,
+            GyroSetting::SmoothTime(s) => self.smooth_time = s,
         }
     }
 }

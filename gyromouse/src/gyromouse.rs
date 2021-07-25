@@ -1,6 +1,8 @@
 use cgmath::{Vector2, Zero};
 use std::collections::VecDeque;
 
+use crate::config::{settings::GyroSettings, types::GyroSetting};
+
 pub struct GyroMouse {
     /// Enables smoothing for slow movements.
     ///
@@ -158,6 +160,26 @@ impl GyroMouse {
             self.acceleration_slow_sens * (1. - factor) + self.acceleration_fast_sens * factor
         } else {
             self.sensitivity
+        }
+    }
+}
+
+impl From<GyroSettings> for GyroMouse {
+    fn from(settings: GyroSettings) -> Self {
+        assert_eq!(settings.cutoff_speed, 0.);
+        Self {
+            apply_smoothing: settings.smooth_threshold != 0.,
+            smooth_threshold: settings.smooth_threshold,
+            // TODO
+            smooth_buffer: [Vector2::zero(); 25].iter().cloned().collect(),
+            apply_tightening: settings.cutoff_recovery != 0.,
+            tightening_threshold: settings.cutoff_recovery,
+            apply_acceleration: settings.slow_sens != 0. || settings.fast_sens != 0.,
+            acceleration_slow_sens: settings.slow_sens,
+            acceleration_slow_threshold: settings.slow_threshold,
+            acceleration_fast_sens: settings.fast_sens,
+            acceleration_fast_threshold: settings.fast_threshold,
+            sensitivity: settings.sens,
         }
     }
 }

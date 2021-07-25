@@ -10,13 +10,15 @@ use hid_gamepad::sys::{JoyKey, KeyStatus, Report};
 
 use crate::{
     calibration::Calibration,
-    config::settings::Settings,
+    config::{settings::Settings, types::GyroSpace},
     diff,
     gyromouse::GyroMouse,
-    joystick::{ButtonStick, FlickStick, Stick},
+    joystick::Stick,
     mapping::{Buttons, ExtAction},
     mouse::Mouse,
-    space_mapper::{self, PlayerSpace, SensorFusion, SimpleFusion, SpaceMapper},
+    space_mapper::{
+        self, LocalSpace, PlayerSpace, SensorFusion, SimpleFusion, SpaceMapper, WorldSpace,
+    },
     ClickType,
 };
 
@@ -34,16 +36,10 @@ impl Engine {
     pub fn new(settings: Settings, buttons: Buttons, calibration: Calibration) -> Self {
         Engine {
             left_stick: settings.new_left_stick(),
-            right_stick: Box::new(FlickStick::default()),
+            right_stick: settings.new_right_stick(),
             buttons,
             mouse: Mouse::new(),
-            gyro: Gyro {
-                enabled: false,
-                calibration,
-                sensor_fusion: Box::new(SimpleFusion::new()),
-                space_mapper: Box::new(PlayerSpace::default()),
-                gyromouse: GyroMouse::d3(),
-            },
+            gyro: Gyro::new(settings, calibration),
             last_keys: EnumMap::default(),
         }
     }
@@ -92,7 +88,7 @@ impl Engine {
     }
 }
 
-struct Gyro {
+pub struct Gyro {
     enabled: bool,
     calibration: Calibration,
     sensor_fusion: Box<dyn SensorFusion>,
@@ -101,6 +97,21 @@ struct Gyro {
 }
 
 impl Gyro {
+    pub fn new(settings: Settings, calibration: Calibration) -> Gyro {
+        Gyro {
+            enabled: true,
+            calibration,
+            sensor_fusion: Box::new(SimpleFusion::new()),
+            space_mapper: match settings.gyro.space {
+                GyroSpace::Local => Box::new(LocalSpace::default()),
+                GyroSpace::WorldTurn => Box::new(WorldSpace::default()),
+                GyroSpace::WorldLean => todo!(),
+                GyroSpace::PlayerTurn => Box::new(PlayerSpace::default()),
+                GyroSpace::PlayerLean => todo!(),
+            },
+            gyromouse: GyroMouse::from(settings.gyro),
+        }
+    }
     fn handle_frame(&mut self, report: Report, mouse: &mut Mouse) {
         const SMOOTH_RATE: bool = false;
         let mut delta_position = Vector2::zero();

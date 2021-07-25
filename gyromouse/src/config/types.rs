@@ -115,7 +115,27 @@ pub enum FlickStickSetting {
 }
 
 #[derive(Debug, Copy, Clone)]
+pub enum GyroSetting {
+    Sensitivity(f64),
+    Space(GyroSpace),
+    CutoffSpeed(f64),
+    CutoffRecovery(f64),
+    SmoothThreshold(f64),
+    SmoothTime(Duration),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum GyroSpace {
+    Local,
+    WorldTurn,
+    WorldLean,
+    PlayerTurn,
+    PlayerLean,
+}
+
+#[derive(Debug, Copy, Clone)]
 pub enum Setting {
+    Gyro(GyroSetting),
     TriggerThreshold(f64),
     ZLMode(TriggerMode),
     ZRMode(TriggerMode),
