@@ -89,6 +89,7 @@ impl Settings {
 #[derive(Debug, Clone)]
 pub struct StickSettings {
     deadzone: f64,
+    fullzone: f64,
     aim_stick: AimStickSettings,
     flick_stick: FlickStickSettings,
 }
@@ -97,6 +98,7 @@ impl Default for StickSettings {
     fn default() -> Self {
         Self {
             deadzone: 0.15,
+            fullzone: 0.9,
             aim_stick: Default::default(),
             flick_stick: Default::default(),
         }
@@ -107,6 +109,7 @@ impl StickSettings {
     fn apply(&mut self, setting: StickSetting) {
         match setting {
             StickSetting::Deadzone(d) => self.deadzone = d,
+            StickSetting::FullZone(d) => self.fullzone = d,
             StickSetting::Aim(s) => self.aim_stick.apply(s),
             StickSetting::Flick(s) => self.flick_stick.apply(s),
         }
@@ -121,7 +124,6 @@ pub struct AimStickSettings {
     invert_y: bool,
     acceleration_rate: f64,
     acceleration_cap: f64,
-    fullzone: f64,
 }
 
 impl Default for AimStickSettings {
@@ -133,7 +135,6 @@ impl Default for AimStickSettings {
             invert_y: false,
             acceleration_rate: 0.,
             acceleration_cap: 1000000.,
-            fullzone: 0.1,
         }
     }
 }
@@ -147,7 +148,6 @@ impl AimStickSettings {
             AimStickSetting::InvertY => self.invert_y = true,
             AimStickSetting::AccelerationRate(s) => self.acceleration_rate = s,
             AimStickSetting::AccelerationCap(s) => self.acceleration_cap = s,
-            AimStickSetting::FullZone(s) => self.fullzone = s,
         }
     }
 }

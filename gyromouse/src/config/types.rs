@@ -93,6 +93,7 @@ pub enum StickMode {
 #[derive(Debug, Copy, Clone)]
 pub enum StickSetting {
     Deadzone(f64),
+    FullZone(f64),
     Aim(AimStickSetting),
     Flick(FlickStickSetting),
 }
@@ -105,7 +106,6 @@ pub enum AimStickSetting {
     InvertY,
     AccelerationRate(f64),
     AccelerationCap(f64),
-    FullZone(f64),
 }
 
 #[derive(Debug, Copy, Clone)]
