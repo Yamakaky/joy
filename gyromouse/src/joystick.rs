@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 use cgmath::{vec2, AbsDiffEq, Angle, Deg, InnerSpace, Rad, Vector2};
 
 use crate::{
-    config::settings::FlickStickSettings,
+    config::{settings::FlickStickSettings, types::RingMode},
     mapping::{Buttons, VirtualKey},
     mouse::Mouse,
 };
@@ -86,6 +86,7 @@ pub struct FlickStick {
     threshold: f64,
     state: FlickStickState,
     do_rotate: bool,
+    do_flick: bool,
 }
 
 impl Default for FlickStick {
@@ -95,6 +96,7 @@ impl Default for FlickStick {
             threshold: 0.6,
             state: FlickStickState::Center,
             do_rotate: true,
+            do_flick: true,
         }
     }
 }
@@ -106,6 +108,7 @@ impl FlickStick {
             threshold,
             state: FlickStickState::Center,
             do_rotate: rotate,
+            do_flick: flick,
         }
     }
 }
@@ -127,10 +130,16 @@ impl Stick for FlickStick {
             }
             FlickStickState::Center => {
                 let target = stick.angle(Vector2::unit_y()).into();
-                self.state = FlickStickState::Flicking {
-                    flick_start: now,
-                    last: Deg(0.),
-                    target,
+                self.state = if self.do_flick {
+                    FlickStickState::Flicking {
+                        flick_start: now,
+                        last: Deg(0.),
+                        target,
+                    }
+                } else {
+                    FlickStickState::Rotating {
+                        old_rotation: target,
+                    }
                 };
                 None
             }
@@ -177,27 +186,27 @@ pub struct ButtonStick {
     fullzone: f64,
     left: bool,
     angle: Deg<f64>,
-    inner_ring: bool,
+    ring_mode: RingMode,
 }
 
 impl ButtonStick {
-    pub fn left(inner_ring: bool) -> Self {
+    pub fn left(ring_mode: RingMode) -> Self {
         Self {
             deadzone: 0.15,
             fullzone: 0.9,
             left: true,
             angle: Deg(30.),
-            inner_ring,
+            ring_mode,
         }
     }
 
-    pub fn right(inner_ring: bool) -> Self {
+    pub fn right(ring_mode: RingMode) -> Self {
         Self {
             deadzone: 0.15,
             fullzone: 0.9,
             left: false,
             angle: Deg(30.),
-            inner_ring,
+            ring_mode,
         }
     }
 }
@@ -230,10 +239,9 @@ impl Stick for ButtonStick {
                 } else {
                     VirtualKey::RRing
                 },
-                if self.inner_ring {
-                    amp_clamped < 1.
-                } else {
-                    amp_clamped >= 1.
+                match self.ring_mode {
+                    RingMode::Inner => amp_clamped < 1.,
+                    RingMode::Outer => amp_clamped >= 1.,
                 },
                 now,
             );

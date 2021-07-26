@@ -5,8 +5,8 @@ use cgmath::Deg;
 use crate::joystick::{ButtonStick, FlickStick, Stick};
 
 use super::types::{
-    AimStickSetting, FlickStickSetting, GyroSetting, GyroSpace, Setting, StickMode, StickSetting,
-    TriggerMode,
+    AimStickSetting, FlickStickSetting, GyroSetting, GyroSpace, RingMode, Setting, StickMode,
+    StickSetting, TriggerMode,
 };
 
 #[derive(Debug, Clone)]
@@ -15,6 +15,8 @@ pub struct Settings {
     pub stick_settings: StickSettings,
     pub left_stick_mode: StickMode,
     pub right_stick_mode: StickMode,
+    pub left_ring_mode: RingMode,
+    pub right_ring_mode: RingMode,
     pub trigger_threshold: f64,
     pub zl_mode: TriggerMode,
     pub zr_mode: TriggerMode,
@@ -27,6 +29,8 @@ impl Default for Settings {
             stick_settings: StickSettings::default(),
             left_stick_mode: StickMode::NoMouse,
             right_stick_mode: StickMode::Aim,
+            left_ring_mode: RingMode::Outer,
+            right_ring_mode: RingMode::Outer,
             trigger_threshold: 0.5,
             zl_mode: TriggerMode::NoFull,
             zr_mode: TriggerMode::NoFull,
@@ -41,6 +45,8 @@ impl Settings {
             Setting::StickSetting(s) => self.stick_settings.apply(s),
             Setting::LeftStickMode(m) => self.left_stick_mode = m,
             Setting::RightStickMode(m) => self.right_stick_mode = m,
+            Setting::LeftRingMode(m) => self.left_ring_mode = m,
+            Setting::RightRingMode(m) => self.right_ring_mode = m,
             Setting::TriggerThreshold(t) => self.trigger_threshold = t,
             Setting::ZLMode(m) => self.zl_mode = m,
             Setting::ZRMode(m) => self.zr_mode = m,
@@ -70,14 +76,11 @@ impl Settings {
             }
             StickMode::MouseRing => todo!(),
             StickMode::MouseArea => todo!(),
-            StickMode::NoMouse => {
-                let inner_ring = todo!();
-                Box::new(if left {
-                    ButtonStick::left(inner_ring)
-                } else {
-                    ButtonStick::right(inner_ring)
-                })
-            }
+            StickMode::NoMouse => Box::new(if left {
+                ButtonStick::left(self.left_ring_mode)
+            } else {
+                ButtonStick::right(self.right_ring_mode)
+            }),
             StickMode::ScrollWheel => todo!(),
         }
     }

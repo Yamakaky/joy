@@ -3,6 +3,7 @@ use std::time::Duration;
 use cgmath::Deg;
 
 use crate::{
+    joystick::Stick,
     mapping::{ExtAction, MapKey},
     ClickType,
 };
@@ -141,6 +142,8 @@ pub enum Setting {
     ZRMode(TriggerMode),
     LeftStickMode(StickMode),
     RightStickMode(StickMode),
+    LeftRingMode(RingMode),
+    RightRingMode(RingMode),
     StickSetting(StickSetting),
 }
 
@@ -150,3 +153,11 @@ pub enum Cmd {
     Special(SpecialKey),
     Setting(Setting),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RingMode {
+    Inner,
+    Outer,
+}
+
+impl dyn Stick {}
