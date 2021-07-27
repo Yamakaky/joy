@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::{settings::Settings, types::*};
 use hid_gamepad::sys::JoyKey;
 use nom::{
@@ -8,12 +10,14 @@ use nom::{
         is_alphanumeric,
     },
     combinator::{all_consuming, map, opt, value},
-    error::context,
+    error::{context, ParseError},
     multi::{separated_list0, separated_list1},
-    IResult,
+    number::complete::float,
+    IResult, Parser,
 };
 
 use crate::{
+    engine::Gyro,
     mapping::{Action, Buttons, Layer, MapKey, VirtualKey},
     ClickType,
 };
@@ -162,7 +166,48 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
 }
 
 fn setting(input: &str) -> IResult<&str, Setting> {
-    alt((stick_mode, trigger_mode))(input)
+    alt((stick_mode, trigger_mode, gyro_setting))(input)
+}
+
+fn f64_setting<'a, Output>(
+    tag: &'static str,
+    value_map: impl Fn(f64) -> Output,
+) -> impl FnMut(&'a str) -> IResult<&'a str, Output> {
+    move |input| {
+        let (input, _) = tag_no_case(tag)(input)?;
+        let (input, _) = equal_with_space(input)?;
+        let (input, val) = float(input)?;
+        Ok((input, value_map(val as f64)))
+    }
+}
+
+fn gyro_setting(input: &str) -> IResult<&str, Setting> {
+    map(
+        alt((
+            f64_setting("GYRO_SENS", GyroSetting::Sensitivity),
+            gyro_space,
+            f64_setting("GYRO_CUTTOFF_SPEED", GyroSetting::CutoffSpeed),
+            f64_setting("GYRO_CUTTOFF_RECOVERY", GyroSetting::CutoffRecovery),
+            f64_setting("GYRO_SMOOTH_THRESHOLD", GyroSetting::SmoothThreshold),
+            f64_setting("GYRO_SMOOTH_TIME", |secs| {
+                GyroSetting::SmoothTime(Duration::from_secs_f64(secs))
+            }),
+        )),
+        Setting::Gyro,
+    )(input)
+}
+
+fn gyro_space(input: &str) -> IResult<&str, GyroSetting> {
+    let (input, _) = tag_no_case("GYRO_SPACE")(input)?;
+    let (input, _) = equal_with_space(input)?;
+    let (input, space) = alt((
+        value(GyroSpace::Local, tag_no_case("LOCAL")),
+        value(GyroSpace::WorldTurn, tag_no_case("WORLD_TURN")),
+        value(GyroSpace::WorldLean, tag_no_case("WORLD_LEAN")),
+        value(GyroSpace::PlayerTurn, tag_no_case("PLAYER_TURN")),
+        value(GyroSpace::PlayerLean, tag_no_case("PLAYER_LEAN")),
+    ))(input)?;
+    Ok((input, GyroSetting::Space(space)))
 }
 
 fn stick_mode(input: &str) -> IResult<&str, Setting> {
