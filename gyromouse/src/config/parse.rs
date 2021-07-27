@@ -10,14 +10,13 @@ use nom::{
         is_alphanumeric,
     },
     combinator::{all_consuming, map, opt, value},
-    error::{context, ParseError},
+    error::context,
     multi::{separated_list0, separated_list1},
     number::complete::float,
-    IResult, Parser,
+    IResult,
 };
 
 use crate::{
-    engine::Gyro,
     mapping::{Action, Buttons, Layer, MapKey, VirtualKey},
     ClickType,
 };
@@ -166,7 +165,12 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
 }
 
 fn setting(input: &str) -> IResult<&str, Setting> {
-    alt((stick_mode, trigger_mode, gyro_setting))(input)
+    alt((
+        stick_mode,
+        f64_setting("TRIGGER_THRESHOLD", Setting::TriggerThreshold),
+        trigger_mode,
+        gyro_setting,
+    ))(input)
 }
 
 fn f64_setting<'a, Output>(
@@ -185,6 +189,10 @@ fn gyro_setting(input: &str) -> IResult<&str, Setting> {
     map(
         alt((
             f64_setting("GYRO_SENS", GyroSetting::Sensitivity),
+            f64_setting("MIN_GYRO_SENS", GyroSetting::MinSens),
+            f64_setting("MIN_GYRO_THRESHOLD", GyroSetting::MinThreshold),
+            f64_setting("MAX_GYRO_SENS", GyroSetting::MaxSens),
+            f64_setting("MAX_GYRO_THRESHOLD", GyroSetting::MaxThreshold),
             gyro_space,
             f64_setting("GYRO_CUTTOFF_SPEED", GyroSetting::CutoffSpeed),
             f64_setting("GYRO_CUTTOFF_RECOVERY", GyroSetting::CutoffRecovery),

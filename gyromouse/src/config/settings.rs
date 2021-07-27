@@ -214,6 +214,10 @@ impl GyroSettings {
     fn apply(&mut self, setting: GyroSetting) {
         match setting {
             GyroSetting::Sensitivity(s) => self.sens = s,
+            GyroSetting::MinSens(s) => self.slow_sens = s,
+            GyroSetting::MinThreshold(s) => self.slow_threshold = s,
+            GyroSetting::MaxSens(s) => self.fast_sens = s,
+            GyroSetting::MaxThreshold(s) => self.fast_threshold = s,
             GyroSetting::Space(s) => self.space = s,
             GyroSetting::CutoffSpeed(s) => self.cutoff_speed = s,
             GyroSetting::CutoffRecovery(s) => self.cutoff_recovery = s,

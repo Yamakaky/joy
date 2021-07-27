@@ -118,6 +118,10 @@ pub enum FlickStickSetting {
 #[derive(Debug, Copy, Clone)]
 pub enum GyroSetting {
     Sensitivity(f64),
+    MinSens(f64),
+    MinThreshold(f64),
+    MaxSens(f64),
+    MaxThreshold(f64),
     Space(GyroSpace),
     CutoffSpeed(f64),
     CutoffRecovery(f64),
