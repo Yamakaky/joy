@@ -37,11 +37,11 @@ jobs:
         if: matrix.platform == 'linux'
         run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
 
-      - name: 🔨 Build
+      - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --workspace --verbose
+          args: --release --verbose --bin gyromouse --all-features
 
       - name: ⚙️ Run tests
         uses: actions-rs/cargo@v1
