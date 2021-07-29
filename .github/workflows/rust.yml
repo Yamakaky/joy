@@ -53,7 +53,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: vcpkg
-          args: build --manifest-path gyromouse/Cargo.toml
+          args: --verbose build --manifest-path gyromouse/Cargo.toml
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
         with:
