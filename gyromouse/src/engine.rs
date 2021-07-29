@@ -3,10 +3,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cgmath::{vec3, Deg, Euler, Vector2, Zero};
+use cgmath::{vec3, Deg, Euler, Vector2, Vector3, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
-use hid_gamepad::sys::{JoyKey, KeyStatus, Report};
+use hid_gamepad::sys::{JoyKey, KeyStatus, Motion, Report};
 
 use crate::{
     calibration::Calibration,
@@ -50,22 +50,14 @@ impl Engine {
         diff(&mut self.buttons, now, &self.last_keys, &report.keys);
         self.last_keys = report.keys;
 
-        self.left_stick.handle(
-            report.left_joystick,
-            &mut self.buttons,
-            &mut self.mouse,
-            now,
-        );
-        self.right_stick.handle(
-            report.right_joystick,
-            &mut self.buttons,
-            &mut self.mouse,
-            now,
-        );
+        self.handle_left_stick(report.left_joystick, now);
+        self.handle_right_stick(report.right_joystick, now);
 
         self.apply_actions(now);
 
-        self.gyro.handle_frame(report, &mut self.mouse);
+        // dt of the entire report time
+        let dt = Duration::from_secs_f64(1. / report.frequency as f64 * report.motion.len() as f64);
+        self.gyro.handle_frame(&report.motion, &mut self.mouse, dt);
         Ok(())
     }
 
@@ -104,6 +96,17 @@ impl Engine {
             }
         }
     }
+
+    pub fn apply_motion(&mut self, gyro: Vector3<f64>, acc: Vector3<f64>, dt: Duration) {
+        self.gyro.handle_frame(
+            &[Motion {
+                rotation_speed: Euler::new(Deg(gyro.x), Deg(gyro.y), Deg(gyro.z)),
+                acceleration: acc,
+            }],
+            &mut self.mouse,
+            dt,
+        )
+    }
 }
 
 pub struct Gyro {
@@ -130,11 +133,11 @@ impl Gyro {
             gyromouse: GyroMouse::from(settings.gyro),
         }
     }
-    fn handle_frame(&mut self, report: Report, mouse: &mut Mouse) {
+    pub fn handle_frame(&mut self, motions: &[Motion], mouse: &mut Mouse, dt: Duration) {
         const SMOOTH_RATE: bool = false;
         let mut delta_position = Vector2::zero();
-        let dt = 1. / report.frequency as f64;
-        for (i, mut frame) in report.motion.into_iter().enumerate() {
+        let dt = dt.as_secs_f64() / motions.len() as f64;
+        for (i, mut frame) in motions.iter().cloned().enumerate() {
             let raw_rot = vec3(
                 frame.rotation_speed.x.0,
                 frame.rotation_speed.y.0,
@@ -147,8 +150,7 @@ impl Gyro {
                 dt,
                 self.sensor_fusion.deref_mut(),
                 self.space_mapper.deref_mut(),
-            ) * 360.
-                * 20.;
+            );
             let offset = self.gyromouse.process(delta, dt);
             delta_position += offset;
             if self.enabled && !SMOOTH_RATE {

@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::Context;
-use cgmath::vec2;
+use cgmath::{vec2, vec3, Vector3};
 use hid_gamepad::sys::JoyKey;
 use sdl2::{
     self,
@@ -15,7 +15,6 @@ use sdl2::{
     event::Event,
     keyboard::Keycode,
     sensor::SensorType,
-    GameControllerSubsystem,
 };
 
 use crate::{
@@ -38,8 +37,12 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
 
     let mut controllers = HashMap::new();
 
+    let mut last_tick = Instant::now();
+
     'running: loop {
         let now = Instant::now();
+        let dt = now.duration_since(last_tick);
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -65,8 +68,8 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
                     };
                     config::parse::parse_file(&content, &mut settings, &mut bindings).unwrap();
 
-                    let mut calibration = Calibration::with_capacity(250 * 60);
-                    let mut engine = Engine::new(settings, bindings, calibration);
+                    let calibration = Calibration::with_capacity(250 * 60);
+                    let engine = Engine::new(settings, bindings, calibration);
                     controllers.insert(which, ControllerState { controller, engine });
                 }
                 Event::ControllerDeviceRemoved { which, .. } => {
@@ -97,6 +100,7 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
 
         for controller in controllers.values_mut() {
             let c = &mut controller.controller;
+            let engine = &mut controller.engine;
             let left = vec2(c.axis(Axis::LeftX), c.axis(Axis::LeftY))
                 .cast::<f64>()
                 .unwrap()
@@ -105,24 +109,26 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
                 .cast::<f64>()
                 .unwrap()
                 / (i16::MAX as f64);
-            controller.engine.handle_left_stick(left, now);
-            controller.engine.handle_right_stick(right, now);
+            engine.handle_left_stick(left, now);
+            engine.handle_right_stick(right, now);
             if c.sensor_enabled(SensorType::Accelerometer)
                 && c.sensor_enabled(SensorType::Gyroscope)
             {
                 let mut accel = [0.; 3];
-                controller
-                    .controller
-                    .sensor_get_data(SensorType::Accelerometer, &mut accel)?;
+                c.sensor_get_data(SensorType::Accelerometer, &mut accel)?;
+                let accel = Vector3::from(accel).cast::<f64>().unwrap() / 9.82;
                 let mut gyro = [0.; 3];
-                controller
-                    .controller
-                    .sensor_get_data(SensorType::Gyroscope, &mut gyro)?;
-                dbg!(accel);
+                c.sensor_get_data(SensorType::Gyroscope, &mut gyro)?;
+                let gyro = vec3(gyro[0] as f64, gyro[1] as f64, gyro[2] as f64)
+                    / std::f64::consts::PI
+                    * 180.;
+
+                engine.apply_motion(gyro, accel, dt);
             }
-            controller.engine.apply_actions(now);
+            engine.apply_actions(now);
         }
 
+        last_tick = now;
         sleep(Duration::from_millis(1));
     }
 

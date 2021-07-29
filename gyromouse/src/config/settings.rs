@@ -197,7 +197,7 @@ impl Default for GyroSettings {
     fn default() -> Self {
         Self {
             sens: 1.,
-            space: GyroSpace::Local,
+            space: GyroSpace::PlayerTurn,
             cutoff_speed: 0.,
             cutoff_recovery: 0.,
             smooth_threshold: 0.,
