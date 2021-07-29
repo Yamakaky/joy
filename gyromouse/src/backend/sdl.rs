@@ -22,12 +22,12 @@ use crate::{
     config::{self, settings::Settings},
     engine::Engine,
     mapping::Buttons,
-    opts::Opts,
+    opts::{Cmd, Opts},
 };
 
 pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
-    let opts = match opts {
-        Opts::Run(r) => r,
+    let opts = match opts.cmd {
+        Cmd::Run(ref r) => r,
         _ => todo!(),
     };
     let sdl = sdl2::init().unwrap();

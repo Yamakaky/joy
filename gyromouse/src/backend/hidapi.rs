@@ -5,7 +5,7 @@ use crate::{
     config::{self, settings::Settings},
     engine::Engine,
     mapping::Buttons,
-    opts::{Opts, Run},
+    opts::{Cmd, Opts, Run},
 };
 
 use anyhow::Context;
@@ -23,8 +23,8 @@ use nom::{error::convert_error, Err};
 
 pub fn hidapi_main(opts: &Opts) -> anyhow::Result<()> {
     let mut api = HidApi::new()?;
-    match opts {
-        Opts::Validate(run) => {
+    match opts.cmd {
+        Cmd::Validate(ref run) => {
             let mut settings = Settings::default();
             let mut bindings = Buttons::new();
             let mut content_file = File::open(&run.mapping_file)
@@ -42,7 +42,7 @@ pub fn hidapi_main(opts: &Opts) -> anyhow::Result<()> {
                 Err(_) => unimplemented!(),
             }
         }
-        Opts::List => {
+        Cmd::List => {
             println!("Listing gamepads:");
             for device_info in api.device_list() {
                 if hid_gamepad::open_gamepad(&api, device_info)?.is_some() {
@@ -50,7 +50,7 @@ pub fn hidapi_main(opts: &Opts) -> anyhow::Result<()> {
                 }
             }
         }
-        Opts::Run(run) => loop {
+        Cmd::Run(ref run) => loop {
             for device_info in api.device_list() {
                 if let Some(mut gamepad) = hid_gamepad::open_gamepad(&api, device_info)? {
                     return hid_main(gamepad.as_mut(), &run);
@@ -59,7 +59,7 @@ pub fn hidapi_main(opts: &Opts) -> anyhow::Result<()> {
             std::thread::sleep(std::time::Duration::from_secs(1));
             api.refresh_devices()?;
         },
-        Opts::FlickCalibrate => {
+        Cmd::FlickCalibrate => {
             todo!()
         }
     }

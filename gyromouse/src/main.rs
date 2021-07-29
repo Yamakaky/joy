@@ -9,12 +9,7 @@ mod mouse;
 mod opts;
 mod space_mapper;
 
-use std::time::Instant;
-
 use clap::Clap;
-use enum_map::EnumMap;
-use hid_gamepad::sys::{JoyKey, KeyStatus};
-use mapping::Buttons;
 use opts::Opts;
 
 #[derive(Debug, Copy, Clone)]
@@ -38,8 +33,16 @@ impl ClickType {
 
 fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
-    #[cfg(feature = "sdl")]
-    return backend::sdl::sdl_main(&opts);
-    #[cfg(feature = "hidapi")]
-    return backend::hidapi::hidapi_main(&opts);
+
+    #[allow(unreachable_patterns)]
+    match opts.backend {
+        #[cfg(feature = "sdl")]
+        Some(opts::Backend::Sdl) | None => backend::sdl::sdl_main(&opts),
+        #[cfg(feature = "hidapi")]
+        Some(opts::Backend::Hid) | None => backend::hidapi::hidapi_main(&opts),
+        None => {
+            println!("A backend must be enabled");
+            Ok(())
+        }
+    }
 }
