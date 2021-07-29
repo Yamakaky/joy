@@ -31,7 +31,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v4-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v5-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install cargo-vcpkg
         uses: actions-rs/install@v0.1
@@ -53,7 +53,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: vcpkg
-          args: build
+          args: build --manifest-path gyromouse/Cargo.toml
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
         with:
