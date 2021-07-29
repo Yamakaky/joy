@@ -18,4 +18,4 @@ enum-map = "0.6"
 hid-gamepad = { path = "../hid-gamepad", optional = true }
 joycon = { path = "../joycon", optional = true }
 nom = "6.0"
-sdl2 = { path = "../../rust-sdl2", optional = true }
+sdl2 = { git = "https://github.com/Yamakaky/rust-sdl2", branch = "sensor-api", optional = true }
