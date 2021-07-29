@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, time::Instant};
+use std::{fs::File, io::Read};
 
 use crate::{
     calibration::Calibration,
@@ -10,9 +10,7 @@ use crate::{
 
 use anyhow::Context;
 use cgmath::vec3;
-use clap::Clap;
-use enum_map::EnumMap;
-use hid_gamepad::sys::{GamepadDevice, JoyKey, KeyStatus};
+use hid_gamepad::sys::GamepadDevice;
 use joycon::{
     hidapi::HidApi,
     joycon_sys::{

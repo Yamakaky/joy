@@ -1,7 +1,7 @@
 use cgmath::{Vector2, Zero};
 use std::collections::VecDeque;
 
-use crate::config::{settings::GyroSettings, types::GyroSetting};
+use crate::config::settings::GyroSettings;
 
 pub struct GyroMouse {
     /// Enables smoothing for slow movements.
