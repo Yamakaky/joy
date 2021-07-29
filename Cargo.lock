@@ -1123,6 +1123,7 @@ dependencies = [
  "enum-map",
  "hid-gamepad",
  "hid-gamepad-sys",
+ "joycon",
  "nom 6.2.1",
  "sdl2",
 ]

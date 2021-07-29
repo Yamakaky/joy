@@ -6,7 +6,7 @@ edition = "2018"
 
 [features]
 all-backends = ["sdl2", "hidapi"]
-hidapi = ["hid-gamepad"]
+hidapi = ["hid-gamepad", "joycon"]
 sdl2-static = ["sdl2", "sdl2/static-link", "sdl2/use-vcpkg"]
 
 [dependencies]
@@ -18,6 +18,7 @@ enigo = "0.0"
 enum-map = "0.6"
 hid-gamepad-sys = { path = "../hid-gamepad-sys" }
 hid-gamepad = { path = "../hid-gamepad", optional = true }
+joycon = { path = "../joycon", optional = true }
 nom = "6.0"
 
 [dependencies.sdl2]
