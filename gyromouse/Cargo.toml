@@ -7,6 +7,7 @@ edition = "2018"
 [features]
 hidapi = ["hid-gamepad", "joycon"]
 sdl = ["sdl2"]
+sdl-static = ["sdl", "sdl2/static-link", "sdl2/use-vcpkg"]
 
 [dependencies]
 anyhow = "1.0"
@@ -18,4 +19,17 @@ enum-map = "0.6"
 hid-gamepad = { path = "../hid-gamepad", optional = true }
 joycon = { path = "../joycon", optional = true }
 nom = "6.0"
-sdl2 = { git = "https://github.com/Yamakaky/rust-sdl2", branch = "sensor-api", optional = true }
+
+[dependencies.sdl2]
+git = "https://github.com/Yamakaky/rust-sdl2"
+branch = "sensor-api"
+optional = true 
+default-features = false
+
+[package.metadata.vcpkg]
+dependencies = ["sdl2", "sdl2-image[libjpeg-turbo,tiff,libwebp]", "sdl2-ttf", "sdl2-gfx", "sdl2-mixer"]
+git = "https://github.com/microsoft/vcpkg"
+rev = "a267ab118c09f56f3dae96c9a4b3410820ad2f0b"
+
+[package.metadata.vcpkg.target]
+x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }

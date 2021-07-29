@@ -33,10 +33,27 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-v4-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: ⚙️ Install cargo-vcpkg
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-vcpkg
+          version: latest
+          use-tool-cache: true
+      # Ubuntu build deps for SDL
+      # https://hg.libsdl.org/SDL/file/default/docs/README-linux.md
+      - name: ⚙️ Install SDL dependencies
+        if: matrix.platform == 'linux'
+        run: sudo apt-get update && sudo apt-get install build-essential mercurial make cmake autoconf automake libtool libasound2-dev libpulse-dev libaudio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libxxf86vm-dev libxss-dev libgl1-mesa-dev libdbus-1-dev libudev-dev libgles2-mesa-dev libegl1-mesa-dev libibus-1.0-dev fcitx-libs-dev libsamplerate0-dev libwayland-dev libxkbcommon-dev
+
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
         run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
 
+      - name: 🔨 Build SDL
+        uses: actions-rs/cargo@v1
+        with:
+          command: vcpkg
+          args: build
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
         with:
