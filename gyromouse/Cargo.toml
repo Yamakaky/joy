@@ -4,7 +4,9 @@ version = "0.1.0"
 authors = ["Mikaël Fourrier <mikael.fourrier@pm.me>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+hidapi = ["hid-gamepad", "joycon"]
+sdl = ["sdl2"]
 
 [dependencies]
 anyhow = "1.0"
@@ -13,6 +15,7 @@ clap = "3.0.0-beta.2"
 enigo = "0.0"
 # see https://gitlab.com/KonradBorowski/enum-map/-/issues/20
 enum-map = "0.6"
-hid-gamepad = { path = "../hid-gamepad" }
-joycon = { path = "../joycon" }
+hid-gamepad = { path = "../hid-gamepad", optional = true }
+joycon = { path = "../joycon", optional = true }
 nom = "6.0"
+sdl2 = { version = "0.34", optional = true }

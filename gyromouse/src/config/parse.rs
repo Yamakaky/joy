@@ -10,7 +10,7 @@ use nom::{
         is_alphanumeric,
     },
     combinator::{all_consuming, map, opt, value},
-    error::context,
+    error::{context, VerboseError},
     multi::{separated_list0, separated_list1},
     number::complete::float,
     IResult,

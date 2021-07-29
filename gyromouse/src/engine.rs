@@ -8,19 +8,9 @@ use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use hid_gamepad::sys::{JoyKey, KeyStatus, Report};
 
-use crate::{
-    calibration::Calibration,
-    config::{settings::Settings, types::GyroSpace},
-    diff,
-    gyromouse::GyroMouse,
-    joystick::Stick,
-    mapping::{Buttons, ExtAction},
-    mouse::Mouse,
-    space_mapper::{
+use crate::{ClickType, calibration::Calibration, config::{settings::Settings, types::GyroSpace}, diff, gyromouse::GyroMouse, joystick::Stick, mapping::{Buttons, ExtAction}, mouse::Mouse, space_mapper::{
         self, LocalSpace, PlayerSpace, SensorFusion, SimpleFusion, SpaceMapper, WorldSpace,
-    },
-    ClickType,
-};
+    }};
 
 pub struct Engine {
     left_stick: Box<dyn Stick>,
