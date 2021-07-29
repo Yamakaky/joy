@@ -1,5 +1,5 @@
 use cgmath::{vec2, vec3, Deg, Euler, InnerSpace, Quaternion, Rotation, Vector2, Vector3};
-use hid_gamepad::sys::Motion;
+use hid_gamepad_sys::Motion;
 
 pub fn map_input(
     motion: &Motion,

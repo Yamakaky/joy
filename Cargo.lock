@@ -1122,7 +1122,7 @@ dependencies = [
  "enigo",
  "enum-map",
  "hid-gamepad",
- "joycon",
+ "hid-gamepad-sys",
  "nom 6.2.1",
  "sdl2",
 ]

@@ -1,6 +1,6 @@
 use enigo::{Key, MouseButton};
 use enum_map::{Enum, EnumMap};
-use hid_gamepad::sys::JoyKey;
+use hid_gamepad_sys::JoyKey;
 use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
 

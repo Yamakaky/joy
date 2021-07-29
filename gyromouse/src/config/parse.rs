@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::{settings::Settings, types::*};
-use hid_gamepad::sys::JoyKey;
+use hid_gamepad_sys::JoyKey;
 use nom::{
     branch::alt,
     bytes::complete::{tag, tag_no_case},

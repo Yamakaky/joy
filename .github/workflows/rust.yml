@@ -60,12 +60,11 @@ jobs:
           command: build
           args: --release --verbose --bin gyromouse --all-features
 
-      # TODO: re-add
-      #- name: ⚙️ Run tests
-      #  uses: actions-rs/cargo@v1
-      #  with:
-      #    command: test
-      #    args: --workspace --verbose
+      - name: ⚙️ Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --verbose
 
       - name: 🔨 Rename binaries
         if: matrix.platform != 'windows'

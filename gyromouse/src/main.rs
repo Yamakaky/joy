@@ -36,11 +36,11 @@ fn main() -> anyhow::Result<()> {
 
     #[allow(unreachable_patterns)]
     match opts.backend {
-        #[cfg(feature = "sdl")]
+        #[cfg(feature = "sdl2")]
         Some(opts::Backend::Sdl) | None => backend::sdl::sdl_main(&opts),
         #[cfg(feature = "hidapi")]
         Some(opts::Backend::Hid) | None => backend::hidapi::hidapi_main(&opts),
-        None => {
+        Some(_) | None => {
             println!("A backend must be enabled");
             Ok(())
         }

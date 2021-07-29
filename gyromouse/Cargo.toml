@@ -5,9 +5,9 @@ authors = ["Mikaël Fourrier <mikael.fourrier@pm.me>"]
 edition = "2018"
 
 [features]
-hidapi = ["hid-gamepad", "joycon"]
-sdl = ["sdl2"]
-sdl-static = ["sdl", "sdl2/static-link", "sdl2/use-vcpkg"]
+all-backends = ["sdl2", "hidapi"]
+hidapi = ["hid-gamepad"]
+sdl2-static = ["sdl2", "sdl2/static-link", "sdl2/use-vcpkg"]
 
 [dependencies]
 anyhow = "1.0"
@@ -16,8 +16,8 @@ clap = "3.0.0-beta.2"
 enigo = "0.0"
 # see https://gitlab.com/KonradBorowski/enum-map/-/issues/20
 enum-map = "0.6"
+hid-gamepad-sys = { path = "../hid-gamepad-sys" }
 hid-gamepad = { path = "../hid-gamepad", optional = true }
-joycon = { path = "../joycon", optional = true }
 nom = "6.0"
 
 [dependencies.sdl2]

@@ -12,7 +12,7 @@ pub struct Opts {
 
 #[derive(Debug, Clap)]
 pub enum Backend {
-    #[cfg(feature = "sdl")]
+    #[cfg(feature = "sdl2")]
     Sdl,
     #[cfg(feature = "hidapi")]
     Hid,
@@ -36,7 +36,7 @@ impl FromStr for Backend {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            #[cfg(feature = "sdl")]
+            #[cfg(feature = "sdl2")]
             "sdl" => Ok(Backend::Sdl),
             #[cfg(feature = "hidapi")]
             "hid" => Ok(Backend::Hid),
