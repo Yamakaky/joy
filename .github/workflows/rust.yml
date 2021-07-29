@@ -26,12 +26,11 @@ jobs:
         id: cache
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v5-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v6-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install cargo-vcpkg
         uses: actions-rs/install@v0.1
