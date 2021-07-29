@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ActionModifier",""],["ActionType",""],["AimStickSetting",""],["Cmd",""],["EventModifier",""],["FlickStickSetting",""],["GyroSetting",""],["GyroSpace",""],["Key",""],["RingMode",""],["Setting",""],["SpecialKey",""],["StickMode",""],["StickSetting",""],["TriggerMode",""]],"struct":[["JSMAction",""]]});
