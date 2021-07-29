@@ -21,6 +21,8 @@ use crate::{
     ClickType,
 };
 
+type IRes<I, O> = IResult<I, O, VerboseError<I>>;
+
 fn convert_action_mod(
     action: &JSMAction,
     action_mod: Option<ActionModifier>,
@@ -87,7 +89,7 @@ pub fn parse_file<'a>(
     content: &'a str,
     settings: &mut Settings,
     mapping: &mut Buttons,
-) -> IResult<&'a str, ()> {
+) -> IRes<&'a str, ()> {
     for cmd in jsm_parse(content)?.1 {
         match cmd {
             Cmd::Map(Key::Simple(key), ref actions) => map_key(mapping.get(key, 0), actions),
@@ -105,11 +107,11 @@ pub fn parse_file<'a>(
     Ok(("", ()))
 }
 
-fn keys(input: &str) -> IResult<&str, Key> {
-    fn simple(input: &str) -> IResult<&str, Key> {
+fn keys(input: &str) -> IRes<&str, Key> {
+    fn simple(input: &str) -> IRes<&str, Key> {
         mapkey(input).map(|(i, k)| (i, Key::Simple(k)))
     }
-    fn simul(input: &str) -> IResult<&str, Key> {
+    fn simul(input: &str) -> IRes<&str, Key> {
         let (input, k1) = mapkey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag("+")(input)?;
@@ -117,7 +119,7 @@ fn keys(input: &str) -> IResult<&str, Key> {
         let (input, k2) = mapkey(input)?;
         Ok((input, Key::Simul(k1, k2)))
     }
-    fn chorded(input: &str) -> IResult<&str, Key> {
+    fn chorded(input: &str) -> IRes<&str, Key> {
         let (input, k1) = mapkey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag(",")(input)?;
@@ -128,7 +130,7 @@ fn keys(input: &str) -> IResult<&str, Key> {
     alt((simul, chorded, simple))(input)
 }
 
-fn action(input: &str) -> IResult<&str, JSMAction> {
+fn action(input: &str) -> IRes<&str, JSMAction> {
     let (input, action_mod) = opt(alt((
         value(ActionModifier::Toggle, tag("^")),
         value(ActionModifier::Instant, tag("!")),
@@ -155,7 +157,7 @@ fn action(input: &str) -> IResult<&str, JSMAction> {
     ))
 }
 
-fn binding(input: &str) -> IResult<&str, Cmd> {
+fn binding(input: &str) -> IRes<&str, Cmd> {
     let (input, key) = keys(input)?;
     let (input, _) = space0(input)?;
     let (input, _) = tag("=")(input)?;
@@ -164,7 +166,7 @@ fn binding(input: &str) -> IResult<&str, Cmd> {
     Ok((input, Cmd::Map(key, actions)))
 }
 
-fn setting(input: &str) -> IResult<&str, Setting> {
+fn setting(input: &str) -> IRes<&str, Setting> {
     alt((
         stick_mode,
         f64_setting("TRIGGER_THRESHOLD", Setting::TriggerThreshold),
@@ -176,7 +178,7 @@ fn setting(input: &str) -> IResult<&str, Setting> {
 fn f64_setting<'a, Output>(
     tag: &'static str,
     value_map: impl Fn(f64) -> Output,
-) -> impl FnMut(&'a str) -> IResult<&'a str, Output> {
+) -> impl FnMut(&'a str) -> IRes<&'a str, Output> {
     move |input| {
         let (input, _) = tag_no_case(tag)(input)?;
         let (input, _) = equal_with_space(input)?;
@@ -185,7 +187,7 @@ fn f64_setting<'a, Output>(
     }
 }
 
-fn gyro_setting(input: &str) -> IResult<&str, Setting> {
+fn gyro_setting(input: &str) -> IRes<&str, Setting> {
     map(
         alt((
             f64_setting("GYRO_SENS", GyroSetting::Sensitivity),
@@ -205,7 +207,7 @@ fn gyro_setting(input: &str) -> IResult<&str, Setting> {
     )(input)
 }
 
-fn gyro_space(input: &str) -> IResult<&str, GyroSetting> {
+fn gyro_space(input: &str) -> IRes<&str, GyroSetting> {
     let (input, _) = tag_no_case("GYRO_SPACE")(input)?;
     let (input, _) = equal_with_space(input)?;
     let (input, space) = alt((
@@ -218,7 +220,7 @@ fn gyro_space(input: &str) -> IResult<&str, GyroSetting> {
     Ok((input, GyroSetting::Space(space)))
 }
 
-fn stick_mode(input: &str) -> IResult<&str, Setting> {
+fn stick_mode(input: &str) -> IRes<&str, Setting> {
     let (input, key) = alt((
         tag_no_case("LEFT_STICK_MODE"),
         tag_no_case("RIGHT_STICK_MODE"),
@@ -241,7 +243,7 @@ fn stick_mode(input: &str) -> IResult<&str, Setting> {
     }
 }
 
-fn trigger_mode(input: &str) -> IResult<&str, Setting> {
+fn trigger_mode(input: &str) -> IRes<&str, Setting> {
     let (input, key) = alt((tag_no_case("ZL_MODE"), tag_no_case("ZR_MODE")))(input)?;
     let (input, _) = equal_with_space(input)?;
     let (input, mode) = alt((
@@ -263,14 +265,14 @@ fn trigger_mode(input: &str) -> IResult<&str, Setting> {
     }
 }
 
-fn equal_with_space(input: &str) -> IResult<&str, ()> {
+fn equal_with_space(input: &str) -> IRes<&str, ()> {
     let (input, _) = space0(input)?;
     let (input, _) = tag("=")(input)?;
     let (input, _) = space0(input)?;
     Ok((input, ()))
 }
 
-fn cmd(input: &str) -> IResult<&str, Cmd> {
+fn cmd(input: &str) -> IRes<&str, Cmd> {
     alt((
         binding,
         map(special, Cmd::Special),
@@ -278,13 +280,13 @@ fn cmd(input: &str) -> IResult<&str, Cmd> {
     ))(input)
 }
 
-fn comment(input: &str) -> IResult<&str, ()> {
+fn comment(input: &str) -> IRes<&str, ()> {
     let (input, _) = tag("#")(input)?;
     let (input, _) = not_line_ending(input)?;
     Ok((input, ()))
 }
 
-fn line(input: &str) -> IResult<&str, Option<Cmd>> {
+fn line(input: &str) -> IRes<&str, Option<Cmd>> {
     let (input, _) = space0(input)?;
     let (input, cmd) = opt(cmd)(input)?;
     let (input, _) = space0(input)?;
@@ -292,17 +294,17 @@ fn line(input: &str) -> IResult<&str, Option<Cmd>> {
     Ok((input, cmd))
 }
 
-pub fn jsm_parse(input: &str) -> IResult<&str, Vec<Cmd>> {
+pub fn jsm_parse(input: &str) -> IRes<&str, Vec<Cmd>> {
     let (input, cmds) =
         all_consuming(separated_list0(newline, context("parse line", line)))(input)?;
     Ok((input, cmds.into_iter().flat_map(|x| x).collect()))
 }
 
-fn mapkey(input: &str) -> IResult<&str, MapKey> {
+fn mapkey(input: &str) -> IRes<&str, MapKey> {
     alt((map(virtkey, MapKey::from), map(joykey, MapKey::from)))(input)
 }
 
-fn joykey(input: &str) -> IResult<&str, JoyKey> {
+fn joykey(input: &str) -> IRes<&str, JoyKey> {
     alt((
         alt((
             value(JoyKey::Up, tag_no_case("Up")),
@@ -331,7 +333,7 @@ fn joykey(input: &str) -> IResult<&str, JoyKey> {
     ))(input)
 }
 
-fn virtkey(input: &str) -> IResult<&str, VirtualKey> {
+fn virtkey(input: &str) -> IRes<&str, VirtualKey> {
     alt((
         value(VirtualKey::LUp, tag_no_case("LUp")),
         value(VirtualKey::LDown, tag_no_case("LDown")),
@@ -346,7 +348,7 @@ fn virtkey(input: &str) -> IResult<&str, VirtualKey> {
     ))(input)
 }
 
-fn keyboardkey(input: &str) -> IResult<&str, enigo::Key> {
+fn keyboardkey(input: &str) -> IRes<&str, enigo::Key> {
     use enigo::Key::*;
     let char_parse =
         |input| satisfy(|c| is_alphanumeric(c as u8))(input).map(|(i, x)| (i, Layout(x)));
@@ -392,7 +394,7 @@ fn keyboardkey(input: &str) -> IResult<&str, enigo::Key> {
     ))(input)
 }
 
-fn mousekey(input: &str) -> IResult<&str, enigo::MouseButton> {
+fn mousekey(input: &str) -> IRes<&str, enigo::MouseButton> {
     use enigo::MouseButton::*;
     let key_parse = |key, tag| value(key, tag_no_case(tag));
     alt((
@@ -406,7 +408,7 @@ fn mousekey(input: &str) -> IResult<&str, enigo::MouseButton> {
     ))(input)
 }
 
-fn special(input: &str) -> IResult<&str, SpecialKey> {
+fn special(input: &str) -> IRes<&str, SpecialKey> {
     use SpecialKey::*;
     let parse = |key, tag| value(key, tag_no_case(tag));
     alt((
