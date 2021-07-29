@@ -8,9 +8,19 @@ use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
 use hid_gamepad::sys::{JoyKey, KeyStatus, Report};
 
-use crate::{ClickType, calibration::Calibration, config::{settings::Settings, types::GyroSpace}, diff, gyromouse::GyroMouse, joystick::Stick, mapping::{Buttons, ExtAction}, mouse::Mouse, space_mapper::{
+use crate::{
+    calibration::Calibration,
+    config::{settings::Settings, types::GyroSpace},
+    diff,
+    gyromouse::GyroMouse,
+    joystick::Stick,
+    mapping::{Buttons, ExtAction},
+    mouse::Mouse,
+    space_mapper::{
         self, LocalSpace, PlayerSpace, SensorFusion, SimpleFusion, SpaceMapper, WorldSpace,
-    }};
+    },
+    ClickType,
+};
 
 pub struct Engine {
     left_stick: Box<dyn Stick>,
@@ -40,6 +50,40 @@ impl Engine {
         diff(&mut self.buttons, now, &self.last_keys, &report.keys);
         self.last_keys = report.keys;
 
+        self.left_stick.handle(
+            report.left_joystick,
+            &mut self.buttons,
+            &mut self.mouse,
+            now,
+        );
+        self.right_stick.handle(
+            report.right_joystick,
+            &mut self.buttons,
+            &mut self.mouse,
+            now,
+        );
+
+        self.apply_actions(now);
+
+        self.gyro.handle_frame(report, &mut self.mouse);
+        Ok(())
+    }
+
+    pub fn buttons(&mut self) -> &mut Buttons {
+        &mut self.buttons
+    }
+
+    pub fn handle_left_stick(&mut self, stick: Vector2<f64>, now: Instant) {
+        self.left_stick
+            .handle(stick, &mut self.buttons, &mut self.mouse, now);
+    }
+
+    pub fn handle_right_stick(&mut self, stick: Vector2<f64>, now: Instant) {
+        self.right_stick
+            .handle(stick, &mut self.buttons, &mut self.mouse, now);
+    }
+
+    pub fn apply_actions(&mut self, now: Instant) {
         for action in self.buttons.tick(now).drain(..) {
             match action {
                 ExtAction::GyroOn(ClickType::Press) | ExtAction::GyroOff(ClickType::Release) => {
@@ -59,22 +103,6 @@ impl Engine {
                 ExtAction::MousePress(_, ClickType::Toggle) => unimplemented!(),
             }
         }
-
-        self.left_stick.handle(
-            report.left_joystick,
-            &mut self.buttons,
-            &mut self.mouse,
-            now,
-        );
-        self.right_stick.handle(
-            report.right_joystick,
-            &mut self.buttons,
-            &mut self.mouse,
-            now,
-        );
-
-        self.gyro.handle_frame(report, &mut self.mouse);
-        Ok(())
     }
 }
 

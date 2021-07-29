@@ -1,8 +1,21 @@
-use std::{collections::HashMap, fs::File, io::Read, time::Instant};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::Read,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 
 use anyhow::Context;
+use cgmath::vec2;
+use hid_gamepad::sys::JoyKey;
 use sdl2::{
-    self, controller::GameController, event::Event, keyboard::Keycode, GameControllerSubsystem,
+    self,
+    controller::{Axis, Button, GameController},
+    event::Event,
+    keyboard::Keycode,
+    sensor::SensorType,
+    GameControllerSubsystem,
 };
 
 use crate::{
@@ -36,7 +49,11 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
                 } => break 'running,
                 Event::ControllerDeviceAdded { which, .. } => {
                     let controller = game_controller_system.open(which)?;
-                    dbg!(controller.name());
+
+                    // Ignore errors, handled later
+                    let _ = controller.sensor_set_enabled(SensorType::Accelerometer, true);
+                    let _ = controller.sensor_set_enabled(SensorType::Gyroscope, true);
+
                     let mut settings = Settings::default();
                     let mut bindings = Buttons::new();
                     let mut content_file = File::open(&opts.mapping_file)
@@ -60,17 +77,53 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
                     which,
                     button,
                 } => {
-                    let controller = &controllers[&which];
-                    //controller.engine.tick(report)
+                    let controller = controllers.get_mut(&which).unwrap();
+                    controller
+                        .engine
+                        .buttons()
+                        .key_down(sdl_to_sys(button), now);
                 }
                 Event::ControllerButtonUp {
                     timestamp: _,
                     which,
                     button,
-                } => {}
+                } => {
+                    let controller = controllers.get_mut(&which).unwrap();
+                    controller.engine.buttons().key_up(sdl_to_sys(button), now);
+                }
                 _ => {}
             }
         }
+
+        for controller in controllers.values_mut() {
+            let c = &mut controller.controller;
+            let left = vec2(c.axis(Axis::LeftX), c.axis(Axis::LeftY))
+                .cast::<f64>()
+                .unwrap()
+                / (i16::MAX as f64);
+            let right = vec2(c.axis(Axis::RightX), c.axis(Axis::RightY))
+                .cast::<f64>()
+                .unwrap()
+                / (i16::MAX as f64);
+            controller.engine.handle_left_stick(left, now);
+            controller.engine.handle_right_stick(right, now);
+            if c.sensor_enabled(SensorType::Accelerometer)
+                && c.sensor_enabled(SensorType::Gyroscope)
+            {
+                let mut accel = [0.; 3];
+                controller
+                    .controller
+                    .sensor_get_data(SensorType::Accelerometer, &mut accel)?;
+                let mut gyro = [0.; 3];
+                controller
+                    .controller
+                    .sensor_get_data(SensorType::Gyroscope, &mut gyro)?;
+                dbg!(accel);
+            }
+            controller.engine.apply_actions(now);
+        }
+
+        sleep(Duration::from_millis(1));
     }
 
     Ok(())
@@ -79,4 +132,24 @@ pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
 struct ControllerState {
     controller: GameController,
     engine: Engine,
+}
+
+fn sdl_to_sys(button: Button) -> JoyKey {
+    match button {
+        Button::A => JoyKey::S,
+        Button::B => JoyKey::E,
+        Button::X => JoyKey::W,
+        Button::Y => JoyKey::N,
+        Button::Back => JoyKey::Minus,
+        Button::Guide => todo!(),
+        Button::Start => JoyKey::Plus,
+        Button::LeftStick => JoyKey::L3,
+        Button::RightStick => JoyKey::R3,
+        Button::LeftShoulder => JoyKey::L,
+        Button::RightShoulder => JoyKey::R,
+        Button::DPadUp => JoyKey::Up,
+        Button::DPadDown => JoyKey::Down,
+        Button::DPadLeft => JoyKey::Left,
+        Button::DPadRight => JoyKey::Right,
+    }
 }

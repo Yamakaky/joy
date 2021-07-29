@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use cgmath::Deg;
 
-use crate::joystick::{ButtonStick, FlickStick, Stick};
+use crate::joystick::{ButtonStick, CameraStick, FlickStick, Stick};
 
 use super::types::{
     AimStickSetting, FlickStickSetting, GyroSetting, GyroSpace, RingMode, Setting, StickMode,
@@ -63,7 +63,7 @@ impl Settings {
 
     fn new_stick(&self, mode: StickMode, left: bool) -> Box<dyn Stick> {
         match mode {
-            StickMode::Aim => todo!(),
+            StickMode::Aim => Box::new(CameraStick::default()),
             StickMode::Flick | StickMode::FlickOnly | StickMode::RotateOnly => {
                 let flick = mode != StickMode::RotateOnly;
                 let rotate = mode != StickMode::FlickOnly;
