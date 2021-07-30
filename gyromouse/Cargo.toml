@@ -7,7 +7,7 @@ edition = "2018"
 [features]
 all-backends = ["sdl2", "hidapi"]
 hidapi = ["hid-gamepad", "joycon"]
-sdl2-static = ["sdl2", "sdl2/static-link", "sdl2/use-vcpkg"]
+#sdl2-static = ["sdl2", "sdl2/static-link", "sdl2/use-vcpkg"]
 
 [dependencies]
 anyhow = "1.0"

@@ -57,7 +57,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --verbose --bin gyromouse --all-features
+          args: --release --verbose --bin gyromouse --features all-backends,sdl2/static-link,sdl2/use-vcpkg
 
       - name: ⚙️ Run tests
         uses: actions-rs/cargo@v1
