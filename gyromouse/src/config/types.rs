@@ -3,7 +3,6 @@ use std::time::Duration;
 use cgmath::Deg;
 
 use crate::{
-    joystick::Stick,
     mapping::{ExtAction, MapKey},
     ClickType,
 };
@@ -163,5 +162,3 @@ pub enum RingMode {
     Inner,
     Outer,
 }
-
-impl dyn Stick {}

@@ -172,6 +172,7 @@ fn setting(input: &str) -> IRes<&str, Setting> {
         f64_setting("TRIGGER_THRESHOLD", Setting::TriggerThreshold),
         trigger_mode,
         gyro_setting,
+        ring_mode,
     ))(input)
 }
 
@@ -185,6 +186,26 @@ fn f64_setting<'a, Output>(
         let (input, val) = float(input)?;
         Ok((input, value_map(val as f64)))
     }
+}
+
+fn ring_mode(input: &str) -> IRes<&str, Setting> {
+    let (input, tag) = alt((
+        tag_no_case("LEFT_RING_MODE"),
+        tag_no_case("RIGHT_RING_MODE"),
+    ))(input)?;
+    let (input, _) = equal_with_space(input)?;
+    let (input, mode) = alt((
+        value(RingMode::Inner, tag_no_case("INNER")),
+        value(RingMode::Outer, tag_no_case("OUTER")),
+    ))(input)?;
+    Ok((
+        input,
+        if tag == "LEFT_RING_MODE" {
+            Setting::LeftRingMode(mode)
+        } else {
+            Setting::RightRingMode(mode)
+        },
+    ))
 }
 
 fn gyro_setting(input: &str) -> IRes<&str, Setting> {
