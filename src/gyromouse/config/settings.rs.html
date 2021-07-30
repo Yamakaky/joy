@@ -319,10 +319,10 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StickSettings</span> {
-    <span class="ident">deadzone</span>: <span class="ident">f64</span>,
-    <span class="ident">fullzone</span>: <span class="ident">f64</span>,
-    <span class="ident">aim_stick</span>: <span class="ident">AimStickSettings</span>,
-    <span class="ident">flick_stick</span>: <span class="ident">FlickStickSettings</span>,
+    <span class="kw">pub</span> <span class="ident">deadzone</span>: <span class="ident">f64</span>,
+    <span class="kw">pub</span> <span class="ident">fullzone</span>: <span class="ident">f64</span>,
+    <span class="kw">pub</span> <span class="ident">aim_stick</span>: <span class="ident">AimStickSettings</span>,
+    <span class="kw">pub</span> <span class="ident">flick_stick</span>: <span class="ident">FlickStickSettings</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">StickSettings</span> {
@@ -349,12 +349,12 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AimStickSettings</span> {
-    <span class="ident">sens</span>: <span class="ident">f64</span>,
-    <span class="ident">power</span>: <span class="ident">f64</span>,
-    <span class="ident">invert_x</span>: <span class="ident">bool</span>,
-    <span class="ident">invert_y</span>: <span class="ident">bool</span>,
-    <span class="ident">acceleration_rate</span>: <span class="ident">f64</span>,
-    <span class="ident">acceleration_cap</span>: <span class="ident">f64</span>,
+    <span class="kw">pub</span> <span class="ident">sens</span>: <span class="ident">f64</span>,
+    <span class="kw">pub</span> <span class="ident">power</span>: <span class="ident">f64</span>,
+    <span class="kw">pub</span> <span class="ident">invert_x</span>: <span class="ident">bool</span>,
+    <span class="kw">pub</span> <span class="ident">invert_y</span>: <span class="ident">bool</span>,
+    <span class="kw">pub</span> <span class="ident">acceleration_rate</span>: <span class="ident">f64</span>,
+    <span class="kw">pub</span> <span class="ident">acceleration_cap</span>: <span class="ident">f64</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">AimStickSettings</span> {
@@ -375,8 +375,8 @@
         <span class="kw">match</span> <span class="ident">setting</span> {
             <span class="ident">AimStickSetting::Sens</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">sens</span> <span class="op">=</span> <span class="ident">s</span>,
             <span class="ident">AimStickSetting::Power</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">power</span> <span class="op">=</span> <span class="ident">s</span>,
-            <span class="ident">AimStickSetting::InvertX</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">invert_x</span> <span class="op">=</span> <span class="bool-val">true</span>,
-            <span class="ident">AimStickSetting::InvertY</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">invert_y</span> <span class="op">=</span> <span class="bool-val">true</span>,
+            <span class="ident">AimStickSetting::InvertX</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">invert_x</span> <span class="op">=</span> <span class="ident">v</span>,
+            <span class="ident">AimStickSetting::InvertY</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">invert_y</span> <span class="op">=</span> <span class="ident">v</span>,
             <span class="ident">AimStickSetting::AccelerationRate</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">acceleration_rate</span> <span class="op">=</span> <span class="ident">s</span>,
             <span class="ident">AimStickSetting::AccelerationCap</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">acceleration_cap</span> <span class="op">=</span> <span class="ident">s</span>,
         }

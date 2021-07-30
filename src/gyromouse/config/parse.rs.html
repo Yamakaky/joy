@@ -422,10 +422,80 @@
 <span id="420">420</span>
 <span id="421">421</span>
 <span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">settings::Settings</span>, <span class="ident">types</span>::<span class="kw-2">*</span>};
+<span class="kw">use</span> <span class="ident">cgmath::Deg</span>;
 <span class="kw">use</span> <span class="ident">hid_gamepad_sys::JoyKey</span>;
 <span class="kw">use</span> <span class="ident">nom</span>::{
     <span class="ident">branch::alt</span>,
@@ -597,6 +667,8 @@
         <span class="ident">f64_setting</span>(<span class="string">&quot;TRIGGER_THRESHOLD&quot;</span>, <span class="ident">Setting::TriggerThreshold</span>),
         <span class="ident">trigger_mode</span>,
         <span class="ident">gyro_setting</span>,
+        <span class="ident">ring_mode</span>,
+        <span class="ident">map</span>(<span class="ident">stick_setting</span>, <span class="ident">Setting::StickSetting</span>),
     ))(<span class="ident">input</span>)
 }
 
@@ -610,6 +682,72 @@
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">val</span>) <span class="op">=</span> <span class="ident">float</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">value_map</span>(<span class="ident">val</span> <span class="kw">as</span> <span class="ident">f64</span>)))
     }
+}
+
+<span class="kw">fn</span> <span class="ident">stick_setting</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">StickSetting</span><span class="op">&gt;</span> {
+    <span class="ident">alt</span>((
+        <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_DEADZONE_INNER&quot;</span>, <span class="ident">StickSetting::Deadzone</span>),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_DEADZONE_OUTER&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">StickSetting::FullZone</span>(<span class="number">1.</span> <span class="op">-</span> <span class="ident">v</span>)),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_SENS&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Aim</span>(<span class="ident">AimStickSetting::Sens</span>(<span class="ident">v</span>))
+        }),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_POWER&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Aim</span>(<span class="ident">AimStickSetting::Power</span>(<span class="ident">v</span>))
+        }),
+        <span class="ident">stick_axis</span>,
+        <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_ACCELERATION_RATE&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Aim</span>(<span class="ident">AimStickSetting::AccelerationRate</span>(<span class="ident">v</span>))
+        }),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_ACCELERATION_CAP&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Aim</span>(<span class="ident">AimStickSetting::AccelerationCap</span>(<span class="ident">v</span>))
+        }),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;FLICK_TIME&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Flick</span>(<span class="ident">FlickStickSetting::FlickTime</span>(<span class="ident">Duration::from_secs_f64</span>(<span class="ident">v</span>)))
+        }),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;FLICK_TIME_EXPONENT&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Flick</span>(<span class="ident">FlickStickSetting::Exponent</span>(<span class="ident">v</span>))
+        }),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;FLICK_DEADZONE_ANGLE&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Flick</span>(<span class="ident">FlickStickSetting::ForwardDeadzoneArc</span>(<span class="ident">Deg</span>(<span class="ident">v</span> <span class="op">*</span> <span class="number">2.</span>)))
+        }),
+    ))(<span class="ident">input</span>)
+}
+
+<span class="kw">fn</span> <span class="ident">stick_axis</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">StickSetting</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">tag</span>) <span class="op">=</span> <span class="ident">alt</span>((<span class="ident">tag_no_case</span>(<span class="string">&quot;STICK_AXIS_X&quot;</span>), <span class="ident">tag_no_case</span>(<span class="string">&quot;STICK_AXIS_Y&quot;</span>)))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">invert</span>) <span class="op">=</span> <span class="ident">alt</span>((
+        <span class="ident">value</span>(<span class="bool-val">false</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;STANDARD&quot;</span>)),
+        <span class="ident">value</span>(<span class="bool-val">true</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;INVERTED&quot;</span>)),
+    ))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>((
+        <span class="ident">input</span>,
+        <span class="kw">if</span> <span class="ident">tag</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;STICK_AXIS_X&quot;</span> {
+            <span class="ident">StickSetting::Aim</span>(<span class="ident">AimStickSetting::InvertX</span>(<span class="ident">invert</span>))
+        } <span class="kw">else</span> {
+            <span class="ident">StickSetting::Aim</span>(<span class="ident">AimStickSetting::InvertY</span>(<span class="ident">invert</span>))
+        },
+    ))
+}
+
+<span class="kw">fn</span> <span class="ident">ring_mode</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">tag</span>) <span class="op">=</span> <span class="ident">alt</span>((
+        <span class="ident">tag_no_case</span>(<span class="string">&quot;LEFT_RING_MODE&quot;</span>),
+        <span class="ident">tag_no_case</span>(<span class="string">&quot;RIGHT_RING_MODE&quot;</span>),
+    ))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">mode</span>) <span class="op">=</span> <span class="ident">alt</span>((
+        <span class="ident">value</span>(<span class="ident">RingMode::Inner</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;INNER&quot;</span>)),
+        <span class="ident">value</span>(<span class="ident">RingMode::Outer</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;OUTER&quot;</span>)),
+    ))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>((
+        <span class="ident">input</span>,
+        <span class="kw">if</span> <span class="ident">tag</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;LEFT_RING_MODE&quot;</span> {
+            <span class="ident">Setting::LeftRingMode</span>(<span class="ident">mode</span>)
+        } <span class="kw">else</span> {
+            <span class="ident">Setting::RightRingMode</span>(<span class="ident">mode</span>)
+        },
+    ))
 }
 
 <span class="kw">fn</span> <span class="ident">gyro_setting</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
