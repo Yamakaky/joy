@@ -88,10 +88,10 @@ impl Settings {
 
 #[derive(Debug, Clone)]
 pub struct StickSettings {
-    deadzone: f64,
-    fullzone: f64,
-    aim_stick: AimStickSettings,
-    flick_stick: FlickStickSettings,
+    pub deadzone: f64,
+    pub fullzone: f64,
+    pub aim_stick: AimStickSettings,
+    pub flick_stick: FlickStickSettings,
 }
 
 impl Default for StickSettings {
@@ -118,12 +118,12 @@ impl StickSettings {
 
 #[derive(Debug, Clone)]
 pub struct AimStickSettings {
-    sens: f64,
-    power: f64,
-    invert_x: bool,
-    invert_y: bool,
-    acceleration_rate: f64,
-    acceleration_cap: f64,
+    pub sens: f64,
+    pub power: f64,
+    pub invert_x: bool,
+    pub invert_y: bool,
+    pub acceleration_rate: f64,
+    pub acceleration_cap: f64,
 }
 
 impl Default for AimStickSettings {
