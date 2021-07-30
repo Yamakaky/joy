@@ -34,10 +34,7 @@ jobs:
           key: ${{ runner.os }}-cargo-v7-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install cargo-vcpkg
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: cargo-vcpkg
+        run: cargo vcpkg --version || cargo install cargo-vcpkg
       # Ubuntu build deps for SDL
       # https://hg.libsdl.org/SDL/file/default/docs/README-linux.md
       - name: ⚙️ Install SDL dependencies
