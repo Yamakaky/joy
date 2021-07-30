@@ -26,18 +26,18 @@ jobs:
         id: cache
         with:
           path: |
+            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v6-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v7-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install cargo-vcpkg
-        uses: actions-rs/install@v0.1
+        uses: actions-rs/cargo@v1
         with:
-          crate: cargo-vcpkg
-          version: latest
-          use-tool-cache: true
+          command: install
+          args: cargo-vcpkg
       # Ubuntu build deps for SDL
       # https://hg.libsdl.org/SDL/file/default/docs/README-linux.md
       - name: ⚙️ Install SDL dependencies
