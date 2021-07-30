@@ -101,8 +101,8 @@ pub enum StickSetting {
 pub enum AimStickSetting {
     Sens(f64),
     Power(f64),
-    InvertX,
-    InvertY,
+    InvertX(bool),
+    InvertY(bool),
     AccelerationRate(f64),
     AccelerationCap(f64),
 }

@@ -144,8 +144,8 @@ impl AimStickSettings {
         match setting {
             AimStickSetting::Sens(s) => self.sens = s,
             AimStickSetting::Power(s) => self.power = s,
-            AimStickSetting::InvertX => self.invert_x = true,
-            AimStickSetting::InvertY => self.invert_y = true,
+            AimStickSetting::InvertX(v) => self.invert_x = v,
+            AimStickSetting::InvertY(v) => self.invert_y = v,
             AimStickSetting::AccelerationRate(s) => self.acceleration_rate = s,
             AimStickSetting::AccelerationCap(s) => self.acceleration_cap = s,
         }

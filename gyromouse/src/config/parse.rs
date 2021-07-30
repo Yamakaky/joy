@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use super::{settings::Settings, types::*};
+use cgmath::Deg;
 use hid_gamepad_sys::JoyKey;
 use nom::{
     branch::alt,
@@ -173,6 +174,7 @@ fn setting(input: &str) -> IRes<&str, Setting> {
         trigger_mode,
         gyro_setting,
         ring_mode,
+        map(stick_setting, Setting::StickSetting),
     ))(input)
 }
 
@@ -186,6 +188,52 @@ fn f64_setting<'a, Output>(
         let (input, val) = float(input)?;
         Ok((input, value_map(val as f64)))
     }
+}
+
+fn stick_setting(input: &str) -> IRes<&str, StickSetting> {
+    alt((
+        f64_setting("STICK_DEADZONE_INNER", StickSetting::Deadzone),
+        f64_setting("STICK_DEADZONE_OUTER", |v| StickSetting::FullZone(1. - v)),
+        f64_setting("STICK_SENS", |v| {
+            StickSetting::Aim(AimStickSetting::Sens(v))
+        }),
+        f64_setting("STICK_POWER", |v| {
+            StickSetting::Aim(AimStickSetting::Power(v))
+        }),
+        stick_axis,
+        f64_setting("STICK_ACCELERATION_RATE", |v| {
+            StickSetting::Aim(AimStickSetting::AccelerationRate(v))
+        }),
+        f64_setting("STICK_ACCELERATION_CAP", |v| {
+            StickSetting::Aim(AimStickSetting::AccelerationCap(v))
+        }),
+        f64_setting("FLICK_TIME", |v| {
+            StickSetting::Flick(FlickStickSetting::FlickTime(Duration::from_secs_f64(v)))
+        }),
+        f64_setting("FLICK_TIME_EXPONENT", |v| {
+            StickSetting::Flick(FlickStickSetting::Exponent(v))
+        }),
+        f64_setting("FLICK_DEADZONE_ANGLE", |v| {
+            StickSetting::Flick(FlickStickSetting::ForwardDeadzoneArc(Deg(v * 2.)))
+        }),
+    ))(input)
+}
+
+fn stick_axis(input: &str) -> IRes<&str, StickSetting> {
+    let (input, tag) = alt((tag_no_case("STICK_AXIS_X"), tag_no_case("STICK_AXIS_Y")))(input)?;
+    let (input, _) = equal_with_space(input)?;
+    let (input, invert) = alt((
+        value(false, tag_no_case("STANDARD")),
+        value(true, tag_no_case("INVERTED")),
+    ))(input)?;
+    Ok((
+        input,
+        if tag == "STICK_AXIS_X" {
+            StickSetting::Aim(AimStickSetting::InvertX(invert))
+        } else {
+            StickSetting::Aim(AimStickSetting::InvertY(invert))
+        },
+    ))
 }
 
 fn ring_mode(input: &str) -> IRes<&str, Setting> {
