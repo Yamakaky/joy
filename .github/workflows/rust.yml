@@ -62,21 +62,13 @@ jobs:
           command: test
           args: --workspace --verbose
 
-      - name: 🔨 Rename binaries
-        if: matrix.platform != 'windows'
-        env:
-          OS: ${{matrix.platform}}
-        run: |
-          cp target/release/gyromouse target/release/gyromouse-$OS
-
       - name: ☁️ Upload gyromouse
         uses: actions/upload-artifact@v2
         with:
-          name: client
+          name: gyromouse  ${{ matrix.platform }}
           if-no-files-found: error
           path: |
-            target/release/gyromouse-linux
-            target/release/gyromouse-macos
+            target/release/gyromouse
             target/release/gyromouse.exe
 
       - name: 🔨 Build Documentation
