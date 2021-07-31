@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
-joycon = { path = "../joycon" }
+joycon = { path = "../crates/joycon" }

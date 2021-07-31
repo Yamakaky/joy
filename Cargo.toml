@@ -1,11 +1,11 @@
 [workspace]
 members = [
-    "dualshock-sys",
-    "dualshock",
-    "hid-gamepad",
-    "hid-gamepad-sys",
-    "joycon-sys",
-    "joycon",
+    "crates/dualshock-sys",
+    "crates/dualshock",
+    "crates/hid-gamepad",
+    "crates/hid-gamepad-sys",
+    "crates/joycon-sys",
+    "crates/joycon",
     # removed for huge number of deps
     #"joy-infrared",
     "joy-music",

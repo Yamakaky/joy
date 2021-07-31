@@ -16,9 +16,9 @@ clap = "3.0.0-beta.2"
 enigo = "0.0"
 # see https://gitlab.com/KonradBorowski/enum-map/-/issues/20
 enum-map = "0.6"
-hid-gamepad-sys = { path = "../hid-gamepad-sys" }
-hid-gamepad = { path = "../hid-gamepad", optional = true }
-joycon = { path = "../joycon", optional = true }
+hid-gamepad-sys = { path = "../crates/hid-gamepad-sys" }
+hid-gamepad = { path = "../crates/hid-gamepad", optional = true }
+joycon = { path = "../crates/joycon", optional = true }
 nom = "6.0"
 
 [dependencies.sdl2]
