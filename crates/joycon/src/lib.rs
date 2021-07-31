@@ -56,8 +56,8 @@ impl From<Report> for hid_gamepad_sys::Report {
                 .unwrap()
                 .iter()
                 .map(|x| Motion {
-                    acceleration: x.accel.into(),
-                    rotation_speed: vec3(x.gyro.y, x.gyro.z, x.gyro.x).into(),
+                    acceleration: vec3(-x.accel.y, x.accel.z, x.accel.x).into(),
+                    rotation_speed: vec3(x.gyro.y, -x.gyro.z, -x.gyro.x).into(),
                 })
                 .collect(),
             keys: enum_map::enum_map! {
