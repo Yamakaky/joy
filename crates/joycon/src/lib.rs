@@ -56,7 +56,7 @@ impl From<Report> for hid_gamepad_sys::Report {
                 .unwrap()
                 .iter()
                 .map(|x| Motion {
-                    acceleration: x.accel,
+                    acceleration: x.accel.into(),
                     rotation_speed: vec3(x.gyro.y, x.gyro.z, x.gyro.x).into(),
                 })
                 .collect(),

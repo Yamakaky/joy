@@ -79,7 +79,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Butto
     let mut calibration = Calibration::with_capacity(250 * 60);
 
     println!("calibrating");
-    for _ in 0..1000 {
+    for _ in 0..100 {
         let report = gamepad.recv()?;
         for frame in report.motion.iter() {
             calibration.push(frame.rotation_speed.as_vec());
@@ -88,8 +88,11 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Butto
     println!("calibrating done");
     let mut engine = Engine::new(settings, bindings, calibration);
 
+    let mut acc = 0.;
     loop {
         let report = gamepad.recv()?;
+        acc += report.motion[0].rotation_speed.z / report.frequency as f64;
+        dbg!(acc);
         engine.tick(report)?;
     }
 }

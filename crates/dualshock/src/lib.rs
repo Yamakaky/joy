@@ -45,7 +45,7 @@ impl GamepadDevice for DS4 {
             left_joystick: full.base.left_stick.normalize(),
             right_joystick: full.base.right_stick.normalize(),
             motion: vec![Motion {
-                acceleration: full.accel.normalize(),
+                acceleration: full.accel.normalize().into(),
                 rotation_speed: rot.into(),
             }],
             keys: enum_map::enum_map! {

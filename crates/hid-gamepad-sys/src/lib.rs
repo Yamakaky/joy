@@ -63,7 +63,7 @@ pub struct Report {
 #[derive(Debug, Clone)]
 pub struct Motion {
     pub rotation_speed: RotationSpeed,
-    pub acceleration: Vector3<f64>,
+    pub acceleration: Acceleration,
 }
 
 /// Uses the SDL convention.
@@ -104,6 +104,35 @@ impl Mul<Duration> for RotationSpeed {
             Deg(self.y * dt.as_secs_f64()),
             Deg(self.z * dt.as_secs_f64()),
         )
+    }
+}
+
+/// Uses the SDL convention.
+///
+/// Units are in g
+#[derive(Debug, Clone, Copy)]
+pub struct Acceleration {
+    /// -x ... +x is left ... right
+    pub x: f64,
+    /// -y ... +y is down ... up
+    pub y: f64,
+    /// -z ... +z is forward ... backward
+    pub z: f64,
+}
+
+impl Acceleration {
+    pub fn as_vec(self) -> Vector3<f64> {
+        vec3(self.x, self.y, self.z)
+    }
+}
+
+impl From<Vector3<f64>> for Acceleration {
+    fn from(raw: Vector3<f64>) -> Self {
+        Self {
+            x: raw.x,
+            y: raw.y,
+            z: raw.z,
+        }
     }
 }
 

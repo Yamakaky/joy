@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use cgmath::{vec2, vec3, Deg, Euler, InnerSpace, Quaternion, Rotation, Vector2, Vector3};
-use hid_gamepad_sys::{Motion, RotationSpeed};
+use hid_gamepad_sys::{Acceleration, Motion, RotationSpeed};
 
 pub fn map_input(
     motion: &Motion,
@@ -14,7 +14,7 @@ pub fn map_input(
     mapper.map(motion.rotation_speed, up_vector)
 }
 pub trait SensorFusion {
-    fn compute_up_vector(&mut self, rot: Euler<Deg<f64>>, acc: Vector3<f64>) -> Vector3<f64>;
+    fn compute_up_vector(&mut self, rot: Euler<Deg<f64>>, acc: Acceleration) -> Vector3<f64>;
 }
 
 /// Convert local space motion to 2D mouse-like motion.
@@ -38,10 +38,10 @@ impl SimpleFusion {
 }
 
 impl SensorFusion for SimpleFusion {
-    fn compute_up_vector(&mut self, rot: Euler<Deg<f64>>, acc: Vector3<f64>) -> Vector3<f64> {
+    fn compute_up_vector(&mut self, rot: Euler<Deg<f64>>, acc: Acceleration) -> Vector3<f64> {
         let rotation = Quaternion::from(rot).invert();
         self.up_vector = rotation.rotate_vector(self.up_vector);
-        self.up_vector += (acc - self.up_vector) * self.correction_factor;
+        self.up_vector += (acc.as_vec() - self.up_vector) * self.correction_factor;
         self.up_vector
     }
 }

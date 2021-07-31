@@ -6,7 +6,7 @@ use std::{
 use cgmath::{Vector2, Vector3, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
-use hid_gamepad_sys::{JoyKey, KeyStatus, Motion, Report, RotationSpeed};
+use hid_gamepad_sys::{Acceleration, JoyKey, KeyStatus, Motion, Report, RotationSpeed};
 
 use crate::{
     calibration::Calibration,
@@ -96,11 +96,16 @@ impl Engine {
         }
     }
 
-    pub fn apply_motion(&mut self, rotation_speed: RotationSpeed, acc: Vector3<f64>, dt: Duration) {
+    pub fn apply_motion(
+        &mut self,
+        rotation_speed: RotationSpeed,
+        acceleration: Acceleration,
+        dt: Duration,
+    ) {
         self.gyro.handle_frame(
             &[Motion {
                 rotation_speed,
-                acceleration: acc,
+                acceleration,
             }],
             &mut self.mouse,
             dt,

@@ -232,8 +232,8 @@ impl Gyro {
     pub fn normalize(&self) -> Vector3<f64> {
         let factor = 2000. / (2.0_f64.powi(15));
         let pitch = i16::from(self.pitch) as f64 * factor;
-        let yaw = -i16::from(self.yaw) as f64 * factor;
-        let roll = -i16::from(self.roll) as f64 * factor;
+        let yaw = i16::from(self.yaw) as f64 * factor;
+        let roll = i16::from(self.roll) as f64 * factor;
         vec3(pitch, yaw, roll)
     }
 }
@@ -248,7 +248,7 @@ pub struct Accel {
 
 impl Accel {
     pub fn raw(&self) -> Vector3<i16> {
-        vec3(i16::from(self.x), -i16::from(self.y), i16::from(self.z))
+        vec3(i16::from(self.x), i16::from(self.y), i16::from(self.z))
     }
 
     /// Convert to SI units, in G across each axis.
