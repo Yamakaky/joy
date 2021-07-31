@@ -36,14 +36,14 @@ impl Frame {
         vector_from_raw(self.raw_gyro)
     }
 
-    /// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g
+    /// Calculation from <https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g>
     pub fn accel_g(&self, offset: Vector3<f64>, _sens: AccSens) -> Vector3<f64> {
         // TODO: handle sens
         (self.raw_accel() * 4.).div_element_wise(Vector3::from_value(16383.) - offset)
     }
 
     /// The rotation described in this frame.
-    /// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps
+    /// <https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps>
     pub fn rotation_dps(&self, offset: Vector3<f64>, sens: GyroSens) -> Vector3<f64> {
         (self.raw_gyro() - offset) * sens.factor()
     }
@@ -150,7 +150,7 @@ impl Default for GyroPerfRate {
 ///
 /// Accelerations frequencies above the value are ignored using a low-pass filter.
 ///
-/// See https://blog.endaq.com/filter-selection-for-shock-and-vibration-applications.
+/// See <https://blog.endaq.com/filter-selection-for-shock-and-vibration-applications>.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive)]
 pub enum AccAntiAliasing {

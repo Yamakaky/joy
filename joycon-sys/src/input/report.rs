@@ -1,6 +1,6 @@
 //! Structs binary compatible with the HID input reports
 //!
-//! https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports
+//! <https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports>
 
 use crate::{accessory::AccessoryResponse, common::*, imu, input::*, mcu::*, raw_enum, spi::*};
 use std::{fmt, mem::size_of_val};

@@ -6,7 +6,7 @@ use crate::config::settings::GyroSettings;
 pub struct GyroMouse {
     /// Enables smoothing for slow movements.
     ///
-    /// http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc8
+    /// <http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc8>
     pub apply_smoothing: bool,
     /// Smoothing threshold.
     ///
@@ -16,7 +16,7 @@ pub struct GyroMouse {
 
     /// Stabilize slow movements
     ///
-    /// http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc9
+    /// <http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc9>
     pub apply_tightening: bool,
     /// Tightening threshold.
     ///
@@ -25,7 +25,7 @@ pub struct GyroMouse {
 
     /// Enables acceleration.
     ///
-    /// http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc7
+    /// <http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc7>
     pub apply_acceleration: bool,
     pub acceleration_slow_sens: f64,
     pub acceleration_slow_threshold: f64,
@@ -34,7 +34,7 @@ pub struct GyroMouse {
 
     /// Sensitivity to use without acceleration.
     ///
-    /// http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc5
+    /// <http://gyrowiki.jibbsmart.com/blog:good-gyro-controls-part-1:the-gyro-is-a-mouse#toc5>
     pub sensitivity: f64,
 }
 

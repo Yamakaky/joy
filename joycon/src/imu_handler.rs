@@ -5,7 +5,7 @@ use joycon_sys::*;
 
 /// Acceleration and gyroscope data for the controller.
 ///
-/// https://camo.githubusercontent.com/3e980a22532232f4b28ddbea4f119e55c7025ddb52efdaffb96a22f06cb203b3/687474703a2f2f6374636165722e636f6d2f7769692f7377697463682f6a6f79636f6e5f6163632d6779726f5f7269676874322e706e67
+/// <https://camo.githubusercontent.com/3e980a22532232f4b28ddbea4f119e55c7025ddb52efdaffb96a22f06cb203b3/687474703a2f2f6374636165722e636f6d2f7769692f7377697463682f6a6f79636f6e5f6163632d6779726f5f7269676874322e706e67>
 #[derive(Debug, Copy, Clone)]
 pub struct IMU {
     /// Current rotation speed.
