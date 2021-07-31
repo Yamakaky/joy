@@ -1,12 +1,10 @@
 use std::{
     collections::HashMap,
-    fs::File,
-    io::Read,
     thread::sleep,
     time::{Duration, Instant},
 };
 
-use anyhow::Context;
+use anyhow::Result;
 use cgmath::{vec2, vec3, Vector3};
 use hid_gamepad_sys::JoyKey;
 use sdl2::{
@@ -15,124 +13,132 @@ use sdl2::{
     event::Event,
     keyboard::Keycode,
     sensor::SensorType,
+    GameControllerSubsystem, Sdl,
 };
 
 use crate::{
-    calibration::Calibration,
-    config::{self, settings::Settings},
-    engine::Engine,
-    mapping::Buttons,
-    opts::{Cmd, Opts},
+    calibration::Calibration, config::settings::Settings, engine::Engine, mapping::Buttons,
 };
 
-pub fn sdl_main(opts: &Opts) -> anyhow::Result<()> {
-    let opts = match opts.cmd {
-        Cmd::Run(ref r) => r,
-        _ => todo!(),
-    };
-    let sdl = sdl2::init().unwrap();
-    let game_controller_system = sdl.game_controller().unwrap();
+use super::Backend;
 
-    let mut event_pump = sdl.event_pump().unwrap();
+pub struct SDLBackend {
+    sdl: Sdl,
+    game_controller_system: GameControllerSubsystem,
+}
 
-    let mut controllers = HashMap::new();
+impl SDLBackend {
+    pub fn new() -> Result<Self> {
+        let sdl = sdl2::init().unwrap();
+        let game_controller_system = sdl.game_controller().unwrap();
+        Ok(Self {
+            sdl,
+            game_controller_system,
+        })
+    }
+}
 
-    let mut last_tick = Instant::now();
-
-    'running: loop {
-        let now = Instant::now();
-        let dt = now.duration_since(last_tick);
-
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
-                Event::ControllerDeviceAdded { which, .. } => {
-                    let controller = game_controller_system.open(which)?;
-
-                    // Ignore errors, handled later
-                    let _ = controller.sensor_set_enabled(SensorType::Accelerometer, true);
-                    let _ = controller.sensor_set_enabled(SensorType::Gyroscope, true);
-
-                    let mut settings = Settings::default();
-                    let mut bindings = Buttons::new();
-                    let mut content_file = File::open(&opts.mapping_file)
-                        .with_context(|| format!("opening config file {}", opts.mapping_file))?;
-                    let content = {
-                        let mut buf = String::new();
-                        content_file.read_to_string(&mut buf)?;
-                        buf
-                    };
-                    config::parse::parse_file(&content, &mut settings, &mut bindings).unwrap();
-
-                    let calibration = Calibration::with_capacity(250 * 60);
-                    let engine = Engine::new(settings, bindings, calibration);
-                    controllers.insert(which, ControllerState { controller, engine });
-                }
-                Event::ControllerDeviceRemoved { which, .. } => {
-                    controllers.remove(&which);
-                }
-                Event::ControllerButtonDown {
-                    timestamp: _,
-                    which,
-                    button,
-                } => {
-                    let controller = controllers.get_mut(&which).unwrap();
-                    controller
-                        .engine
-                        .buttons()
-                        .key_down(sdl_to_sys(button), now);
-                }
-                Event::ControllerButtonUp {
-                    timestamp: _,
-                    which,
-                    button,
-                } => {
-                    let controller = controllers.get_mut(&which).unwrap();
-                    controller.engine.buttons().key_up(sdl_to_sys(button), now);
-                }
-                _ => {}
-            }
-        }
-
-        for controller in controllers.values_mut() {
-            let c = &mut controller.controller;
-            let engine = &mut controller.engine;
-            let left = vec2(c.axis(Axis::LeftX), c.axis(Axis::LeftY))
-                .cast::<f64>()
-                .unwrap()
-                / (i16::MAX as f64);
-            let right = vec2(c.axis(Axis::RightX), c.axis(Axis::RightY))
-                .cast::<f64>()
-                .unwrap()
-                / (i16::MAX as f64);
-            engine.handle_left_stick(left, now);
-            engine.handle_right_stick(right, now);
-            if c.sensor_enabled(SensorType::Accelerometer)
-                && c.sensor_enabled(SensorType::Gyroscope)
-            {
-                let mut accel = [0.; 3];
-                c.sensor_get_data(SensorType::Accelerometer, &mut accel)?;
-                let accel = Vector3::from(accel).cast::<f64>().unwrap() / 9.82;
-                let mut gyro = [0.; 3];
-                c.sensor_get_data(SensorType::Gyroscope, &mut gyro)?;
-                let gyro = vec3(gyro[0] as f64, gyro[1] as f64, gyro[2] as f64)
-                    / std::f64::consts::PI
-                    * 180.;
-
-                engine.apply_motion(gyro, accel, dt);
-            }
-            engine.apply_actions(now);
-        }
-
-        last_tick = now;
-        sleep(Duration::from_millis(1));
+impl Backend for SDLBackend {
+    fn list_devices(&mut self) -> anyhow::Result<()> {
+        todo!()
     }
 
-    Ok(())
+    fn run(
+        &mut self,
+        _opts: crate::opts::Run,
+        settings: Settings,
+        bindings: Buttons,
+    ) -> anyhow::Result<()> {
+        let mut event_pump = self.sdl.event_pump().unwrap();
+
+        let mut controllers = HashMap::new();
+
+        let mut last_tick = Instant::now();
+
+        'running: loop {
+            let now = Instant::now();
+            let dt = now.duration_since(last_tick);
+
+            for event in event_pump.poll_iter() {
+                match event {
+                    Event::Quit { .. }
+                    | Event::KeyDown {
+                        keycode: Some(Keycode::Escape),
+                        ..
+                    } => break 'running,
+                    Event::ControllerDeviceAdded { which, .. } => {
+                        let controller = self.game_controller_system.open(which)?;
+
+                        // Ignore errors, handled later
+                        let _ = controller.sensor_set_enabled(SensorType::Accelerometer, true);
+                        let _ = controller.sensor_set_enabled(SensorType::Gyroscope, true);
+
+                        let calibration = Calibration::with_capacity(250 * 60);
+                        let engine = Engine::new(settings.clone(), bindings.clone(), calibration);
+                        controllers.insert(which, ControllerState { controller, engine });
+                    }
+                    Event::ControllerDeviceRemoved { which, .. } => {
+                        controllers.remove(&which);
+                    }
+                    Event::ControllerButtonDown {
+                        timestamp: _,
+                        which,
+                        button,
+                    } => {
+                        let controller = controllers.get_mut(&which).unwrap();
+                        controller
+                            .engine
+                            .buttons()
+                            .key_down(sdl_to_sys(button), now);
+                    }
+                    Event::ControllerButtonUp {
+                        timestamp: _,
+                        which,
+                        button,
+                    } => {
+                        let controller = controllers.get_mut(&which).unwrap();
+                        controller.engine.buttons().key_up(sdl_to_sys(button), now);
+                    }
+                    _ => {}
+                }
+            }
+
+            for controller in controllers.values_mut() {
+                let c = &mut controller.controller;
+                let engine = &mut controller.engine;
+                let left = vec2(c.axis(Axis::LeftX), c.axis(Axis::LeftY))
+                    .cast::<f64>()
+                    .unwrap()
+                    / (i16::MAX as f64);
+                let right = vec2(c.axis(Axis::RightX), c.axis(Axis::RightY))
+                    .cast::<f64>()
+                    .unwrap()
+                    / (i16::MAX as f64);
+                engine.handle_left_stick(left, now);
+                engine.handle_right_stick(right, now);
+                if c.sensor_enabled(SensorType::Accelerometer)
+                    && c.sensor_enabled(SensorType::Gyroscope)
+                {
+                    let mut accel = [0.; 3];
+                    c.sensor_get_data(SensorType::Accelerometer, &mut accel)?;
+                    let accel = Vector3::from(accel).cast::<f64>().unwrap() / 9.82;
+                    let mut gyro = [0.; 3];
+                    c.sensor_get_data(SensorType::Gyroscope, &mut gyro)?;
+                    let gyro = vec3(gyro[0] as f64, gyro[1] as f64, gyro[2] as f64)
+                        / std::f64::consts::PI
+                        * 180.;
+
+                    engine.apply_motion(gyro, accel, dt);
+                }
+                engine.apply_actions(now);
+            }
+
+            last_tick = now;
+            sleep(Duration::from_millis(1));
+        }
+
+        Ok(())
+    }
 }
 
 struct ControllerState {

@@ -1,14 +1,9 @@
-use std::{fs::File, io::Read};
-
 use crate::{
-    calibration::Calibration,
-    config::{self, settings::Settings},
-    engine::Engine,
-    mapping::Buttons,
-    opts::{Cmd, Opts, Run},
+    calibration::Calibration, config::settings::Settings, engine::Engine, mapping::Buttons,
+    opts::Run,
 };
 
-use anyhow::Context;
+use anyhow::{bail, Result};
 use cgmath::vec3;
 use hid_gamepad::sys::GamepadDevice;
 use joycon::{
@@ -19,54 +14,47 @@ use joycon::{
     },
     JoyCon,
 };
-use nom::{error::convert_error, Err};
 
-pub fn hidapi_main(opts: &Opts) -> anyhow::Result<()> {
-    let mut api = HidApi::new()?;
-    match opts.cmd {
-        Cmd::Validate(ref run) => {
-            let mut settings = Settings::default();
-            let mut bindings = Buttons::new();
-            let mut content_file = File::open(&run.mapping_file)
-                .with_context(|| format!("opening config file {}", run.mapping_file))?;
-            let content = {
-                let mut buf = String::new();
-                content_file.read_to_string(&mut buf)?;
-                buf
-            };
-            match config::parse::parse_file(&content, &mut settings, &mut bindings) {
-                Ok(_) => {}
-                Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-                    println!("{:?}", convert_error(content.as_str(), e))
-                }
-                Err(_) => unimplemented!(),
+use super::Backend;
+
+pub struct HidapiBackend {
+    api: HidApi,
+}
+
+impl HidapiBackend {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            api: HidApi::new()?,
+        })
+    }
+}
+
+impl Backend for HidapiBackend {
+    fn list_devices(&mut self) -> Result<()> {
+        println!("Listing gamepads:");
+        for device_info in self.api.device_list() {
+            if hid_gamepad::open_gamepad(&self.api, device_info)?.is_some() {
+                println!("Found one");
+                return Ok(());
             }
         }
-        Cmd::List => {
-            println!("Listing gamepads:");
-            for device_info in api.device_list() {
-                if hid_gamepad::open_gamepad(&api, device_info)?.is_some() {
-                    println!("Found one");
-                }
-            }
-        }
-        Cmd::Run(ref run) => loop {
-            for device_info in api.device_list() {
-                if let Some(mut gamepad) = hid_gamepad::open_gamepad(&api, device_info)? {
-                    return hid_main(gamepad.as_mut(), &run);
+        bail!("No gamepad found");
+    }
+
+    fn run(&mut self, _opts: Run, settings: Settings, bindings: Buttons) -> Result<()> {
+        loop {
+            for device_info in self.api.device_list() {
+                if let Some(mut gamepad) = hid_gamepad::open_gamepad(&self.api, device_info)? {
+                    return hid_main(gamepad.as_mut(), settings, bindings);
                 }
             }
             std::thread::sleep(std::time::Duration::from_secs(1));
-            api.refresh_devices()?;
-        },
-        Cmd::FlickCalibrate => {
-            todo!()
+            self.api.refresh_devices()?;
         }
     }
-    Ok(())
 }
 
-fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
+fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Buttons) -> Result<()> {
     if let Some(joycon) = gamepad.as_any().downcast_mut::<JoyCon>() {
         dbg!(joycon.set_home_light(light::HomeLight::new(
             0x8,
@@ -88,17 +76,6 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, opts: &Run) -> anyhow::Result<()> {
             },
         ))?;
     }
-
-    let mut settings = Settings::default();
-    let mut bindings = Buttons::new();
-    let mut content_file = File::open(&opts.mapping_file)
-        .with_context(|| format!("opening config file {}", opts.mapping_file))?;
-    let content = {
-        let mut buf = String::new();
-        content_file.read_to_string(&mut buf)?;
-        buf
-    };
-    config::parse::parse_file(&content, &mut settings, &mut bindings).unwrap();
 
     let mut calibration = Calibration::with_capacity(250 * 60);
 

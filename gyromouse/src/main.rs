@@ -9,8 +9,15 @@ mod mouse;
 mod opts;
 mod space_mapper;
 
+use std::{fs::File, io::Read};
+
+use anyhow::{bail, Context};
+use backend::Backend;
 use clap::Clap;
+use nom::{error::convert_error, Err};
 use opts::Opts;
+
+use crate::{config::settings::Settings, mapping::Buttons};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -35,14 +42,56 @@ fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
 
     #[allow(unreachable_patterns)]
-    match opts.backend {
+    let mut backend: Box<dyn Backend> = match opts.backend {
         #[cfg(feature = "sdl2")]
-        Some(opts::Backend::Sdl) | None => backend::sdl::sdl_main(&opts),
+        Some(opts::Backend::Sdl) | None => Box::new(backend::sdl::SDLBackend::new()?),
         #[cfg(feature = "hidapi")]
-        Some(opts::Backend::Hid) | None => backend::hidapi::hidapi_main(&opts),
+        Some(opts::Backend::Hid) | None => Box::new(backend::hidapi::HidapiBackend::new()?),
         Some(_) | None => {
             println!("A backend must be enabled");
-            Ok(())
+            return Ok(());
         }
+    };
+
+    match opts.cmd {
+        opts::Cmd::Validate(v) => {
+            let mut settings = Settings::default();
+            let mut bindings = Buttons::new();
+            let mut content_file = File::open(&v.mapping_file)
+                .with_context(|| format!("opening config file {}", v.mapping_file))?;
+            let content = {
+                let mut buf = String::new();
+                content_file.read_to_string(&mut buf)?;
+                buf
+            };
+            match config::parse::parse_file(&content, &mut settings, &mut bindings) {
+                Ok(_) => Ok(()),
+                Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+                    bail!("{:?}", convert_error(content.as_str(), e))
+                }
+                Err(_) => unimplemented!(),
+            }
+        }
+        opts::Cmd::FlickCalibrate => todo!(),
+        opts::Cmd::Run(r) => {
+            let mut settings = Settings::default();
+            let mut bindings = Buttons::new();
+            let mut content_file = File::open(&r.mapping_file)
+                .with_context(|| format!("opening config file {}", r.mapping_file))?;
+            let content = {
+                let mut buf = String::new();
+                content_file.read_to_string(&mut buf)?;
+                buf
+            };
+            match config::parse::parse_file(&content, &mut settings, &mut bindings) {
+                Ok(_) => {}
+                Err(Err::Error(e)) | Err(Err::Failure(e)) => {
+                    bail!("{:?}", convert_error(content.as_str(), e))
+                }
+                Err(_) => unimplemented!(),
+            }
+            backend.run(r, settings, bindings)
+        }
+        opts::Cmd::List => backend.list_devices(),
     }
 }
