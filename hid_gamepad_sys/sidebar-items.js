@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["JoyKey",""],["KeyStatus",""]],"struct":[["Motion",""],["Report",""]],"trait":[["GamepadDevice",""],["GamepadDriver",""]]});
+initSidebarItems({"enum":[["JoyKey",""],["KeyStatus",""]],"struct":[["Acceleration","Uses the SDL convention."],["Motion",""],["Report",""],["RotationSpeed","Uses the SDL convention."]],"trait":[["GamepadDevice",""],["GamepadDriver",""]]});

@@ -97,7 +97,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::image</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">anyhow::Result</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">calibration</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Deg</span>, <span class="ident">Euler</span>};
+<span class="kw">use</span> <span class="ident">cgmath::vec3</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">hid</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">hid_gamepad_sys</span>::{<span class="ident">GamepadDevice</span>, <span class="ident">GamepadDriver</span>, <span class="ident">JoyKey</span>, <span class="ident">Motion</span>};
 <span class="kw">use</span> <span class="ident">hidapi::HidApi</span>;
@@ -147,8 +147,8 @@
                 .<span class="ident">unwrap</span>()
                 .<span class="ident">iter</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">Motion</span> {
-                    <span class="ident">acceleration</span>: <span class="ident">x</span>.<span class="ident">accel</span>,
-                    <span class="ident">rotation_speed</span>: <span class="ident">Euler::new</span>(<span class="ident">Deg</span>(<span class="ident">x</span>.<span class="ident">gyro</span>.<span class="ident">y</span>), <span class="ident">Deg</span>(<span class="ident">x</span>.<span class="ident">gyro</span>.<span class="ident">z</span>), <span class="ident">Deg</span>(<span class="ident">x</span>.<span class="ident">gyro</span>.<span class="ident">x</span>)),
+                    <span class="ident">acceleration</span>: <span class="ident">vec3</span>(<span class="op">-</span><span class="ident">x</span>.<span class="ident">accel</span>.<span class="ident">y</span>, <span class="ident">x</span>.<span class="ident">accel</span>.<span class="ident">z</span>, <span class="ident">x</span>.<span class="ident">accel</span>.<span class="ident">x</span>).<span class="ident">into</span>(),
+                    <span class="ident">rotation_speed</span>: <span class="ident">vec3</span>(<span class="ident">x</span>.<span class="ident">gyro</span>.<span class="ident">y</span>, <span class="op">-</span><span class="ident">x</span>.<span class="ident">gyro</span>.<span class="ident">z</span>, <span class="op">-</span><span class="ident">x</span>.<span class="ident">gyro</span>.<span class="ident">x</span>).<span class="ident">into</span>(),
                 })
                 .<span class="ident">collect</span>(),
             <span class="ident">keys</span>: <span class="macro">enum_map::enum_map!</span> {

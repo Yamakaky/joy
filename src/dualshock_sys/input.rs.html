@@ -404,7 +404,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>, <span class="ident">mem::size_of</span>};
 
 <span class="kw">use</span> <span class="ident">bitfield::bitfield</span>;
-<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">vec2</span>, <span class="ident">vec3</span>, <span class="ident">Deg</span>, <span class="ident">Euler</span>, <span class="ident">Vector2</span>, <span class="ident">Vector3</span>};
+<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">vec2</span>, <span class="ident">vec3</span>, <span class="ident">Vector2</span>, <span class="ident">Vector3</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">ConnectionType</span>, <span class="ident">RawId</span>, <span class="ident">I16LE</span>};
 
@@ -632,12 +632,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Gyro</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">normalize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Euler</span><span class="op">&lt;</span><span class="ident">Deg</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">normalize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">factor</span> <span class="op">=</span> <span class="number">2000.</span> <span class="op">/</span> (<span class="number">2.0_f64</span>.<span class="ident">powi</span>(<span class="number">15</span>));
-        <span class="kw">let</span> <span class="ident">pitch</span> <span class="op">=</span> <span class="ident">Deg</span>(<span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">pitch</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">factor</span>);
-        <span class="kw">let</span> <span class="ident">yaw</span> <span class="op">=</span> <span class="ident">Deg</span>(<span class="op">-</span><span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">yaw</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">factor</span>);
-        <span class="kw">let</span> <span class="ident">roll</span> <span class="op">=</span> <span class="ident">Deg</span>(<span class="op">-</span><span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">roll</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">factor</span>);
-        <span class="ident">Euler::new</span>(<span class="ident">pitch</span>, <span class="ident">yaw</span>, <span class="ident">roll</span>)
+        <span class="kw">let</span> <span class="ident">pitch</span> <span class="op">=</span> <span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">pitch</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">factor</span>;
+        <span class="kw">let</span> <span class="ident">yaw</span> <span class="op">=</span> <span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">yaw</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">factor</span>;
+        <span class="kw">let</span> <span class="ident">roll</span> <span class="op">=</span> <span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">roll</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">factor</span>;
+        <span class="ident">vec3</span>(<span class="ident">pitch</span>, <span class="ident">yaw</span>, <span class="ident">roll</span>)
     }
 }
 
@@ -651,7 +651,7 @@
 
 <span class="kw">impl</span> <span class="ident">Accel</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">raw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">i16</span><span class="op">&gt;</span> {
-        <span class="ident">vec3</span>(<span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">x</span>), <span class="op">-</span><span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">y</span>), <span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">z</span>))
+        <span class="ident">vec3</span>(<span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">x</span>), <span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">y</span>), <span class="ident">i16::from</span>(<span class="self">self</span>.<span class="ident">z</span>))
     }
 
     <span class="doccomment">/// Convert to SI units, in G across each axis.</span>

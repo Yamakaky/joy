@@ -208,16 +208,18 @@
 <span id="206">206</span>
 <span id="207">207</span>
 <span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">ops::DerefMut</span>,
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
 };
 
-<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">vec3</span>, <span class="ident">Deg</span>, <span class="ident">Euler</span>, <span class="ident">Vector2</span>, <span class="ident">Vector3</span>, <span class="ident">Zero</span>};
+<span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Vector2</span>, <span class="ident">Zero</span>};
 <span class="kw">use</span> <span class="ident">enigo</span>::{<span class="ident">KeyboardControllable</span>, <span class="ident">MouseControllable</span>};
 <span class="kw">use</span> <span class="ident">enum_map::EnumMap</span>;
-<span class="kw">use</span> <span class="ident">hid_gamepad_sys</span>::{<span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span>, <span class="ident">Motion</span>, <span class="ident">Report</span>};
+<span class="kw">use</span> <span class="ident">hid_gamepad_sys</span>::{<span class="ident">Acceleration</span>, <span class="ident">JoyKey</span>, <span class="ident">KeyStatus</span>, <span class="ident">Motion</span>, <span class="ident">Report</span>, <span class="ident">RotationSpeed</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">calibration::Calibration</span>,
@@ -307,11 +309,16 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_motion</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gyro</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="ident">acc</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="ident">dt</span>: <span class="ident">Duration</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply_motion</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">rotation_speed</span>: <span class="ident">RotationSpeed</span>,
+        <span class="ident">acceleration</span>: <span class="ident">Acceleration</span>,
+        <span class="ident">dt</span>: <span class="ident">Duration</span>,
+    ) {
         <span class="self">self</span>.<span class="ident">gyro</span>.<span class="ident">handle_frame</span>(
             <span class="kw-2">&amp;</span>[<span class="ident">Motion</span> {
-                <span class="ident">rotation_speed</span>: <span class="ident">Euler::new</span>(<span class="ident">Deg</span>(<span class="ident">gyro</span>.<span class="ident">x</span>), <span class="ident">Deg</span>(<span class="ident">gyro</span>.<span class="ident">y</span>), <span class="ident">Deg</span>(<span class="ident">gyro</span>.<span class="ident">z</span>)),
-                <span class="ident">acceleration</span>: <span class="ident">acc</span>,
+                <span class="ident">rotation_speed</span>,
+                <span class="ident">acceleration</span>,
             }],
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">mouse</span>,
             <span class="ident">dt</span>,
@@ -346,15 +353,12 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">handle_frame</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">motions</span>: <span class="kw-2">&amp;</span>[<span class="ident">Motion</span>], <span class="ident">mouse</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Mouse</span>, <span class="ident">dt</span>: <span class="ident">Duration</span>) {
         <span class="kw">const</span> <span class="ident">SMOOTH_RATE</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delta_position</span> <span class="op">=</span> <span class="ident">Vector2::zero</span>();
-        <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="ident">dt</span>.<span class="ident">as_secs_f64</span>() <span class="op">/</span> <span class="ident">motions</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>;
+        <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="ident">dt</span> <span class="op">/</span> <span class="ident">motions</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="kw-2">mut</span> <span class="ident">frame</span>) <span class="kw">in</span> <span class="ident">motions</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">enumerate</span>() {
-            <span class="kw">let</span> <span class="ident">raw_rot</span> <span class="op">=</span> <span class="ident">vec3</span>(
-                <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">x</span>.<span class="number">0</span>,
-                <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">y</span>.<span class="number">0</span>,
-                <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">z</span>.<span class="number">0</span>,
-            );
-            <span class="kw">let</span> <span class="ident">rot</span> <span class="op">=</span> <span class="ident">raw_rot</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">calibration</span>.<span class="ident">get_average</span>();
-            <span class="ident">frame</span>.<span class="ident">rotation_speed</span> <span class="op">=</span> <span class="ident">Euler::new</span>(<span class="ident">Deg</span>(<span class="ident">rot</span>.<span class="ident">x</span>), <span class="ident">Deg</span>(<span class="ident">rot</span>.<span class="ident">y</span>), <span class="ident">Deg</span>(<span class="ident">rot</span>.<span class="ident">z</span>));
+            <span class="kw">let</span> <span class="ident">avg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">calibration</span>.<span class="ident">get_average</span>();
+            <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">x</span> <span class="op">-</span><span class="op">=</span> <span class="ident">avg</span>.<span class="ident">x</span>;
+            <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">y</span> <span class="op">-</span><span class="op">=</span> <span class="ident">avg</span>.<span class="ident">y</span>;
+            <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">z</span> <span class="op">-</span><span class="op">=</span> <span class="ident">avg</span>.<span class="ident">z</span>;
             <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">space_mapper::map_input</span>(
                 <span class="kw-2">&amp;</span><span class="ident">frame</span>,
                 <span class="ident">dt</span>,
@@ -365,7 +369,7 @@
             <span class="ident">delta_position</span> <span class="op">+</span><span class="op">=</span> <span class="ident">offset</span>;
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">enabled</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">SMOOTH_RATE</span> {
                 <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span> <span class="number">0</span> {
-                    <span class="ident">std::thread::sleep</span>(<span class="ident">Duration::from_secs_f64</span>(<span class="ident">dt</span>));
+                    <span class="ident">std::thread::sleep</span>(<span class="ident">dt</span>);
                 }
                 <span class="ident">mouse</span>.<span class="ident">mouse_move_relative</span>(<span class="ident">offset</span>);
             }

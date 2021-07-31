@@ -187,7 +187,7 @@
 <span id="185">185</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Vector2</span>, <span class="ident">Zero</span>};
-<span class="kw">use</span> <span class="ident">std::collections::VecDeque</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::VecDeque</span>, <span class="ident">time::Duration</span>};
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::config::settings::GyroSettings</span>;
 
@@ -296,7 +296,7 @@
     <span class="doccomment">/// Updates `self.orientation` and returns the applied change.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// `orientation` and return value have origin in bottom left.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">rot</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="ident">dt</span>: <span class="ident">f64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">rot</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="ident">dt</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">apply_smoothing</span> {
             <span class="ident">rot</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">tiered_smooth</span>(<span class="ident">rot</span>);
         }
@@ -304,7 +304,7 @@
             <span class="ident">rot</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">tight</span>(<span class="ident">rot</span>);
         }
         <span class="kw">let</span> <span class="ident">sens</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_sens</span>(<span class="ident">rot</span>);
-        <span class="ident">rot</span> <span class="op">*</span> <span class="ident">sens</span> <span class="op">*</span> <span class="ident">dt</span>
+        <span class="ident">rot</span> <span class="op">*</span> <span class="ident">sens</span> <span class="op">*</span> <span class="ident">dt</span>.<span class="ident">as_secs_f64</span>()
     }
 
     <span class="kw">fn</span> <span class="ident">tiered_smooth</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rot</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
