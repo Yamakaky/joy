@@ -41,9 +41,9 @@ fn main() -> anyhow::Result<()> {
         };
 
         let delta = Euler::new(
-            gyro_speed.x * DS4_REPORT_DT,
-            gyro_speed.y * DS4_REPORT_DT,
-            gyro_speed.z * DS4_REPORT_DT,
+            Deg(gyro_speed.x * DS4_REPORT_DT),
+            Deg(gyro_speed.y * DS4_REPORT_DT),
+            Deg(gyro_speed.z * DS4_REPORT_DT),
         );
 
         orientation = orientation * Quaternion::from(delta);

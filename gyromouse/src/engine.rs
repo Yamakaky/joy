@@ -3,10 +3,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cgmath::{vec3, Deg, Euler, Vector2, Vector3, Zero};
+use cgmath::{Vector2, Vector3, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
-use hid_gamepad_sys::{JoyKey, KeyStatus, Motion, Report};
+use hid_gamepad_sys::{JoyKey, KeyStatus, Motion, Report, RotationSpeed};
 
 use crate::{
     calibration::Calibration,
@@ -96,10 +96,10 @@ impl Engine {
         }
     }
 
-    pub fn apply_motion(&mut self, gyro: Vector3<f64>, acc: Vector3<f64>, dt: Duration) {
+    pub fn apply_motion(&mut self, rotation_speed: RotationSpeed, acc: Vector3<f64>, dt: Duration) {
         self.gyro.handle_frame(
             &[Motion {
-                rotation_speed: Euler::new(Deg(gyro.x), Deg(gyro.y), Deg(gyro.z)),
+                rotation_speed,
                 acceleration: acc,
             }],
             &mut self.mouse,
@@ -135,15 +135,12 @@ impl Gyro {
     pub fn handle_frame(&mut self, motions: &[Motion], mouse: &mut Mouse, dt: Duration) {
         const SMOOTH_RATE: bool = false;
         let mut delta_position = Vector2::zero();
-        let dt = dt.as_secs_f64() / motions.len() as f64;
+        let dt = dt / motions.len() as u32;
         for (i, mut frame) in motions.iter().cloned().enumerate() {
-            let raw_rot = vec3(
-                frame.rotation_speed.x.0,
-                frame.rotation_speed.y.0,
-                frame.rotation_speed.z.0,
-            );
-            let rot = raw_rot - self.calibration.get_average();
-            frame.rotation_speed = Euler::new(Deg(rot.x), Deg(rot.y), Deg(rot.z));
+            let avg = self.calibration.get_average();
+            frame.rotation_speed.x -= avg.x;
+            frame.rotation_speed.y -= avg.y;
+            frame.rotation_speed.z -= avg.z;
             let delta = space_mapper::map_input(
                 &frame,
                 dt,
@@ -154,7 +151,7 @@ impl Gyro {
             delta_position += offset;
             if self.enabled && !SMOOTH_RATE {
                 if i > 0 {
-                    std::thread::sleep(Duration::from_secs_f64(dt));
+                    std::thread::sleep(dt);
                 }
                 mouse.mouse_move_relative(offset);
             }

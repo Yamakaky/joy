@@ -4,7 +4,6 @@ use crate::{
 };
 
 use anyhow::{bail, Result};
-use cgmath::vec3;
 use hid_gamepad::sys::GamepadDevice;
 use joycon::{
     hidapi::HidApi,
@@ -83,12 +82,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Butto
     for _ in 0..1000 {
         let report = gamepad.recv()?;
         for frame in report.motion.iter() {
-            let raw_rot = vec3(
-                frame.rotation_speed.x.0,
-                frame.rotation_speed.y.0,
-                frame.rotation_speed.z.0,
-            );
-            calibration.push(raw_rot);
+            calibration.push(frame.rotation_speed.as_vec());
         }
     }
     println!("calibrating done");

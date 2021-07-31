@@ -1,7 +1,7 @@
 use std::{fmt, mem::size_of};
 
 use bitfield::bitfield;
-use cgmath::{vec2, vec3, Deg, Euler, Vector2, Vector3};
+use cgmath::{vec2, vec3, Vector2, Vector3};
 
 use crate::{ConnectionType, RawId, I16LE};
 
@@ -229,12 +229,12 @@ pub struct Gyro {
 }
 
 impl Gyro {
-    pub fn normalize(&self) -> Euler<Deg<f64>> {
+    pub fn normalize(&self) -> Vector3<f64> {
         let factor = 2000. / (2.0_f64.powi(15));
-        let pitch = Deg(i16::from(self.pitch) as f64 * factor);
-        let yaw = Deg(-i16::from(self.yaw) as f64 * factor);
-        let roll = Deg(-i16::from(self.roll) as f64 * factor);
-        Euler::new(pitch, yaw, roll)
+        let pitch = i16::from(self.pitch) as f64 * factor;
+        let yaw = -i16::from(self.yaw) as f64 * factor;
+        let roll = -i16::from(self.roll) as f64 * factor;
+        vec3(pitch, yaw, roll)
     }
 }
 

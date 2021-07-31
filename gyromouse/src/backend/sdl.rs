@@ -128,7 +128,7 @@ impl Backend for SDLBackend {
                         / std::f64::consts::PI
                         * 180.;
 
-                    engine.apply_motion(gyro, accel, dt);
+                    engine.apply_motion(gyro.into(), accel, dt);
                 }
                 engine.apply_actions(now);
             }

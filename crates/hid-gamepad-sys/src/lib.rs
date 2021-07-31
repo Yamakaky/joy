@@ -1,7 +1,7 @@
-use std::any::Any;
+use std::{any::Any, ops::Mul, time::Duration};
 
 use anyhow::Result;
-use cgmath::{Deg, Euler, Vector2, Vector3};
+use cgmath::{vec3, Deg, Euler, Vector2, Vector3};
 use enum_map::{Enum, EnumMap};
 use hidapi::{DeviceInfo, HidApi};
 
@@ -62,8 +62,49 @@ pub struct Report {
 
 #[derive(Debug, Clone)]
 pub struct Motion {
-    pub rotation_speed: Euler<Deg<f64>>,
+    pub rotation_speed: RotationSpeed,
     pub acceleration: Vector3<f64>,
+}
+
+/// Uses the SDL convention.
+///
+/// Units are deg/s
+#[derive(Debug, Clone, Copy)]
+pub struct RotationSpeed {
+    /// -x ... +x is left ... right
+    pub x: f64,
+    /// -y ... +y is down ... up
+    pub y: f64,
+    /// -z ... +z is forward ... backward
+    pub z: f64,
+}
+
+impl RotationSpeed {
+    pub fn as_vec(self) -> Vector3<f64> {
+        vec3(self.x, self.y, self.z)
+    }
+}
+
+impl From<Vector3<f64>> for RotationSpeed {
+    fn from(raw: Vector3<f64>) -> Self {
+        Self {
+            x: raw.x,
+            y: raw.y,
+            z: raw.z,
+        }
+    }
+}
+
+impl Mul<Duration> for RotationSpeed {
+    type Output = Euler<Deg<f64>>;
+
+    fn mul(self, dt: Duration) -> Self::Output {
+        Euler::new(
+            Deg(self.x * dt.as_secs_f64()),
+            Deg(self.y * dt.as_secs_f64()),
+            Deg(self.z * dt.as_secs_f64()),
+        )
+    }
 }
 
 pub trait GamepadDriver {

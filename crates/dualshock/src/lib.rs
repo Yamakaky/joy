@@ -40,12 +40,13 @@ impl GamepadDevice for DS4 {
             ConnectionType::USB => &report.usb_full().unwrap().full,
         };
         let b = &full.base.buttons;
+        let rot = full.gyro.normalize();
         Ok(Report {
             left_joystick: full.base.left_stick.normalize(),
             right_joystick: full.base.right_stick.normalize(),
             motion: vec![Motion {
                 acceleration: full.accel.normalize(),
-                rotation_speed: full.gyro.normalize(),
+                rotation_speed: rot.into(),
             }],
             keys: enum_map::enum_map! {
                 JoyKey::Up => b.dpad().up().into(),

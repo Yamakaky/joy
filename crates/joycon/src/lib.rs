@@ -6,7 +6,7 @@ mod imu_handler;
 pub use crate::image::*;
 use anyhow::Result;
 pub use calibration::*;
-use cgmath::{Deg, Euler};
+use cgmath::vec3;
 pub use hid::*;
 use hid_gamepad_sys::{GamepadDevice, GamepadDriver, JoyKey, Motion};
 use hidapi::HidApi;
@@ -57,7 +57,7 @@ impl From<Report> for hid_gamepad_sys::Report {
                 .iter()
                 .map(|x| Motion {
                     acceleration: x.accel,
-                    rotation_speed: Euler::new(Deg(x.gyro.y), Deg(x.gyro.z), Deg(x.gyro.x)),
+                    rotation_speed: vec3(x.gyro.y, x.gyro.z, x.gyro.x).into(),
                 })
                 .collect(),
             keys: enum_map::enum_map! {

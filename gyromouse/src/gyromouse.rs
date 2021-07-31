@@ -1,5 +1,5 @@
 use cgmath::{Vector2, Zero};
-use std::collections::VecDeque;
+use std::{collections::VecDeque, time::Duration};
 
 use crate::config::settings::GyroSettings;
 
@@ -108,7 +108,7 @@ impl GyroMouse {
     /// Updates `self.orientation` and returns the applied change.
     ///
     /// `orientation` and return value have origin in bottom left.
-    pub fn process(&mut self, mut rot: Vector2<f64>, dt: f64) -> Vector2<f64> {
+    pub fn process(&mut self, mut rot: Vector2<f64>, dt: Duration) -> Vector2<f64> {
         if self.apply_smoothing {
             rot = self.tiered_smooth(rot);
         }
@@ -116,7 +116,7 @@ impl GyroMouse {
             rot = self.tight(rot);
         }
         let sens = self.get_sens(rot);
-        rot * sens * dt
+        rot * sens * dt.as_secs_f64()
     }
 
     fn tiered_smooth(&mut self, rot: Vector2<f64>) -> Vector2<f64> {
