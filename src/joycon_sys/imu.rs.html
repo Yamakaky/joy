@@ -204,14 +204,14 @@
         <span class="ident">vector_from_raw</span>(<span class="self">self</span>.<span class="ident">raw_gyro</span>)
     }
 
-    <span class="doccomment">/// Calculation from https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g</span>
+    <span class="doccomment">/// Calculation from &lt;https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#accelerometer---acceleration-in-g&gt;</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">accel_g</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="ident">_sens</span>: <span class="ident">AccSens</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
         <span class="comment">// TODO: handle sens</span>
         (<span class="self">self</span>.<span class="ident">raw_accel</span>() <span class="op">*</span> <span class="number">4.</span>).<span class="ident">div_element_wise</span>(<span class="ident">Vector3::from_value</span>(<span class="number">16383.</span>) <span class="op">-</span> <span class="ident">offset</span>)
     }
 
     <span class="doccomment">/// The rotation described in this frame.</span>
-    <span class="doccomment">/// https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps</span>
+    <span class="doccomment">/// &lt;https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/imu_sensor_notes.md#gyroscope-calibrated---rotation-in-degreess---dps&gt;</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotation_dps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>, <span class="ident">sens</span>: <span class="ident">GyroSens</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vector3</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> {
         (<span class="self">self</span>.<span class="ident">raw_gyro</span>() <span class="op">-</span> <span class="ident">offset</span>) <span class="op">*</span> <span class="ident">sens</span>.<span class="ident">factor</span>()
     }
@@ -318,7 +318,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// Accelerations frequencies above the value are ignored using a low-pass filter.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// See https://blog.endaq.com/filter-selection-for-shock-and-vibration-applications.</span>
+<span class="doccomment">/// See &lt;https://blog.endaq.com/filter-selection-for-shock-and-vibration-applications&gt;.</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">FromPrimitive</span>, <span class="ident">ToPrimitive</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">AccAntiAliasing</span> {
