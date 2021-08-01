@@ -147,7 +147,7 @@ pub enum Setting {
     RightStickMode(StickMode),
     LeftRingMode(RingMode),
     RightRingMode(RingMode),
-    StickSetting(StickSetting),
+    Stick(StickSetting),
 }
 
 #[derive(Debug, Clone)]

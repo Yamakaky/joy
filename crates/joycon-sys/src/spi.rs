@@ -135,7 +135,7 @@ impl fmt::Debug for SPIWriteRequest {
     }
 }
 
-fn dbg_spi_data(out: &mut fmt::DebugStruct, address: U32LE, size: u8, data: &SPIData) -> () {
+fn dbg_spi_data(out: &mut fmt::DebugStruct, address: U32LE, size: u8, data: &SPIData) {
     unsafe {
         let raw = &&data.raw[..size as usize];
         match (u32::from(address), size) {
@@ -566,7 +566,7 @@ impl From<UserSensorCalibration> for SPIWriteRequest {
             address: range.0.into(),
             size: range.1,
             data: SPIData {
-                imu_user_calib: calib.into(),
+                imu_user_calib: calib,
             },
         }
     }

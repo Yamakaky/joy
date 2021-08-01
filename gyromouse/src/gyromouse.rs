@@ -165,6 +165,7 @@ impl GyroMouse {
 }
 
 impl From<GyroSettings> for GyroMouse {
+    #[allow(clippy::float_cmp)]
     fn from(settings: GyroSettings) -> Self {
         assert_eq!(settings.cutoff_speed, 0.);
         Self {

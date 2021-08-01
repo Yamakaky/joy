@@ -42,7 +42,7 @@ fn convert_action_mod(
     Some(Action::Ext((action.action, action_type).into()))
 }
 
-fn map_key(layer: &mut Layer, actions: &Vec<JSMAction>) {
+fn map_key(layer: &mut Layer, actions: &[JSMAction]) {
     use EventModifier::*;
 
     let mut first = true;
@@ -174,7 +174,7 @@ fn setting(input: &str) -> IRes<&str, Setting> {
         trigger_mode,
         gyro_setting,
         ring_mode,
-        map(stick_setting, Setting::StickSetting),
+        map(stick_setting, Setting::Stick),
     ))(input)
 }
 
@@ -369,7 +369,7 @@ pub fn jsm_parse(input: &str) -> IRes<&str, Vec<Cmd>> {
         let (input, _) = multispace0(input)?;
         Ok((input, cmds))
     })(input)?;
-    Ok((input, cmds.into_iter().flat_map(|x| x).collect()))
+    Ok((input, cmds.into_iter().flatten().collect()))
 }
 
 fn mapkey(input: &str) -> IRes<&str, MapKey> {

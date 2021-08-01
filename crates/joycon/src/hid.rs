@@ -46,7 +46,8 @@ impl JoyCon {
             JOYCON_L_BT => WhichController::LeftJoyCon,
             JOYCON_R_BT => WhichController::RightJoyCon,
             PRO_CONTROLLER => WhichController::ProController,
-            JOYCON_CHARGING_GRIP | _ => panic!("unknown controller type"),
+            JOYCON_CHARGING_GRIP => panic!("unsupported charging grip"),
+            _ => panic!("unknown controller type"),
         };
         let mut joycon = JoyCon {
             device,
@@ -82,7 +83,7 @@ impl JoyCon {
         Span::current().record("special", &report.is_special());
         trace!(out_report = %hex::encode(report.as_bytes()));
         let nb_written = self.device.write(report.as_bytes())?;
-        assert_eq!(nb_written, report.len());
+        assert_eq!(nb_written, report.byte_size());
         Ok(())
     }
 
@@ -101,10 +102,8 @@ impl JoyCon {
         }
         if let Some(mcu_report) = report.mcu_report() {
             if self.enable_ir_loop {
-                for packet in &mut self.image.handle(&mcu_report) {
-                    if let Some(mut packet) = packet {
-                        self.send(&mut packet)?;
-                    }
+                for packet in self.image.handle(mcu_report).iter_mut().flatten() {
+                    self.send(packet)?;
                 }
             }
         }

@@ -1,8 +1,8 @@
 use enigo::{Key, MouseButton};
 use enum_map::{Enum, EnumMap};
 use hid_gamepad_sys::JoyKey;
-use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug, time::Duration};
+use std::{convert::TryInto, time::Instant};
 
 use crate::ClickType;
 
@@ -124,8 +124,7 @@ pub enum MapKey {
 
 impl MapKey {
     pub fn to_layer(self) -> u8 {
-        assert!(<Self as Enum<()>>::POSSIBLE_VALUES < 255);
-        <Self as Enum<()>>::to_usize(self) as u8
+        <Self as Enum<()>>::to_usize(self).try_into().unwrap()
     }
 }
 
@@ -329,7 +328,7 @@ impl Buttons {
     fn find_binding(&self, key: MapKey) -> Layer {
         let layers = &self.bindings[key];
         for i in self.current_layers.iter().rev() {
-            if let Some(layer) = layers.get(&i) {
+            if let Some(layer) = layers.get(i) {
                 if layer.is_good() {
                     return *layer;
                 }

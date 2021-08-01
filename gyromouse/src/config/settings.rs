@@ -42,7 +42,7 @@ impl Settings {
     pub fn apply(&mut self, setting: Setting) {
         match setting {
             Setting::Gyro(s) => self.gyro.apply(s),
-            Setting::StickSetting(s) => self.stick_settings.apply(s),
+            Setting::Stick(s) => self.stick_settings.apply(s),
             Setting::LeftStickMode(m) => self.left_stick_mode = m,
             Setting::RightStickMode(m) => self.right_stick_mode = m,
             Setting::LeftRingMode(m) => self.left_ring_mode = m,

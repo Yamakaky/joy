@@ -67,7 +67,7 @@ impl SimpleCalibration {
 
 impl Default for SimpleCalibration {
     fn default() -> Self {
-        SimpleCalibration::with_capacity(3 * 250 as usize)
+        SimpleCalibration::with_capacity(3 * 250_usize)
     }
 }
 

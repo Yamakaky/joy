@@ -96,7 +96,7 @@ impl OutputReport {
         report
     }
 
-    pub fn len(&self) -> usize {
+    pub fn byte_size(&self) -> usize {
         match self.id.try_into() {
             Some(OutputReportId::RumbleAndSubcmd) => 49,
             Some(OutputReportId::MCUFwUpdate) => unimplemented!(),
@@ -107,7 +107,7 @@ impl OutputReport {
     }
 
     pub fn as_bytes(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self as *const _ as *const u8, self.len()) }
+        unsafe { std::slice::from_raw_parts(self as *const _ as *const u8, self.byte_size()) }
     }
 
     pub fn as_bytes_mut(&mut self) -> &mut [u8] {

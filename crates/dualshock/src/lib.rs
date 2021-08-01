@@ -22,7 +22,7 @@ impl GamepadDriver for DS4Driver {
             && [HID_PRODUCT_ID_OLD, HID_PRODUCT_ID_NEW].contains(&device_info.product_id())
         {
             Ok(Some(Box::new(DS4 {
-                device: device_info.open_device(&api)?,
+                device: device_info.open_device(api)?,
             })))
         } else {
             Ok(None)

@@ -25,7 +25,7 @@ impl GamepadDriver for JoyconDriver {
         device_info: &hidapi::DeviceInfo,
     ) -> Result<Option<Box<dyn GamepadDevice>>> {
         if device_info.vendor_id() == NINTENDO_VENDOR_ID {
-            let mut joycon = JoyCon::new(device_info.open_device(&api)?, device_info.clone())?;
+            let mut joycon = JoyCon::new(device_info.open_device(api)?, device_info.clone())?;
             joycon.enable_imu()?;
             joycon.load_calibration()?;
             Ok(Some(Box::new(joycon)))
