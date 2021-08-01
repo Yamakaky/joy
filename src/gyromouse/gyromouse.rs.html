@@ -185,6 +185,7 @@
 <span id="183">183</span>
 <span id="184">184</span>
 <span id="185">185</span>
+<span id="186">186</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">Vector2</span>, <span class="ident">Zero</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections::VecDeque</span>, <span class="ident">time::Duration</span>};
@@ -353,6 +354,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">GyroSettings</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GyroMouse</span> {
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::float_cmp</span>)]</span>
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">settings</span>: <span class="ident">GyroSettings</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="macro">assert_eq!</span>(<span class="ident">settings</span>.<span class="ident">cutoff_speed</span>, <span class="number">0.</span>);
         <span class="self">Self</span> {
