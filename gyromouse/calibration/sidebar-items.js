@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Calibration",""]],"type":[["Entry",""]]});
+initSidebarItems({"enum":[["BetterCalibrationState",""]],"struct":[["BetterCalibration",""],["Calibration",""],["SimpleCalibration",""]],"type":[["Entry",""]]});

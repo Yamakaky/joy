@@ -207,9 +207,6 @@
 <span id="205">205</span>
 <span id="206">206</span>
 <span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">ops::DerefMut</span>,
@@ -354,11 +351,8 @@
         <span class="kw">const</span> <span class="ident">SMOOTH_RATE</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delta_position</span> <span class="op">=</span> <span class="ident">Vector2::zero</span>();
         <span class="kw">let</span> <span class="ident">dt</span> <span class="op">=</span> <span class="ident">dt</span> <span class="op">/</span> <span class="ident">motions</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
-        <span class="kw">for</span> (<span class="ident">i</span>, <span class="kw-2">mut</span> <span class="ident">frame</span>) <span class="kw">in</span> <span class="ident">motions</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">enumerate</span>() {
-            <span class="kw">let</span> <span class="ident">avg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">calibration</span>.<span class="ident">get_average</span>();
-            <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">x</span> <span class="op">-</span><span class="op">=</span> <span class="ident">avg</span>.<span class="ident">x</span>;
-            <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">y</span> <span class="op">-</span><span class="op">=</span> <span class="ident">avg</span>.<span class="ident">y</span>;
-            <span class="ident">frame</span>.<span class="ident">rotation_speed</span>.<span class="ident">z</span> <span class="op">-</span><span class="op">=</span> <span class="ident">avg</span>.<span class="ident">z</span>;
+        <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">frame</span>) <span class="kw">in</span> <span class="ident">motions</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">enumerate</span>() {
+            <span class="kw">let</span> <span class="ident">frame</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">calibration</span>.<span class="ident">calibrate</span>(<span class="ident">frame</span>);
             <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">space_mapper::map_input</span>(
                 <span class="kw-2">&amp;</span><span class="ident">frame</span>,
                 <span class="ident">dt</span>,
