@@ -7,7 +7,7 @@ use nom::{
     branch::alt,
     bytes::complete::{tag, tag_no_case},
     character::{
-        complete::{newline, not_line_ending, satisfy, space0, space1},
+        complete::{line_ending, multispace0, not_line_ending, satisfy, space0, space1},
         is_alphanumeric,
     },
     combinator::{all_consuming, map, opt, value},
@@ -364,8 +364,11 @@ fn line(input: &str) -> IRes<&str, Option<Cmd>> {
 }
 
 pub fn jsm_parse(input: &str) -> IRes<&str, Vec<Cmd>> {
-    let (input, cmds) =
-        all_consuming(separated_list0(newline, context("parse line", line)))(input)?;
+    let (input, cmds) = all_consuming(|input| {
+        let (input, cmds) = separated_list0(line_ending, context("parse line", line))(input)?;
+        let (input, _) = multispace0(input)?;
+        Ok((input, cmds))
+    })(input)?;
     Ok((input, cmds.into_iter().flat_map(|x| x).collect()))
 }
 
