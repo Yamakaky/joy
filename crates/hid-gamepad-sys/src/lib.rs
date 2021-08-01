@@ -60,7 +60,7 @@ pub struct Report {
     pub frequency: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Motion {
     pub rotation_speed: RotationSpeed,
     pub acceleration: Acceleration,

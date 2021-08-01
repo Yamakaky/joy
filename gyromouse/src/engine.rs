@@ -141,11 +141,8 @@ impl Gyro {
         const SMOOTH_RATE: bool = false;
         let mut delta_position = Vector2::zero();
         let dt = dt / motions.len() as u32;
-        for (i, mut frame) in motions.iter().cloned().enumerate() {
-            let avg = self.calibration.get_average();
-            frame.rotation_speed.x -= avg.x;
-            frame.rotation_speed.y -= avg.y;
-            frame.rotation_speed.z -= avg.z;
+        for (i, frame) in motions.iter().cloned().enumerate() {
+            let frame = self.calibration.calibrate(frame);
             let delta = space_mapper::map_input(
                 &frame,
                 dt,

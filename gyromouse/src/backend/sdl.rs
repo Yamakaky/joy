@@ -73,8 +73,8 @@ impl Backend for SDLBackend {
                         let _ = controller.sensor_set_enabled(SensorType::Accelerometer, true);
                         let _ = controller.sensor_set_enabled(SensorType::Gyroscope, true);
 
-                        let calibration = Calibration::with_capacity(250 * 60);
-                        let engine = Engine::new(settings.clone(), bindings.clone(), calibration);
+                        let engine =
+                            Engine::new(settings.clone(), bindings.clone(), Calibration::empty());
                         controllers.insert(which, ControllerState { controller, engine });
                     }
                     Event::ControllerDeviceRemoved { which, .. } => {

@@ -1,5 +1,7 @@
+use std::time::{Duration, Instant};
+
 use crate::{
-    calibration::Calibration, config::settings::Settings, engine::Engine, mapping::Buttons,
+    calibration::BetterCalibration, config::settings::Settings, engine::Engine, mapping::Buttons,
     opts::Run,
 };
 
@@ -76,17 +78,17 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Butto
         ))?;
     }
 
-    let mut calibration = Calibration::with_capacity(250 * 60);
+    let mut calibrator = BetterCalibration::default();
 
     println!("calibrating");
-    for _ in 0..100 {
+    loop {
         let report = gamepad.recv()?;
-        for frame in report.motion.iter() {
-            calibration.push(frame.rotation_speed.as_vec());
+        if calibrator.push(report.motion[0], Instant::now(), Duration::from_secs(1)) {
+            break;
         }
     }
     println!("calibrating done");
-    let mut engine = Engine::new(settings, bindings, calibration);
+    let mut engine = Engine::new(settings, bindings, calibrator.finish());
 
     loop {
         let report = gamepad.recv()?;
