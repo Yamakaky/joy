@@ -1,3 +1,5 @@
+#![cfg_attr(test, allow(dead_code, unreachable_code, unused_variables))]
+
 mod backend;
 mod calibration;
 mod config;

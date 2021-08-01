@@ -60,7 +60,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --workspace --verbose --all-features
+          args: --workspace --verbose
 
       - name: ☁️ Upload gyromouse
         uses: actions/upload-artifact@v2
