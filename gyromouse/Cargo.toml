@@ -5,9 +5,9 @@ authors = ["Mikaël Fourrier <mikael.fourrier@pm.me>"]
 edition = "2018"
 
 [features]
-all-backends = ["sdl2", "hidapi"]
+default = ["sdl2", "hidapi"]
 hidapi = ["hid-gamepad", "joycon"]
-#sdl2-static = ["sdl2", "sdl2/static-link", "sdl2/use-vcpkg"]
+sdl2-static = ["sdl2", "sdl2/static-link", "sdl2/use-vcpkg"]
 
 [dependencies]
 anyhow = "1.0"
@@ -26,11 +26,12 @@ git = "https://github.com/Yamakaky/rust-sdl2"
 branch = "sensor-api"
 optional = true 
 default-features = false
+features = ["static-link", "use-vcpkg"]
 
 [package.metadata.vcpkg]
 dependencies = ["sdl2"]
 git = "https://github.com/Yamakaky/vcpkg"
-rev = "sdl-hidapi"
+branch = "sdl-hidapi"
 
 [package.metadata.vcpkg.target]
 x86_64-pc-windows-msvc = { triplet = "x64-windows-static-md" }
