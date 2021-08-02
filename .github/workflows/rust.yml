@@ -43,7 +43,7 @@ jobs:
 
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
-        run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
+        run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev libsdl2-dev
 
       - name: 🔨 Build SDL
         uses: actions-rs/cargo@v1
