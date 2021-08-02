@@ -1,0 +1,51 @@
+# Windows interaction using gyro
+# Clear previous settings
+RESET_MAPPINGS
+
+# Calibration
+REAL_WORLD_CALIBRATION = 5.3333
+IN_GAME_SENS = 1
+COUNTER_OS_MOUSE_SPEED
+
+# DPAD is arrows
+LEFT = LEFT
+RIGHT = RIGHT
+UP = UP
+DOWN = DOWN
+
+# Mouse Buttons and wheel
+R = FMOUSE
+L = BMOUSE
+ZR = LMOUSE LMOUSE
+ZL = RMOUSE RMOUSE
+L3 = MMOUSE
+LEFT_STICK_MODE = SCROLL_WHEEL
+LLEFT = SCROLLUP
+LRIGHT = SCROLLDOWN
+SCROLL_SENS = 60
+
+# Button pad is common buttons
+S = ENTER
+W = SPACE
+N = BACKSPACE
+E = ESC GYRO_OFF
+
++ = LALT\ !TAB\           # Task view
+- = CONTROL\ LWINDOWS\ O\   # On Screen Keyboard
+HOME = LWINDOWS			 # Start Menu
+HOME,HOME = LWINDOWS\ D\ # Minimize All
+
+# Right stick drives the cursor
+MIN_GYRO_SENS = 8
+MAX_GYRO_SENS = 16
+GYRO_CUTOFF_RECOVERY = 5
+MIN_GYRO_THRESHOLD = 5
+MAX_GYRO_THRESHOLD = 75
+GYRO_SMOOTH_THRESHOLD = 5
+
+# In case you want to use the right stick instead
+RIGHT_STICK_MODE = AIM
+STICK_SENS = 360
+STICK_POWER = 1
+STICK_ACCELERATION_RATE = 2
+STICK_ACCELERATION_CAP = 4
