@@ -50,6 +50,11 @@ jobs:
         with:
           command: vcpkg
           args: --verbose build --manifest-path gyromouse/Cargo.toml
+      - name: dbg sdl
+        if: matrix.platform == 'linux'
+        run: |
+          mv target/vcpkg/installed/x64-linux/debug/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
+          mv target/vcpkg/installed/x64-linux/debug/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
         with:
