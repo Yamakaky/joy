@@ -19,6 +19,7 @@ use nom::{
 
 use crate::{
     mapping::{Action, Buttons, Layer, MapKey, VirtualKey},
+    mouse::Mouse,
     ClickType,
 };
 
@@ -90,6 +91,7 @@ pub fn parse_file<'a>(
     content: &'a str,
     settings: &mut Settings,
     mapping: &mut Buttons,
+    mouse: &mut Mouse,
 ) -> IRes<&'a str, ()> {
     for cmd in jsm_parse(content)?.1 {
         match cmd {
@@ -102,7 +104,12 @@ pub fn parse_file<'a>(
             }
             Cmd::Map(Key::Simul(_k1, _k2), ref _actions) => unimplemented!(),
             Cmd::Setting(setting) => settings.apply(setting),
-            _ => unimplemented!(),
+            Cmd::Reset => {
+                settings.reset();
+                mapping.reset()
+            }
+            Cmd::RealWorldCalibration(c) => mouse.set_calibration(c),
+            Cmd::Special(_) => unimplemented!(),
         }
     }
     Ok(("", ()))
@@ -346,6 +353,8 @@ fn cmd(input: &str) -> IRes<&str, Cmd> {
         binding,
         map(special, Cmd::Special),
         map(setting, Cmd::Setting),
+        value(Cmd::Reset, tag_no_case("RESET_MAPPINGS")),
+        f64_setting("REAL_WORLD_CALIBRATION", Cmd::RealWorldCalibration),
     ))(input)
 }
 

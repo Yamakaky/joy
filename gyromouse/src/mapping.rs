@@ -207,6 +207,10 @@ impl Buttons {
         }
     }
 
+    pub fn reset(&mut self) {
+        *self = Self::new();
+    }
+
     pub fn get(&mut self, key: MapKey, layer: u8) -> &mut Layer {
         self.bindings[key].entry(layer).or_default()
     }

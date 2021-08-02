@@ -18,6 +18,7 @@ use sdl2::{
 
 use crate::{
     calibration::Calibration, config::settings::Settings, engine::Engine, mapping::Buttons,
+    mouse::Mouse,
 };
 
 use super::Backend;
@@ -48,6 +49,7 @@ impl Backend for SDLBackend {
         _opts: crate::opts::Run,
         settings: Settings,
         bindings: Buttons,
+        mouse: Mouse,
     ) -> anyhow::Result<()> {
         let mut event_pump = self.sdl.event_pump().unwrap();
 
@@ -73,8 +75,12 @@ impl Backend for SDLBackend {
                         let _ = controller.sensor_set_enabled(SensorType::Accelerometer, true);
                         let _ = controller.sensor_set_enabled(SensorType::Gyroscope, true);
 
-                        let engine =
-                            Engine::new(settings.clone(), bindings.clone(), Calibration::empty());
+                        let engine = Engine::new(
+                            settings.clone(),
+                            bindings.clone(),
+                            Calibration::empty(),
+                            mouse.clone(),
+                        );
                         controllers.insert(which, ControllerState { controller, engine });
                     }
                     Event::ControllerDeviceRemoved { which, .. } => {

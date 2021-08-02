@@ -155,6 +155,8 @@ pub enum Cmd {
     Map(Key, Vec<JSMAction>),
     Special(SpecialKey),
     Setting(Setting),
+    Reset,
+    RealWorldCalibration(f64),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

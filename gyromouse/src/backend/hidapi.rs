@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use crate::{
     calibration::BetterCalibration, config::settings::Settings, engine::Engine, mapping::Buttons,
-    opts::Run,
+    mouse::Mouse, opts::Run,
 };
 
 use anyhow::{bail, Result};
@@ -42,11 +42,17 @@ impl Backend for HidapiBackend {
         bail!("No gamepad found");
     }
 
-    fn run(&mut self, _opts: Run, settings: Settings, bindings: Buttons) -> Result<()> {
+    fn run(
+        &mut self,
+        _opts: Run,
+        settings: Settings,
+        bindings: Buttons,
+        mouse: Mouse,
+    ) -> Result<()> {
         loop {
             for device_info in self.api.device_list() {
                 if let Some(mut gamepad) = hid_gamepad::open_gamepad(&self.api, device_info)? {
-                    return hid_main(gamepad.as_mut(), settings, bindings);
+                    return hid_main(gamepad.as_mut(), settings, bindings, mouse);
                 }
             }
             std::thread::sleep(std::time::Duration::from_secs(1));
@@ -55,7 +61,12 @@ impl Backend for HidapiBackend {
     }
 }
 
-fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Buttons) -> Result<()> {
+fn hid_main(
+    gamepad: &mut dyn GamepadDevice,
+    settings: Settings,
+    bindings: Buttons,
+    mouse: Mouse,
+) -> Result<()> {
     if let Some(joycon) = gamepad.as_any().downcast_mut::<JoyCon>() {
         dbg!(joycon.set_home_light(light::HomeLight::new(
             0x8,
@@ -88,7 +99,7 @@ fn hid_main(gamepad: &mut dyn GamepadDevice, settings: Settings, bindings: Butto
         }
     }
     println!("calibrating done");
-    let mut engine = Engine::new(settings, bindings, calibrator.finish());
+    let mut engine = Engine::new(settings, bindings, calibrator.finish(), mouse);
 
     loop {
         let report = gamepad.recv()?;

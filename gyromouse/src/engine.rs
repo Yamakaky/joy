@@ -32,12 +32,17 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(settings: Settings, buttons: Buttons, calibration: Calibration) -> Self {
+    pub fn new(
+        settings: Settings,
+        buttons: Buttons,
+        calibration: Calibration,
+        mouse: Mouse,
+    ) -> Self {
         Engine {
             left_stick: settings.new_left_stick(),
             right_stick: settings.new_right_stick(),
             buttons,
-            mouse: Mouse::new(),
+            mouse,
             gyro: Gyro::new(settings, calibration),
             last_keys: EnumMap::default(),
         }

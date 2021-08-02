@@ -19,7 +19,7 @@ use clap::Clap;
 use nom::{error::convert_error, Err};
 use opts::Opts;
 
-use crate::{config::settings::Settings, mapping::Buttons};
+use crate::{config::settings::Settings, mapping::Buttons, mouse::Mouse};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ClickType {
@@ -55,6 +55,8 @@ fn main() -> anyhow::Result<()> {
         }
     };
 
+    let mut mouse = Mouse::new();
+
     match opts.cmd {
         opts::Cmd::Validate(v) => {
             let mut settings = Settings::default();
@@ -66,7 +68,7 @@ fn main() -> anyhow::Result<()> {
                 content_file.read_to_string(&mut buf)?;
                 buf
             };
-            match config::parse::parse_file(&content, &mut settings, &mut bindings) {
+            match config::parse::parse_file(&content, &mut settings, &mut bindings, &mut mouse) {
                 Ok(_) => Ok(()),
                 Err(Err::Error(e)) | Err(Err::Failure(e)) => {
                     bail!("{:?}", convert_error(content.as_str(), e))
@@ -85,14 +87,14 @@ fn main() -> anyhow::Result<()> {
                 content_file.read_to_string(&mut buf)?;
                 buf
             };
-            match config::parse::parse_file(&content, &mut settings, &mut bindings) {
+            match config::parse::parse_file(&content, &mut settings, &mut bindings, &mut mouse) {
                 Ok(_) => {}
                 Err(Err::Error(e)) | Err(Err::Failure(e)) => {
                     bail!("{:?}", convert_error(content.as_str(), e))
                 }
                 Err(_) => unimplemented!(),
             }
-            backend.run(r, settings, bindings)
+            backend.run(r, settings, bindings, mouse)
         }
         opts::Cmd::List => backend.list_devices(),
     }

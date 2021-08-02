@@ -53,6 +53,10 @@ impl Settings {
         }
     }
 
+    pub fn reset(&mut self) {
+        *self = Self::default();
+    }
+
     pub fn new_left_stick(&self) -> Box<dyn Stick> {
         self.new_stick(self.left_stick_mode, true)
     }
