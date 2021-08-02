@@ -26,7 +26,6 @@ git = "https://github.com/Yamakaky/rust-sdl2"
 branch = "sensor-api"
 optional = true 
 default-features = false
-features = ["static-link", "use-vcpkg"]
 
 [package.metadata.vcpkg]
 dependencies = ["sdl2"]
