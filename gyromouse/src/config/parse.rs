@@ -109,6 +109,7 @@ pub fn parse_file<'a>(
                 mapping.reset()
             }
             Cmd::RealWorldCalibration(c) => mouse.set_calibration(c),
+            Cmd::InGameSens(c) => mouse.set_game_sens(c),
             Cmd::Special(_) => unimplemented!(),
         }
     }
@@ -355,6 +356,7 @@ fn cmd(input: &str) -> IRes<&str, Cmd> {
         map(setting, Cmd::Setting),
         value(Cmd::Reset, tag_no_case("RESET_MAPPINGS")),
         f64_setting("REAL_WORLD_CALIBRATION", Cmd::RealWorldCalibration),
+        f64_setting("IN_GAME_SENS", Cmd::InGameSens),
     ))(input)
 }
 

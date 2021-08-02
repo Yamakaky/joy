@@ -6,6 +6,7 @@ pub struct Mouse {
     enigo: Enigo,
     error_accumulator: Vector2<f64>,
     calibration: f64,
+    game_sens: f64,
 }
 
 impl Mouse {
@@ -14,19 +15,21 @@ impl Mouse {
             enigo: Enigo::new(),
             error_accumulator: Vector2::zero(),
             calibration: 1.,
+            game_sens: 1.,
         }
     }
 
     pub fn clone(&self) -> Self {
         Mouse {
             calibration: self.calibration,
+            game_sens: self.game_sens,
             ..Self::new()
         }
     }
 
     // mouse movement is pixel perfect, so we keep track of the error.
     pub fn mouse_move_relative(&mut self, mut offset: Vector2<f64>) {
-        offset *= self.calibration;
+        offset *= self.calibration * self.game_sens;
         let sum = offset + self.error_accumulator;
         let rounded = vec2(sum.x.round(), sum.y.round());
         self.error_accumulator = sum - rounded;
@@ -42,5 +45,9 @@ impl Mouse {
 
     pub fn set_calibration(&mut self, calibration: f64) {
         self.calibration = calibration;
+    }
+
+    pub fn set_game_sens(&mut self, sens: f64) {
+        self.game_sens = sens;
     }
 }

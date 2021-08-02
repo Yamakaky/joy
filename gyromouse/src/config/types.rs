@@ -157,6 +157,7 @@ pub enum Cmd {
     Setting(Setting),
     Reset,
     RealWorldCalibration(f64),
+    InGameSens(f64),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
