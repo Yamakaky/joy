@@ -68,13 +68,8 @@ fn main() -> anyhow::Result<()> {
                 content_file.read_to_string(&mut buf)?;
                 buf
             };
-            match config::parse::parse_file(&content, &mut settings, &mut bindings, &mut mouse) {
-                Ok(_) => Ok(()),
-                Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-                    bail!("{:?}", convert_error(content.as_str(), e))
-                }
-                Err(_) => unimplemented!(),
-            }
+            config::parse::parse_file(&content, &mut settings, &mut bindings, &mut mouse)?;
+            Ok(())
         }
         opts::Cmd::FlickCalibrate => todo!(),
         opts::Cmd::Run(r) => {
@@ -87,13 +82,7 @@ fn main() -> anyhow::Result<()> {
                 content_file.read_to_string(&mut buf)?;
                 buf
             };
-            match config::parse::parse_file(&content, &mut settings, &mut bindings, &mut mouse) {
-                Ok(_) => {}
-                Err(Err::Error(e)) | Err(Err::Failure(e)) => {
-                    bail!("{:?}", convert_error(content.as_str(), e))
-                }
-                Err(_) => unimplemented!(),
-            }
+            config::parse::parse_file(&content, &mut settings, &mut bindings, &mut mouse)?;
             backend.run(r, settings, bindings, mouse)
         }
         opts::Cmd::List => backend.list_devices(),

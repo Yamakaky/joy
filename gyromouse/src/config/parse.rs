@@ -14,7 +14,13 @@ use nom::{
     error::{context, VerboseError},
     multi::{separated_list0, separated_list1},
     number::complete::float,
-    IResult,
+    IResult, Parser,
+};
+use nom_locate::LocatedSpan;
+use nom_supreme::{
+    error::ErrorTree,
+    final_parser::{final_parser, Location},
+    parser_ext::ParserExt,
 };
 
 use crate::{
@@ -23,7 +29,8 @@ use crate::{
     ClickType,
 };
 
-type IRes<I, O> = IResult<I, O, VerboseError<I>>;
+type Input<'a> = &'a str;
+type IRes<'a, O> = IResult<Input<'a>, O, ErrorTree<Input<'a>>>;
 
 fn convert_action_mod(
     action: &JSMAction,
@@ -92,8 +99,8 @@ pub fn parse_file<'a>(
     settings: &mut Settings,
     mapping: &mut Buttons,
     mouse: &mut Mouse,
-) -> IRes<&'a str, ()> {
-    for cmd in jsm_parse(content)?.1 {
+) -> anyhow::Result<()> {
+    for cmd in jsm_parse(content)? {
         match cmd {
             Cmd::Map(Key::Simple(key), ref actions) => map_key(mapping.get(key, 0), actions),
 
@@ -114,14 +121,14 @@ pub fn parse_file<'a>(
             Cmd::Special(_) => unimplemented!(),
         }
     }
-    Ok(("", ()))
+    Ok(())
 }
 
-fn keys(input: &str) -> IRes<&str, Key> {
-    fn simple(input: &str) -> IRes<&str, Key> {
+fn keys(input: Input) -> IRes<'_, Key> {
+    fn simple(input: Input) -> IRes<'_, Key> {
         mapkey(input).map(|(i, k)| (i, Key::Simple(k)))
     }
-    fn simul(input: &str) -> IRes<&str, Key> {
+    fn simul(input: Input) -> IRes<'_, Key> {
         let (input, k1) = mapkey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag("+")(input)?;
@@ -129,7 +136,7 @@ fn keys(input: &str) -> IRes<&str, Key> {
         let (input, k2) = mapkey(input)?;
         Ok((input, Key::Simul(k1, k2)))
     }
-    fn chorded(input: &str) -> IRes<&str, Key> {
+    fn chorded(input: Input) -> IRes<'_, Key> {
         let (input, k1) = mapkey(input)?;
         let (input, _) = space0(input)?;
         let (input, _) = tag(",")(input)?;
@@ -140,7 +147,7 @@ fn keys(input: &str) -> IRes<&str, Key> {
     alt((simul, chorded, simple))(input)
 }
 
-fn action(input: &str) -> IRes<&str, JSMAction> {
+fn action(input: Input) -> IRes<'_, JSMAction> {
     let (input, action_mod) = opt(alt((
         value(ActionModifier::Toggle, tag("^")),
         value(ActionModifier::Instant, tag("!")),
@@ -167,7 +174,7 @@ fn action(input: &str) -> IRes<&str, JSMAction> {
     ))
 }
 
-fn binding(input: &str) -> IRes<&str, Cmd> {
+fn binding(input: Input) -> IRes<'_, Cmd> {
     let (input, key) = keys(input)?;
     let (input, _) = space0(input)?;
     let (input, _) = tag("=")(input)?;
@@ -176,7 +183,7 @@ fn binding(input: &str) -> IRes<&str, Cmd> {
     Ok((input, Cmd::Map(key, actions)))
 }
 
-fn setting(input: &str) -> IRes<&str, Setting> {
+fn setting(input: Input) -> IRes<'_, Setting> {
     alt((
         stick_mode,
         f64_setting("TRIGGER_THRESHOLD", Setting::TriggerThreshold),
@@ -190,7 +197,7 @@ fn setting(input: &str) -> IRes<&str, Setting> {
 fn f64_setting<'a, Output>(
     tag: &'static str,
     value_map: impl Fn(f64) -> Output,
-) -> impl FnMut(&'a str) -> IRes<&'a str, Output> {
+) -> impl FnMut(Input) -> IRes<'_, Output> {
     move |input| {
         let (input, _) = tag_no_case(tag)(input)?;
         let (input, _) = equal_with_space(input)?;
@@ -199,7 +206,7 @@ fn f64_setting<'a, Output>(
     }
 }
 
-fn stick_setting(input: &str) -> IRes<&str, StickSetting> {
+fn stick_setting(input: Input) -> IRes<'_, StickSetting> {
     alt((
         f64_setting("STICK_DEADZONE_INNER", StickSetting::Deadzone),
         f64_setting("STICK_DEADZONE_OUTER", |v| StickSetting::FullZone(1. - v)),
@@ -228,7 +235,7 @@ fn stick_setting(input: &str) -> IRes<&str, StickSetting> {
     ))(input)
 }
 
-fn stick_axis(input: &str) -> IRes<&str, StickSetting> {
+fn stick_axis(input: Input) -> IRes<'_, StickSetting> {
     let (input, tag) = alt((tag_no_case("STICK_AXIS_X"), tag_no_case("STICK_AXIS_Y")))(input)?;
     let (input, _) = equal_with_space(input)?;
     let (input, invert) = alt((
@@ -245,7 +252,7 @@ fn stick_axis(input: &str) -> IRes<&str, StickSetting> {
     ))
 }
 
-fn ring_mode(input: &str) -> IRes<&str, Setting> {
+fn ring_mode(input: Input) -> IRes<'_, Setting> {
     let (input, tag) = alt((
         tag_no_case("LEFT_RING_MODE"),
         tag_no_case("RIGHT_RING_MODE"),
@@ -265,7 +272,7 @@ fn ring_mode(input: &str) -> IRes<&str, Setting> {
     ))
 }
 
-fn gyro_setting(input: &str) -> IRes<&str, Setting> {
+fn gyro_setting(input: Input) -> IRes<'_, Setting> {
     map(
         alt((
             f64_setting("GYRO_SENS", GyroSetting::Sensitivity),
@@ -285,7 +292,7 @@ fn gyro_setting(input: &str) -> IRes<&str, Setting> {
     )(input)
 }
 
-fn gyro_space(input: &str) -> IRes<&str, GyroSetting> {
+fn gyro_space(input: Input) -> IRes<'_, GyroSetting> {
     let (input, _) = tag_no_case("GYRO_SPACE")(input)?;
     let (input, _) = equal_with_space(input)?;
     let (input, space) = alt((
@@ -298,7 +305,7 @@ fn gyro_space(input: &str) -> IRes<&str, GyroSetting> {
     Ok((input, GyroSetting::Space(space)))
 }
 
-fn stick_mode(input: &str) -> IRes<&str, Setting> {
+fn stick_mode(input: Input) -> IRes<'_, Setting> {
     let (input, key) = alt((
         tag_no_case("LEFT_STICK_MODE"),
         tag_no_case("RIGHT_STICK_MODE"),
@@ -321,7 +328,7 @@ fn stick_mode(input: &str) -> IRes<&str, Setting> {
     }
 }
 
-fn trigger_mode(input: &str) -> IRes<&str, Setting> {
+fn trigger_mode(input: Input) -> IRes<'_, Setting> {
     let (input, key) = alt((tag_no_case("ZL_MODE"), tag_no_case("ZR_MODE")))(input)?;
     let (input, _) = equal_with_space(input)?;
     let (input, mode) = alt((
@@ -343,14 +350,14 @@ fn trigger_mode(input: &str) -> IRes<&str, Setting> {
     }
 }
 
-fn equal_with_space(input: &str) -> IRes<&str, ()> {
+fn equal_with_space(input: Input) -> IRes<'_, ()> {
     let (input, _) = space0(input)?;
     let (input, _) = tag("=")(input)?;
     let (input, _) = space0(input)?;
     Ok((input, ()))
 }
 
-fn cmd(input: &str) -> IRes<&str, Cmd> {
+fn cmd(input: Input) -> IRes<'_, Cmd> {
     alt((
         binding,
         map(special, Cmd::Special),
@@ -365,34 +372,33 @@ fn cmd(input: &str) -> IRes<&str, Cmd> {
     ))(input)
 }
 
-fn comment(input: &str) -> IRes<&str, ()> {
+fn comment(input: Input) -> IRes<'_, ()> {
     let (input, _) = tag("#")(input)?;
     let (input, _) = not_line_ending(input)?;
     Ok((input, ()))
 }
 
-fn line(input: &str) -> IRes<&str, Option<Cmd>> {
+fn line(input: Input) -> IRes<'_, Option<Cmd>> {
     let (input, _) = space0(input)?;
-    let (input, cmd) = opt(cmd)(input)?;
+    let (input, cmd) = opt(cmd).context("command").parse(input)?;
     let (input, _) = space0(input)?;
     let (input, _) = opt(comment)(input)?;
     Ok((input, cmd))
 }
 
-pub fn jsm_parse(input: &str) -> IRes<&str, Vec<Cmd>> {
-    let (input, cmds) = all_consuming(|input| {
+pub fn jsm_parse(input: Input) -> Result<Vec<Cmd>, ErrorTree<Location>> {
+    Ok(final_parser(|input| {
         let (input, cmds) = separated_list0(line_ending, context("parse line", line))(input)?;
         let (input, _) = multispace0(input)?;
-        Ok((input, cmds))
-    })(input)?;
-    Ok((input, cmds.into_iter().flatten().collect()))
+        Ok((input, cmds.into_iter().flatten().collect()))
+    })(input)?)
 }
 
-fn mapkey(input: &str) -> IRes<&str, MapKey> {
+fn mapkey(input: Input) -> IRes<'_, MapKey> {
     alt((map(virtkey, MapKey::from), map(joykey, MapKey::from)))(input)
 }
 
-fn joykey(input: &str) -> IRes<&str, JoyKey> {
+fn joykey(input: Input) -> IRes<'_, JoyKey> {
     alt((
         alt((
             value(JoyKey::Up, tag_no_case("Up")),
@@ -421,7 +427,7 @@ fn joykey(input: &str) -> IRes<&str, JoyKey> {
     ))(input)
 }
 
-fn virtkey(input: &str) -> IRes<&str, VirtualKey> {
+fn virtkey(input: Input) -> IRes<'_, VirtualKey> {
     alt((
         value(VirtualKey::LUp, tag_no_case("LUp")),
         value(VirtualKey::LDown, tag_no_case("LDown")),
@@ -436,7 +442,7 @@ fn virtkey(input: &str) -> IRes<&str, VirtualKey> {
     ))(input)
 }
 
-fn keyboardkey(input: &str) -> IRes<&str, enigo::Key> {
+fn keyboardkey(input: Input) -> IRes<'_, enigo::Key> {
     use enigo::Key::*;
     let char_parse =
         |input| satisfy(|c| is_alphanumeric(c as u8))(input).map(|(i, x)| (i, Layout(x)));
@@ -482,7 +488,7 @@ fn keyboardkey(input: &str) -> IRes<&str, enigo::Key> {
     ))(input)
 }
 
-fn mousekey(input: &str) -> IRes<&str, enigo::MouseButton> {
+fn mousekey(input: Input) -> IRes<'_, enigo::MouseButton> {
     use enigo::MouseButton::*;
     let key_parse = |key, tag| value(key, tag_no_case(tag));
     alt((
@@ -499,7 +505,7 @@ fn mousekey(input: &str) -> IRes<&str, enigo::MouseButton> {
     ))(input)
 }
 
-fn special(input: &str) -> IRes<&str, SpecialKey> {
+fn special(input: Input) -> IRes<'_, SpecialKey> {
     use SpecialKey::*;
     let parse = |key, tag| value(key, tag_no_case(tag));
     alt((
