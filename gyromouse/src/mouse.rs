@@ -7,6 +7,7 @@ pub struct Mouse {
     error_accumulator: Vector2<f64>,
     calibration: f64,
     game_sens: f64,
+    counter_os_speed: bool,
 }
 
 impl Mouse {
@@ -16,6 +17,7 @@ impl Mouse {
             error_accumulator: Vector2::zero(),
             calibration: 1.,
             game_sens: 1.,
+            counter_os_speed: false,
         }
     }
 
@@ -23,12 +25,14 @@ impl Mouse {
         Mouse {
             calibration: self.calibration,
             game_sens: self.game_sens,
+            counter_os_speed: false,
             ..Self::new()
         }
     }
 
     // mouse movement is pixel perfect, so we keep track of the error.
     pub fn mouse_move_relative(&mut self, mut offset: Vector2<f64>) {
+        assert!(!self.counter_os_speed, "unimplemented counter os speed");
         offset *= self.calibration * self.game_sens;
         let sum = offset + self.error_accumulator;
         let rounded = vec2(sum.x.round(), sum.y.round());
@@ -49,5 +53,9 @@ impl Mouse {
 
     pub fn set_game_sens(&mut self, sens: f64) {
         self.game_sens = sens;
+    }
+
+    pub fn set_counter_os_speed(&mut self, counter: bool) {
+        self.counter_os_speed = counter;
     }
 }

@@ -110,6 +110,7 @@ pub fn parse_file<'a>(
             }
             Cmd::RealWorldCalibration(c) => mouse.set_calibration(c),
             Cmd::InGameSens(c) => mouse.set_game_sens(c),
+            Cmd::CounterOSMouseSpeed(c) => mouse.set_counter_os_speed(c),
             Cmd::Special(_) => unimplemented!(),
         }
     }
@@ -357,6 +358,10 @@ fn cmd(input: &str) -> IRes<&str, Cmd> {
         value(Cmd::Reset, tag_no_case("RESET_MAPPINGS")),
         f64_setting("REAL_WORLD_CALIBRATION", Cmd::RealWorldCalibration),
         f64_setting("IN_GAME_SENS", Cmd::InGameSens),
+        value(
+            Cmd::CounterOSMouseSpeed(true),
+            tag_no_case("COUNTER_OS_MOUSE_SPEED"),
+        ),
     ))(input)
 }
 

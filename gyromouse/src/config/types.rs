@@ -158,6 +158,7 @@ pub enum Cmd {
     Reset,
     RealWorldCalibration(f64),
     InGameSens(f64),
+    CounterOSMouseSpeed(bool),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
