@@ -1,1 +1,1 @@
-initSidebarItems({"trait":[["Backend",""]]});
+initSidebarItems({"mod":[["hidapi",""],["sdl",""]],"trait":[["Backend",""]]});
