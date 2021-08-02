@@ -489,6 +489,9 @@ fn mousekey(input: &str) -> IRes<&str, enigo::MouseButton> {
         key_parse(Left, "LMouse"),
         key_parse(Middle, "MMouse"),
         key_parse(Right, "RMouse"),
+        // TODO: fix https://github.com/enigo-rs/enigo/issues/110
+        key_parse(Left, "BMouse"),
+        key_parse(Left, "FMouse"),
         key_parse(ScrollUp, "scrollup"),
         key_parse(ScrollDown, "scrolldown"),
         key_parse(ScrollLeft, "scrollleft"),
