@@ -32,7 +32,6 @@ impl Mouse {
 
     // mouse movement is pixel perfect, so we keep track of the error.
     pub fn mouse_move_relative(&mut self, mut offset: Vector2<f64>) {
-        assert!(!self.counter_os_speed, "unimplemented counter os speed");
         offset *= self.calibration * self.game_sens;
         let sum = offset + self.error_accumulator;
         let rounded = vec2(sum.x.round(), sum.y.round());
@@ -56,6 +55,7 @@ impl Mouse {
     }
 
     pub fn set_counter_os_speed(&mut self, counter: bool) {
+        println!("Warning: counter os speed not supported");
         self.counter_os_speed = counter;
     }
 }
