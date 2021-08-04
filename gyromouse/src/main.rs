@@ -13,10 +13,9 @@ mod space_mapper;
 
 use std::{fs::File, io::Read};
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 use backend::Backend;
 use clap::Clap;
-use nom::{error::convert_error, Err};
 use opts::Opts;
 
 use crate::{config::settings::Settings, mapping::Buttons, mouse::Mouse};

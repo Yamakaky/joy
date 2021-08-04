@@ -5,22 +5,21 @@ use cgmath::Deg;
 use hid_gamepad_sys::JoyKey;
 use nom::{
     branch::alt,
-    bytes::complete::{tag, tag_no_case},
     character::{
-        complete::{line_ending, multispace0, not_line_ending, satisfy, space0, space1},
+        complete::{line_ending, not_line_ending, satisfy, space0, space1},
         is_alphanumeric,
     },
-    combinator::{all_consuming, map, opt, value},
-    error::{context, VerboseError},
-    multi::{separated_list0, separated_list1},
+    combinator::{eof, map, opt, peek, value},
+    multi::separated_list1,
     number::complete::float,
     IResult, Parser,
 };
-use nom_locate::LocatedSpan;
 use nom_supreme::{
     error::ErrorTree,
     final_parser::{final_parser, Location},
+    multi::collect_separated_terminated,
     parser_ext::ParserExt,
+    tag::complete::{tag, tag_no_case},
 };
 
 use crate::{
@@ -125,7 +124,7 @@ pub fn parse_file<'a>(
 }
 
 fn keys(input: Input) -> IRes<'_, Key> {
-    fn simple(input: Input) -> IRes<'_, Key> {
+    fn simple(input: Input) -> IRes<Key> {
         mapkey(input).map(|(i, k)| (i, Key::Simple(k)))
     }
     fn simul(input: Input) -> IRes<'_, Key> {
@@ -151,12 +150,16 @@ fn action(input: Input) -> IRes<'_, JSMAction> {
     let (input, action_mod) = opt(alt((
         value(ActionModifier::Toggle, tag("^")),
         value(ActionModifier::Instant, tag("!")),
-    )))(input)?;
+    )))
+    .context("modifier")
+    .parse(input)?;
     let (input, action) = alt((
         map(special, ActionType::Special),
         map(mousekey, ActionType::Mouse),
         map(keyboardkey, ActionType::Key),
-    ))(input)?;
+    ))
+    .context("action")
+    .parse(input)?;
     let (input, event_mod) = opt(alt((
         value(EventModifier::Tap, tag("'")),
         value(EventModifier::Hold, tag("_")),
@@ -175,11 +178,11 @@ fn action(input: Input) -> IRes<'_, JSMAction> {
 }
 
 fn binding(input: Input) -> IRes<'_, Cmd> {
-    let (input, key) = keys(input)?;
-    let (input, _) = space0(input)?;
-    let (input, _) = tag("=")(input)?;
-    let (input, _) = space0(input)?;
-    let (input, actions) = separated_list1(space1, action)(input)?;
+    let (input, key) = keys.context("parse keys").parse(input)?;
+    let (input, _) = tag("=").delimited_by(space0).parse(input)?;
+    let (input, actions) = separated_list1(space1, action)
+        .context("parse actions")
+        .parse(input)?;
     Ok((input, Cmd::Map(key, actions)))
 }
 
@@ -359,7 +362,7 @@ fn equal_with_space(input: Input) -> IRes<'_, ()> {
 
 fn cmd(input: Input) -> IRes<'_, Cmd> {
     alt((
-        binding,
+        binding.context("key binding"),
         map(special, Cmd::Special),
         map(setting, Cmd::Setting),
         value(Cmd::Reset, tag_no_case("RESET_MAPPINGS")),
@@ -378,20 +381,25 @@ fn comment(input: Input) -> IRes<'_, ()> {
     Ok((input, ()))
 }
 
-fn line(input: Input) -> IRes<'_, Option<Cmd>> {
-    let (input, _) = space0(input)?;
-    let (input, cmd) = opt(cmd).context("command").parse(input)?;
+fn empty_line(input: Input) -> IRes<'_, Option<Cmd>> {
     let (input, _) = space0(input)?;
     let (input, _) = opt(comment)(input)?;
-    Ok((input, cmd))
+    peek(alt((line_ending, eof)))(input)?;
+    Ok((input, None))
+}
+
+fn line(input: Input) -> IRes<'_, Option<Cmd>> {
+    let (input, _) = space0(input)?;
+    let (input, cmd) = cmd.context("command").parse(input)?;
+    let (input, _) = empty_line(input)?;
+    Ok((input, Some(cmd)))
 }
 
 pub fn jsm_parse(input: Input) -> Result<Vec<Cmd>, ErrorTree<Location>> {
-    Ok(final_parser(|input| {
-        let (input, cmds) = separated_list0(line_ending, context("parse line", line))(input)?;
-        let (input, _) = multispace0(input)?;
-        Ok((input, cmds.into_iter().flatten().collect()))
-    })(input)?)
+    Ok(final_parser(
+        collect_separated_terminated(alt((empty_line, line)).context("line"), line_ending, eof)
+            .map(|cmds: Vec<_>| cmds.into_iter().flatten().collect()),
+    )(input)?)
 }
 
 fn mapkey(input: Input) -> IRes<'_, MapKey> {
@@ -405,6 +413,12 @@ fn joykey(input: Input) -> IRes<'_, JoyKey> {
             value(JoyKey::Down, tag_no_case("Down")),
             value(JoyKey::Left, tag_no_case("Left")),
             value(JoyKey::Right, tag_no_case("Right")),
+            value(JoyKey::ZL, tag_no_case("ZL")),
+            value(JoyKey::ZR, tag_no_case("ZR")),
+            value(JoyKey::SL, tag_no_case("SL")),
+            value(JoyKey::SR, tag_no_case("SR")),
+            value(JoyKey::L3, tag_no_case("L3")),
+            value(JoyKey::R3, tag_no_case("R3")),
             value(JoyKey::N, tag_no_case("N")),
             value(JoyKey::S, tag_no_case("S")),
             value(JoyKey::E, tag_no_case("E")),
@@ -413,12 +427,6 @@ fn joykey(input: Input) -> IRes<'_, JoyKey> {
             value(JoyKey::W, tag_no_case("W")),
             value(JoyKey::L, tag_no_case("L")),
             value(JoyKey::R, tag_no_case("R")),
-            value(JoyKey::ZL, tag_no_case("ZL")),
-            value(JoyKey::ZR, tag_no_case("ZR")),
-            value(JoyKey::SL, tag_no_case("SL")),
-            value(JoyKey::SR, tag_no_case("SR")),
-            value(JoyKey::L3, tag_no_case("L3")),
-            value(JoyKey::R3, tag_no_case("R3")),
             value(JoyKey::Minus, tag_no_case("Minus")),
             value(JoyKey::Plus, tag_no_case("Plus")),
             value(JoyKey::Capture, tag_no_case("Capture")),
