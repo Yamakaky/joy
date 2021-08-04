@@ -235,6 +235,9 @@ fn stick_setting(input: Input) -> IRes<'_, StickSetting> {
         f64_setting("FLICK_DEADZONE_ANGLE", |v| {
             StickSetting::Flick(FlickStickSetting::ForwardDeadzoneArc(Deg(v * 2.)))
         }),
+        f64_setting("SCROLL_SENS", |v| {
+            StickSetting::Scroll(ScrollStickSetting::Sens(Deg(v)))
+        }),
     ))(input)
 }
 
@@ -284,8 +287,8 @@ fn gyro_setting(input: Input) -> IRes<'_, Setting> {
             f64_setting("MAX_GYRO_SENS", GyroSetting::MaxSens),
             f64_setting("MAX_GYRO_THRESHOLD", GyroSetting::MaxThreshold),
             gyro_space,
-            f64_setting("GYRO_CUTTOFF_SPEED", GyroSetting::CutoffSpeed),
-            f64_setting("GYRO_CUTTOFF_RECOVERY", GyroSetting::CutoffRecovery),
+            f64_setting("GYRO_CUTOFF_SPEED", GyroSetting::CutoffSpeed),
+            f64_setting("GYRO_CUTOFF_RECOVERY", GyroSetting::CutoffRecovery),
             f64_setting("GYRO_SMOOTH_THRESHOLD", GyroSetting::SmoothThreshold),
             f64_setting("GYRO_SMOOTH_TIME", |secs| {
                 GyroSetting::SmoothTime(Duration::from_secs_f64(secs))
@@ -427,6 +430,8 @@ fn joykey(input: Input) -> IRes<'_, JoyKey> {
             value(JoyKey::W, tag_no_case("W")),
             value(JoyKey::L, tag_no_case("L")),
             value(JoyKey::R, tag_no_case("R")),
+            value(JoyKey::Minus, tag_no_case("-")),
+            value(JoyKey::Plus, tag_no_case("+")),
             value(JoyKey::Minus, tag_no_case("Minus")),
             value(JoyKey::Plus, tag_no_case("Plus")),
             value(JoyKey::Capture, tag_no_case("Capture")),
@@ -458,13 +463,16 @@ fn keyboardkey(input: Input) -> IRes<'_, enigo::Key> {
     alt((
         alt((
             key_parse(Alt, "alt"),
+            //TODO: proper lalt and ralt
+            key_parse(Alt, "lalt"),
+            key_parse(Alt, "ralt"),
             key_parse(Backspace, "backspace"),
             key_parse(CapsLock, "capslock"),
             key_parse(Control, "Control"),
             key_parse(Delete, "Delete"),
             key_parse(DownArrow, "down"),
             key_parse(End, "End"),
-            key_parse(Escape, "Escape"),
+            key_parse(Escape, "Esc"),
             key_parse(F1, "F1"),
             key_parse(F10, "F10"),
             key_parse(F11, "F11"),
@@ -482,10 +490,13 @@ fn keyboardkey(input: Input) -> IRes<'_, enigo::Key> {
             key_parse(Home, "Home"),
             key_parse(LeftArrow, "left"),
             key_parse(Meta, "Meta"),
+            key_parse(Meta, "Windows"),
+            key_parse(Meta, "lWindows"),
+            key_parse(Meta, "rWindows"),
             key_parse(Option, "Option"),
             key_parse(PageDown, "PageDown"),
             key_parse(PageUp, "PageUp"),
-            key_parse(Return, "Return"),
+            key_parse(Return, "Enter"),
             key_parse(RightArrow, "right"),
             key_parse(Shift, "Shift"),
             key_parse(Space, "Space"),

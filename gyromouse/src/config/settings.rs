@@ -4,10 +4,7 @@ use cgmath::Deg;
 
 use crate::joystick::{ButtonStick, CameraStick, FlickStick, Stick};
 
-use super::types::{
-    AimStickSetting, FlickStickSetting, GyroSetting, GyroSpace, RingMode, Setting, StickMode,
-    StickSetting, TriggerMode,
-};
+use super::types::*;
 
 #[derive(Debug, Clone)]
 pub struct Settings {
@@ -96,6 +93,7 @@ pub struct StickSettings {
     pub fullzone: f64,
     pub aim_stick: AimStickSettings,
     pub flick_stick: FlickStickSettings,
+    pub scroll_stick: ScrollStickSettings,
 }
 
 impl Default for StickSettings {
@@ -105,6 +103,7 @@ impl Default for StickSettings {
             fullzone: 0.9,
             aim_stick: Default::default(),
             flick_stick: Default::default(),
+            scroll_stick: Default::default(),
         }
     }
 }
@@ -116,6 +115,7 @@ impl StickSettings {
             StickSetting::FullZone(d) => self.fullzone = d,
             StickSetting::Aim(s) => self.aim_stick.apply(s),
             StickSetting::Flick(s) => self.flick_stick.apply(s),
+            StickSetting::Scroll(s) => self.scroll_stick.apply(s),
         }
     }
 }
@@ -179,6 +179,25 @@ impl FlickStickSettings {
             FlickStickSetting::FlickTime(s) => self.flick_time = s,
             FlickStickSetting::Exponent(s) => self.exponent = s,
             FlickStickSetting::ForwardDeadzoneArc(s) => self.forward_deadzone_arc = s,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ScrollStickSettings {
+    pub sens: Deg<f64>,
+}
+
+impl Default for ScrollStickSettings {
+    fn default() -> Self {
+        Self { sens: Deg(10.) }
+    }
+}
+
+impl ScrollStickSettings {
+    fn apply(&mut self, setting: ScrollStickSetting) {
+        match setting {
+            ScrollStickSetting::Sens(s) => self.sens = s,
         }
     }
 }

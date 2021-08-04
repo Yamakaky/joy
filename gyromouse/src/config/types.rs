@@ -95,6 +95,7 @@ pub enum StickSetting {
     FullZone(f64),
     Aim(AimStickSetting),
     Flick(FlickStickSetting),
+    Scroll(ScrollStickSetting),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -112,6 +113,11 @@ pub enum FlickStickSetting {
     FlickTime(Duration),
     Exponent(f64),
     ForwardDeadzoneArc(Deg<f64>),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ScrollStickSetting {
+    Sens(Deg<f64>),
 }
 
 #[derive(Debug, Copy, Clone)]

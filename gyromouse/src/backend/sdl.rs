@@ -159,7 +159,7 @@ fn sdl_to_sys(button: Button) -> JoyKey {
         Button::X => JoyKey::W,
         Button::Y => JoyKey::N,
         Button::Back => JoyKey::Minus,
-        Button::Guide => todo!(),
+        Button::Guide => JoyKey::Home,
         Button::Start => JoyKey::Plus,
         Button::LeftStick => JoyKey::L3,
         Button::RightStick => JoyKey::R3,

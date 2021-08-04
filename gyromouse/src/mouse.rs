@@ -25,7 +25,7 @@ impl Mouse {
         Mouse {
             calibration: self.calibration,
             game_sens: self.game_sens,
-            counter_os_speed: false,
+            counter_os_speed: self.counter_os_speed,
             ..Self::new()
         }
     }
