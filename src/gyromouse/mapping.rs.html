@@ -354,6 +354,10 @@
 <span id="352">352</span>
 <span id="353">353</span>
 <span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">enigo</span>::{<span class="ident">Key</span>, <span class="ident">MouseButton</span>};
 <span class="kw">use</span> <span class="ident">enum_map</span>::{<span class="ident">Enum</span>, <span class="ident">EnumMap</span>};
@@ -562,6 +566,10 @@
             <span class="ident">hold_delay</span>: <span class="ident">Duration::from_millis</span>(<span class="number">100</span>),
             <span class="ident">double_click_interval</span>: <span class="ident">Duration::from_millis</span>(<span class="number">200</span>),
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::new</span>();
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">MapKey</span>, <span class="ident">layer</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Layer</span> {

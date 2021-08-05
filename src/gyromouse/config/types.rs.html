@@ -164,6 +164,16 @@
 <span id="162">162</span>
 <span id="163">163</span>
 <span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
@@ -262,6 +272,7 @@
     <span class="ident">FullZone</span>(<span class="ident">f64</span>),
     <span class="ident">Aim</span>(<span class="ident">AimStickSetting</span>),
     <span class="ident">Flick</span>(<span class="ident">FlickStickSetting</span>),
+    <span class="ident">Scroll</span>(<span class="ident">ScrollStickSetting</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
@@ -279,6 +290,11 @@
     <span class="ident">FlickTime</span>(<span class="ident">Duration</span>),
     <span class="ident">Exponent</span>(<span class="ident">f64</span>),
     <span class="ident">ForwardDeadzoneArc</span>(<span class="ident">Deg</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>),
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ScrollStickSetting</span> {
+    <span class="ident">Sens</span>(<span class="ident">Deg</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
@@ -322,6 +338,10 @@
     <span class="ident">Map</span>(<span class="ident">Key</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JSMAction</span><span class="op">&gt;</span>),
     <span class="ident">Special</span>(<span class="ident">SpecialKey</span>),
     <span class="ident">Setting</span>(<span class="ident">Setting</span>),
+    <span class="ident">Reset</span>,
+    <span class="ident">RealWorldCalibration</span>(<span class="ident">f64</span>),
+    <span class="ident">InGameSens</span>(<span class="ident">f64</span>),
+    <span class="ident">CounterOSMouseSpeed</span>(<span class="ident">bool</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>

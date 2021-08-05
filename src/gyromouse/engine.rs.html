@@ -207,6 +207,11 @@
 <span id="205">205</span>
 <span id="206">206</span>
 <span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">ops::DerefMut</span>,
@@ -242,12 +247,17 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Engine</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">settings</span>: <span class="ident">Settings</span>, <span class="ident">buttons</span>: <span class="ident">Buttons</span>, <span class="ident">calibration</span>: <span class="ident">Calibration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="ident">settings</span>: <span class="ident">Settings</span>,
+        <span class="ident">buttons</span>: <span class="ident">Buttons</span>,
+        <span class="ident">calibration</span>: <span class="ident">Calibration</span>,
+        <span class="ident">mouse</span>: <span class="ident">Mouse</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">Engine</span> {
             <span class="ident">left_stick</span>: <span class="ident">settings</span>.<span class="ident">new_left_stick</span>(),
             <span class="ident">right_stick</span>: <span class="ident">settings</span>.<span class="ident">new_right_stick</span>(),
             <span class="ident">buttons</span>,
-            <span class="ident">mouse</span>: <span class="ident">Mouse::new</span>(),
+            <span class="ident">mouse</span>,
             <span class="ident">gyro</span>: <span class="ident">Gyro::new</span>(<span class="ident">settings</span>, <span class="ident">calibration</span>),
             <span class="ident">last_keys</span>: <span class="ident">EnumMap::default</span>(),
         }

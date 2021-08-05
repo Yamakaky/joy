@@ -167,6 +167,12 @@
 <span id="165">165</span>
 <span id="166">166</span>
 <span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections::HashMap</span>,
@@ -188,6 +194,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">calibration::Calibration</span>, <span class="ident">config::settings::Settings</span>, <span class="ident">engine::Engine</span>, <span class="ident">mapping::Buttons</span>,
+    <span class="ident">mouse::Mouse</span>,
 };
 
 <span class="kw">use</span> <span class="kw">super</span><span class="ident">::Backend</span>;
@@ -218,6 +225,7 @@
         <span class="ident">_opts</span>: <span class="kw">crate</span><span class="ident">::opts::Run</span>,
         <span class="ident">settings</span>: <span class="ident">Settings</span>,
         <span class="ident">bindings</span>: <span class="ident">Buttons</span>,
+        <span class="ident">mouse</span>: <span class="ident">Mouse</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">event_pump</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sdl</span>.<span class="ident">event_pump</span>().<span class="ident">unwrap</span>();
 
@@ -243,8 +251,12 @@
                         <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">controller</span>.<span class="ident">sensor_set_enabled</span>(<span class="ident">SensorType::Accelerometer</span>, <span class="bool-val">true</span>);
                         <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">controller</span>.<span class="ident">sensor_set_enabled</span>(<span class="ident">SensorType::Gyroscope</span>, <span class="bool-val">true</span>);
 
-                        <span class="kw">let</span> <span class="ident">engine</span> <span class="op">=</span>
-                            <span class="ident">Engine::new</span>(<span class="ident">settings</span>.<span class="ident">clone</span>(), <span class="ident">bindings</span>.<span class="ident">clone</span>(), <span class="ident">Calibration::empty</span>());
+                        <span class="kw">let</span> <span class="ident">engine</span> <span class="op">=</span> <span class="ident">Engine::new</span>(
+                            <span class="ident">settings</span>.<span class="ident">clone</span>(),
+                            <span class="ident">bindings</span>.<span class="ident">clone</span>(),
+                            <span class="ident">Calibration::empty</span>(),
+                            <span class="ident">mouse</span>.<span class="ident">clone</span>(),
+                        );
                         <span class="ident">controllers</span>.<span class="ident">insert</span>(<span class="ident">which</span>, <span class="ident">ControllerState</span> { <span class="ident">controller</span>, <span class="ident">engine</span> });
                     }
                     <span class="ident">Event::ControllerDeviceRemoved</span> { <span class="ident">which</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
@@ -323,7 +335,7 @@
         <span class="ident">Button::X</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::W</span>,
         <span class="ident">Button::Y</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::N</span>,
         <span class="ident">Button::Back</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::Minus</span>,
-        <span class="ident">Button::Guide</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">todo!</span>(),
+        <span class="ident">Button::Guide</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::Home</span>,
         <span class="ident">Button::Start</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::Plus</span>,
         <span class="ident">Button::LeftStick</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::L3</span>,
         <span class="ident">Button::RightStick</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">JoyKey::R3</span>,

@@ -228,6 +228,29 @@
 <span id="226">226</span>
 <span id="227">227</span>
 <span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
@@ -235,10 +258,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::joystick</span>::{<span class="ident">ButtonStick</span>, <span class="ident">CameraStick</span>, <span class="ident">FlickStick</span>, <span class="ident">Stick</span>};
 
-<span class="kw">use</span> <span class="kw">super</span><span class="ident">::types</span>::{
-    <span class="ident">AimStickSetting</span>, <span class="ident">FlickStickSetting</span>, <span class="ident">GyroSetting</span>, <span class="ident">GyroSpace</span>, <span class="ident">RingMode</span>, <span class="ident">Setting</span>, <span class="ident">StickMode</span>,
-    <span class="ident">StickSetting</span>, <span class="ident">TriggerMode</span>,
-};
+<span class="kw">use</span> <span class="kw">super</span><span class="ident">::types</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Settings</span> {
@@ -284,6 +304,10 @@
         }
     }
 
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="self">Self</span><span class="ident">::default</span>();
+    }
+
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_left_stick</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Stick</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">new_stick</span>(<span class="self">self</span>.<span class="ident">left_stick_mode</span>, <span class="bool-val">true</span>)
     }
@@ -323,6 +347,7 @@
     <span class="kw">pub</span> <span class="ident">fullzone</span>: <span class="ident">f64</span>,
     <span class="kw">pub</span> <span class="ident">aim_stick</span>: <span class="ident">AimStickSettings</span>,
     <span class="kw">pub</span> <span class="ident">flick_stick</span>: <span class="ident">FlickStickSettings</span>,
+    <span class="kw">pub</span> <span class="ident">scroll_stick</span>: <span class="ident">ScrollStickSettings</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">StickSettings</span> {
@@ -332,6 +357,7 @@
             <span class="ident">fullzone</span>: <span class="number">0.9</span>,
             <span class="ident">aim_stick</span>: <span class="ident">Default::default</span>(),
             <span class="ident">flick_stick</span>: <span class="ident">Default::default</span>(),
+            <span class="ident">scroll_stick</span>: <span class="ident">Default::default</span>(),
         }
     }
 }
@@ -343,6 +369,7 @@
             <span class="ident">StickSetting::FullZone</span>(<span class="ident">d</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">fullzone</span> <span class="op">=</span> <span class="ident">d</span>,
             <span class="ident">StickSetting::Aim</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">aim_stick</span>.<span class="ident">apply</span>(<span class="ident">s</span>),
             <span class="ident">StickSetting::Flick</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">flick_stick</span>.<span class="ident">apply</span>(<span class="ident">s</span>),
+            <span class="ident">StickSetting::Scroll</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">scroll_stick</span>.<span class="ident">apply</span>(<span class="ident">s</span>),
         }
     }
 }
@@ -406,6 +433,25 @@
             <span class="ident">FlickStickSetting::FlickTime</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">flick_time</span> <span class="op">=</span> <span class="ident">s</span>,
             <span class="ident">FlickStickSetting::Exponent</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">exponent</span> <span class="op">=</span> <span class="ident">s</span>,
             <span class="ident">FlickStickSetting::ForwardDeadzoneArc</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">forward_deadzone_arc</span> <span class="op">=</span> <span class="ident">s</span>,
+        }
+    }
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ScrollStickSettings</span> {
+    <span class="kw">pub</span> <span class="ident">sens</span>: <span class="ident">Deg</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ScrollStickSettings</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> { <span class="ident">sens</span>: <span class="ident">Deg</span>(<span class="number">10.</span>) }
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">ScrollStickSettings</span> {
+    <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">setting</span>: <span class="ident">ScrollStickSetting</span>) {
+        <span class="kw">match</span> <span class="ident">setting</span> {
+            <span class="ident">ScrollStickSetting::Sens</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">sens</span> <span class="op">=</span> <span class="ident">s</span>,
         }
     }
 }

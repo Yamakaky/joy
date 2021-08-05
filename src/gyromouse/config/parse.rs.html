@@ -494,6 +494,50 @@
 <span id="492">492</span>
 <span id="493">493</span>
 <span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">std::time::Duration</span>;
 
@@ -502,24 +546,31 @@
 <span class="kw">use</span> <span class="ident">hid_gamepad_sys::JoyKey</span>;
 <span class="kw">use</span> <span class="ident">nom</span>::{
     <span class="ident">branch::alt</span>,
-    <span class="ident">bytes::complete</span>::{<span class="ident">tag</span>, <span class="ident">tag_no_case</span>},
     <span class="ident">character</span>::{
-        <span class="ident">complete</span>::{<span class="ident">line_ending</span>, <span class="ident">multispace0</span>, <span class="ident">not_line_ending</span>, <span class="ident">satisfy</span>, <span class="ident">space0</span>, <span class="ident">space1</span>},
+        <span class="ident">complete</span>::{<span class="ident">line_ending</span>, <span class="ident">not_line_ending</span>, <span class="ident">satisfy</span>, <span class="ident">space0</span>, <span class="ident">space1</span>},
         <span class="ident">is_alphanumeric</span>,
     },
-    <span class="ident">combinator</span>::{<span class="ident">all_consuming</span>, <span class="ident">map</span>, <span class="ident">opt</span>, <span class="ident">value</span>},
-    <span class="ident">error</span>::{<span class="ident">context</span>, <span class="ident">VerboseError</span>},
-    <span class="ident">multi</span>::{<span class="ident">separated_list0</span>, <span class="ident">separated_list1</span>},
+    <span class="ident">combinator</span>::{<span class="ident">eof</span>, <span class="ident">map</span>, <span class="ident">opt</span>, <span class="ident">peek</span>, <span class="ident">value</span>},
+    <span class="ident">multi::separated_list1</span>,
     <span class="ident">number::complete::float</span>,
-    <span class="ident">IResult</span>,
+    <span class="ident">IResult</span>, <span class="ident">Parser</span>,
+};
+<span class="kw">use</span> <span class="ident">nom_supreme</span>::{
+    <span class="ident">error::ErrorTree</span>,
+    <span class="ident">final_parser</span>::{<span class="ident">final_parser</span>, <span class="ident">Location</span>},
+    <span class="ident">multi::collect_separated_terminated</span>,
+    <span class="ident">parser_ext::ParserExt</span>,
+    <span class="ident">tag::complete</span>::{<span class="ident">tag</span>, <span class="ident">tag_no_case</span>},
 };
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">mapping</span>::{<span class="ident">Action</span>, <span class="ident">Buttons</span>, <span class="ident">Layer</span>, <span class="ident">MapKey</span>, <span class="ident">VirtualKey</span>},
+    <span class="ident">mouse::Mouse</span>,
     <span class="ident">ClickType</span>,
 };
 
-<span class="kw">type</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">O</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">IResult</span><span class="op">&lt;</span><span class="ident">I</span>, <span class="ident">O</span>, <span class="ident">VerboseError</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">type</span> <span class="ident">Input</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>;
+<span class="kw">type</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">O</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">IResult</span><span class="op">&lt;</span><span class="ident">Input</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">O</span>, <span class="ident">ErrorTree</span><span class="op">&lt;</span><span class="ident">Input</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 <span class="kw">fn</span> <span class="ident">convert_action_mod</span>(
     <span class="ident">action</span>: <span class="kw-2">&amp;</span><span class="ident">JSMAction</span>,
@@ -587,8 +638,9 @@
     <span class="ident">content</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>,
     <span class="ident">settings</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Settings</span>,
     <span class="ident">mapping</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Buttons</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>, ()<span class="op">&gt;</span> {
-    <span class="kw">for</span> <span class="ident">cmd</span> <span class="kw">in</span> <span class="ident">jsm_parse</span>(<span class="ident">content</span>)<span class="question-mark">?</span>.<span class="number">1</span> {
+    <span class="ident">mouse</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Mouse</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">for</span> <span class="ident">cmd</span> <span class="kw">in</span> <span class="ident">jsm_parse</span>(<span class="ident">content</span>)<span class="question-mark">?</span> {
         <span class="kw">match</span> <span class="ident">cmd</span> {
             <span class="ident">Cmd::Map</span>(<span class="ident">Key::Simple</span>(<span class="ident">key</span>), <span class="kw-2">ref</span> <span class="ident">actions</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">map_key</span>(<span class="ident">mapping</span>.<span class="ident">get</span>(<span class="ident">key</span>, <span class="number">0</span>), <span class="ident">actions</span>),
 
@@ -599,17 +651,24 @@
             }
             <span class="ident">Cmd::Map</span>(<span class="ident">Key::Simul</span>(<span class="ident">_k1</span>, <span class="ident">_k2</span>), <span class="kw-2">ref</span> <span class="ident">_actions</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
             <span class="ident">Cmd::Setting</span>(<span class="ident">setting</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">settings</span>.<span class="ident">apply</span>(<span class="ident">setting</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
+            <span class="ident">Cmd::Reset</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">settings</span>.<span class="ident">reset</span>();
+                <span class="ident">mapping</span>.<span class="ident">reset</span>()
+            }
+            <span class="ident">Cmd::RealWorldCalibration</span>(<span class="ident">c</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">set_calibration</span>(<span class="ident">c</span>),
+            <span class="ident">Cmd::InGameSens</span>(<span class="ident">c</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">set_game_sens</span>(<span class="ident">c</span>),
+            <span class="ident">Cmd::CounterOSMouseSpeed</span>(<span class="ident">c</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">mouse</span>.<span class="ident">set_counter_os_speed</span>(<span class="ident">c</span>),
+            <span class="ident">Cmd::Special</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
         }
     }
-    <span class="prelude-val">Ok</span>((<span class="string">&quot;&quot;</span>, ()))
+    <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">keys</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">simple</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">keys</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">simple</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="ident">Key</span><span class="op">&gt;</span> {
         <span class="ident">mapkey</span>(<span class="ident">input</span>).<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">k</span>)<span class="op">|</span> (<span class="ident">i</span>, <span class="ident">Key::Simple</span>(<span class="ident">k</span>)))
     }
-    <span class="kw">fn</span> <span class="ident">simul</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">simul</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">k1</span>) <span class="op">=</span> <span class="ident">mapkey</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag</span>(<span class="string">&quot;+&quot;</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
@@ -617,7 +676,7 @@
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">k2</span>) <span class="op">=</span> <span class="ident">mapkey</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">Key::Simul</span>(<span class="ident">k1</span>, <span class="ident">k2</span>)))
     }
-    <span class="kw">fn</span> <span class="ident">chorded</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">chorded</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Key</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">k1</span>) <span class="op">=</span> <span class="ident">mapkey</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag</span>(<span class="string">&quot;,&quot;</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
@@ -628,16 +687,20 @@
     <span class="ident">alt</span>((<span class="ident">simul</span>, <span class="ident">chorded</span>, <span class="ident">simple</span>))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">action</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">JSMAction</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">action</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">JSMAction</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">action_mod</span>) <span class="op">=</span> <span class="ident">opt</span>(<span class="ident">alt</span>((
         <span class="ident">value</span>(<span class="ident">ActionModifier::Toggle</span>, <span class="ident">tag</span>(<span class="string">&quot;^&quot;</span>)),
         <span class="ident">value</span>(<span class="ident">ActionModifier::Instant</span>, <span class="ident">tag</span>(<span class="string">&quot;!&quot;</span>)),
-    )))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    )))
+    .<span class="ident">context</span>(<span class="string">&quot;modifier&quot;</span>)
+    .<span class="ident">parse</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">action</span>) <span class="op">=</span> <span class="ident">alt</span>((
         <span class="ident">map</span>(<span class="ident">special</span>, <span class="ident">ActionType::Special</span>),
         <span class="ident">map</span>(<span class="ident">mousekey</span>, <span class="ident">ActionType::Mouse</span>),
         <span class="ident">map</span>(<span class="ident">keyboardkey</span>, <span class="ident">ActionType::Key</span>),
-    ))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    ))
+    .<span class="ident">context</span>(<span class="string">&quot;action&quot;</span>)
+    .<span class="ident">parse</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">event_mod</span>) <span class="op">=</span> <span class="ident">opt</span>(<span class="ident">alt</span>((
         <span class="ident">value</span>(<span class="ident">EventModifier::Tap</span>, <span class="ident">tag</span>(<span class="string">&quot;&#39;&quot;</span>)),
         <span class="ident">value</span>(<span class="ident">EventModifier::Hold</span>, <span class="ident">tag</span>(<span class="string">&quot;_&quot;</span>)),
@@ -655,16 +718,16 @@
     ))
 }
 
-<span class="kw">fn</span> <span class="ident">binding</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Cmd</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">key</span>) <span class="op">=</span> <span class="ident">keys</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag</span>(<span class="string">&quot;=&quot;</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">actions</span>) <span class="op">=</span> <span class="ident">separated_list1</span>(<span class="ident">space1</span>, <span class="ident">action</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
+<span class="kw">fn</span> <span class="ident">binding</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Cmd</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">key</span>) <span class="op">=</span> <span class="ident">keys</span>.<span class="ident">context</span>(<span class="string">&quot;parse keys&quot;</span>).<span class="ident">parse</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag</span>(<span class="string">&quot;=&quot;</span>).<span class="ident">delimited_by</span>(<span class="ident">space0</span>).<span class="ident">parse</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">actions</span>) <span class="op">=</span> <span class="ident">separated_list1</span>(<span class="ident">space1</span>, <span class="ident">action</span>)
+        .<span class="ident">context</span>(<span class="string">&quot;parse actions&quot;</span>)
+        .<span class="ident">parse</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">Cmd::Map</span>(<span class="ident">key</span>, <span class="ident">actions</span>)))
 }
 
-<span class="kw">fn</span> <span class="ident">setting</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">setting</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
     <span class="ident">alt</span>((
         <span class="ident">stick_mode</span>,
         <span class="ident">f64_setting</span>(<span class="string">&quot;TRIGGER_THRESHOLD&quot;</span>, <span class="ident">Setting::TriggerThreshold</span>),
@@ -678,7 +741,7 @@
 <span class="kw">fn</span> <span class="ident">f64_setting</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Output</span><span class="op">&gt;</span>(
     <span class="ident">tag</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>,
     <span class="ident">value_map</span>: <span class="kw">impl</span> <span class="ident">Fn</span>(<span class="ident">f64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Output</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>, <span class="ident">Output</span><span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">FnMut</span>(<span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Output</span><span class="op">&gt;</span> {
     <span class="kw">move</span> <span class="op">|</span><span class="ident">input</span><span class="op">|</span> {
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag_no_case</span>(<span class="ident">tag</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
@@ -687,7 +750,7 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">stick_setting</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">StickSetting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">stick_setting</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">StickSetting</span><span class="op">&gt;</span> {
     <span class="ident">alt</span>((
         <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_DEADZONE_INNER&quot;</span>, <span class="ident">StickSetting::Deadzone</span>),
         <span class="ident">f64_setting</span>(<span class="string">&quot;STICK_DEADZONE_OUTER&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">StickSetting::FullZone</span>(<span class="number">1.</span> <span class="op">-</span> <span class="ident">v</span>)),
@@ -713,10 +776,13 @@
         <span class="ident">f64_setting</span>(<span class="string">&quot;FLICK_DEADZONE_ANGLE&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
             <span class="ident">StickSetting::Flick</span>(<span class="ident">FlickStickSetting::ForwardDeadzoneArc</span>(<span class="ident">Deg</span>(<span class="ident">v</span> <span class="op">*</span> <span class="number">2.</span>)))
         }),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;SCROLL_SENS&quot;</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+            <span class="ident">StickSetting::Scroll</span>(<span class="ident">ScrollStickSetting::Sens</span>(<span class="ident">Deg</span>(<span class="ident">v</span>)))
+        }),
     ))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">stick_axis</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">StickSetting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">stick_axis</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">StickSetting</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">tag</span>) <span class="op">=</span> <span class="ident">alt</span>((<span class="ident">tag_no_case</span>(<span class="string">&quot;STICK_AXIS_X&quot;</span>), <span class="ident">tag_no_case</span>(<span class="string">&quot;STICK_AXIS_Y&quot;</span>)))(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">invert</span>) <span class="op">=</span> <span class="ident">alt</span>((
@@ -733,7 +799,7 @@
     ))
 }
 
-<span class="kw">fn</span> <span class="ident">ring_mode</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">ring_mode</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">tag</span>) <span class="op">=</span> <span class="ident">alt</span>((
         <span class="ident">tag_no_case</span>(<span class="string">&quot;LEFT_RING_MODE&quot;</span>),
         <span class="ident">tag_no_case</span>(<span class="string">&quot;RIGHT_RING_MODE&quot;</span>),
@@ -753,7 +819,7 @@
     ))
 }
 
-<span class="kw">fn</span> <span class="ident">gyro_setting</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">gyro_setting</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
     <span class="ident">map</span>(
         <span class="ident">alt</span>((
             <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_SENS&quot;</span>, <span class="ident">GyroSetting::Sensitivity</span>),
@@ -762,8 +828,8 @@
             <span class="ident">f64_setting</span>(<span class="string">&quot;MAX_GYRO_SENS&quot;</span>, <span class="ident">GyroSetting::MaxSens</span>),
             <span class="ident">f64_setting</span>(<span class="string">&quot;MAX_GYRO_THRESHOLD&quot;</span>, <span class="ident">GyroSetting::MaxThreshold</span>),
             <span class="ident">gyro_space</span>,
-            <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_CUTTOFF_SPEED&quot;</span>, <span class="ident">GyroSetting::CutoffSpeed</span>),
-            <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_CUTTOFF_RECOVERY&quot;</span>, <span class="ident">GyroSetting::CutoffRecovery</span>),
+            <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_CUTOFF_SPEED&quot;</span>, <span class="ident">GyroSetting::CutoffSpeed</span>),
+            <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_CUTOFF_RECOVERY&quot;</span>, <span class="ident">GyroSetting::CutoffRecovery</span>),
             <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_SMOOTH_THRESHOLD&quot;</span>, <span class="ident">GyroSetting::SmoothThreshold</span>),
             <span class="ident">f64_setting</span>(<span class="string">&quot;GYRO_SMOOTH_TIME&quot;</span>, <span class="op">|</span><span class="ident">secs</span><span class="op">|</span> {
                 <span class="ident">GyroSetting::SmoothTime</span>(<span class="ident">Duration::from_secs_f64</span>(<span class="ident">secs</span>))
@@ -773,7 +839,7 @@
     )(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">gyro_space</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">GyroSetting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">gyro_space</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">GyroSetting</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag_no_case</span>(<span class="string">&quot;GYRO_SPACE&quot;</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">space</span>) <span class="op">=</span> <span class="ident">alt</span>((
@@ -786,7 +852,7 @@
     <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">GyroSetting::Space</span>(<span class="ident">space</span>)))
 }
 
-<span class="kw">fn</span> <span class="ident">stick_mode</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">stick_mode</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">key</span>) <span class="op">=</span> <span class="ident">alt</span>((
         <span class="ident">tag_no_case</span>(<span class="string">&quot;LEFT_STICK_MODE&quot;</span>),
         <span class="ident">tag_no_case</span>(<span class="string">&quot;RIGHT_STICK_MODE&quot;</span>),
@@ -809,7 +875,7 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">trigger_mode</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">trigger_mode</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Setting</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">key</span>) <span class="op">=</span> <span class="ident">alt</span>((<span class="ident">tag_no_case</span>(<span class="string">&quot;ZL_MODE&quot;</span>), <span class="ident">tag_no_case</span>(<span class="string">&quot;ZR_MODE&quot;</span>)))(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">mode</span>) <span class="op">=</span> <span class="ident">alt</span>((
@@ -831,55 +897,72 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, ()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">equal_with_space</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, ()<span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag</span>(<span class="string">&quot;=&quot;</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>((<span class="ident">input</span>, ()))
 }
 
-<span class="kw">fn</span> <span class="ident">cmd</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Cmd</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">cmd</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Cmd</span><span class="op">&gt;</span> {
     <span class="ident">alt</span>((
-        <span class="ident">binding</span>,
+        <span class="ident">binding</span>.<span class="ident">context</span>(<span class="string">&quot;key binding&quot;</span>),
         <span class="ident">map</span>(<span class="ident">special</span>, <span class="ident">Cmd::Special</span>),
         <span class="ident">map</span>(<span class="ident">setting</span>, <span class="ident">Cmd::Setting</span>),
+        <span class="ident">value</span>(<span class="ident">Cmd::Reset</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;RESET_MAPPINGS&quot;</span>)),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;REAL_WORLD_CALIBRATION&quot;</span>, <span class="ident">Cmd::RealWorldCalibration</span>),
+        <span class="ident">f64_setting</span>(<span class="string">&quot;IN_GAME_SENS&quot;</span>, <span class="ident">Cmd::InGameSens</span>),
+        <span class="ident">value</span>(
+            <span class="ident">Cmd::CounterOSMouseSpeed</span>(<span class="bool-val">true</span>),
+            <span class="ident">tag_no_case</span>(<span class="string">&quot;COUNTER_OS_MOUSE_SPEED&quot;</span>),
+        ),
     ))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">comment</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, ()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">comment</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, ()<span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">tag</span>(<span class="string">&quot;#&quot;</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">not_line_ending</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>((<span class="ident">input</span>, ()))
 }
 
-<span class="kw">fn</span> <span class="ident">line</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">cmd</span>) <span class="op">=</span> <span class="ident">opt</span>(<span class="ident">cmd</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
+<span class="kw">fn</span> <span class="ident">empty_line</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">opt</span>(<span class="ident">comment</span>)(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">cmd</span>))
+    <span class="ident">peek</span>(<span class="ident">alt</span>((<span class="ident">line_ending</span>, <span class="ident">eof</span>)))(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="prelude-val">None</span>))
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">jsm_parse</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">cmds</span>) <span class="op">=</span> <span class="ident">all_consuming</span>(<span class="op">|</span><span class="ident">input</span><span class="op">|</span> {
-        <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">cmds</span>) <span class="op">=</span> <span class="ident">separated_list0</span>(<span class="ident">line_ending</span>, <span class="ident">context</span>(<span class="string">&quot;parse line&quot;</span>, <span class="ident">line</span>))(<span class="ident">input</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">multispace0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">cmds</span>))
-    })(<span class="ident">input</span>)<span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="ident">cmds</span>.<span class="ident">into_iter</span>().<span class="ident">flatten</span>().<span class="ident">collect</span>()))
+<span class="kw">fn</span> <span class="ident">line</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">space0</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="ident">cmd</span>) <span class="op">=</span> <span class="ident">cmd</span>.<span class="ident">context</span>(<span class="string">&quot;command&quot;</span>).<span class="ident">parse</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">empty_line</span>(<span class="ident">input</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>((<span class="ident">input</span>, <span class="prelude-val">Some</span>(<span class="ident">cmd</span>)))
 }
 
-<span class="kw">fn</span> <span class="ident">mapkey</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">MapKey</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">jsm_parse</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Cmd</span><span class="op">&gt;</span>, <span class="ident">ErrorTree</span><span class="op">&lt;</span><span class="ident">Location</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="prelude-val">Ok</span>(<span class="ident">final_parser</span>(
+        <span class="ident">collect_separated_terminated</span>(<span class="ident">alt</span>((<span class="ident">empty_line</span>, <span class="ident">line</span>)).<span class="ident">context</span>(<span class="string">&quot;line&quot;</span>), <span class="ident">line_ending</span>, <span class="ident">eof</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">cmds</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">|</span> <span class="ident">cmds</span>.<span class="ident">into_iter</span>().<span class="ident">flatten</span>().<span class="ident">collect</span>()),
+    )(<span class="ident">input</span>)<span class="question-mark">?</span>)
+}
+
+<span class="kw">fn</span> <span class="ident">mapkey</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">MapKey</span><span class="op">&gt;</span> {
     <span class="ident">alt</span>((<span class="ident">map</span>(<span class="ident">virtkey</span>, <span class="ident">MapKey::from</span>), <span class="ident">map</span>(<span class="ident">joykey</span>, <span class="ident">MapKey::from</span>)))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">joykey</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">JoyKey</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">joykey</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">JoyKey</span><span class="op">&gt;</span> {
     <span class="ident">alt</span>((
         <span class="ident">alt</span>((
             <span class="ident">value</span>(<span class="ident">JoyKey::Up</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Up&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::Down</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Down&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::Left</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Left&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::Right</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Right&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::ZL</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;ZL&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::ZR</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;ZR&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::SL</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;SL&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::SR</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;SR&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::L3</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;L3&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::R3</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;R3&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::N</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;N&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::S</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;S&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::E</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;E&quot;</span>)),
@@ -888,12 +971,8 @@
             <span class="ident">value</span>(<span class="ident">JoyKey::W</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;W&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::L</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;L&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::R</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;R&quot;</span>)),
-            <span class="ident">value</span>(<span class="ident">JoyKey::ZL</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;ZL&quot;</span>)),
-            <span class="ident">value</span>(<span class="ident">JoyKey::ZR</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;ZR&quot;</span>)),
-            <span class="ident">value</span>(<span class="ident">JoyKey::SL</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;SL&quot;</span>)),
-            <span class="ident">value</span>(<span class="ident">JoyKey::SR</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;SR&quot;</span>)),
-            <span class="ident">value</span>(<span class="ident">JoyKey::L3</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;L3&quot;</span>)),
-            <span class="ident">value</span>(<span class="ident">JoyKey::R3</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;R3&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::Minus</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;-&quot;</span>)),
+            <span class="ident">value</span>(<span class="ident">JoyKey::Plus</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;+&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::Minus</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Minus&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::Plus</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Plus&quot;</span>)),
             <span class="ident">value</span>(<span class="ident">JoyKey::Capture</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;Capture&quot;</span>)),
@@ -902,7 +981,7 @@
     ))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">virtkey</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">VirtualKey</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">virtkey</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">VirtualKey</span><span class="op">&gt;</span> {
     <span class="ident">alt</span>((
         <span class="ident">value</span>(<span class="ident">VirtualKey::LUp</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;LUp&quot;</span>)),
         <span class="ident">value</span>(<span class="ident">VirtualKey::LDown</span>, <span class="ident">tag_no_case</span>(<span class="string">&quot;LDown&quot;</span>)),
@@ -917,7 +996,7 @@
     ))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">keyboardkey</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">enigo::Key</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">keyboardkey</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">enigo::Key</span><span class="op">&gt;</span> {
     <span class="kw">use</span> <span class="ident">enigo::Key</span>::<span class="kw-2">*</span>;
     <span class="kw">let</span> <span class="ident">char_parse</span> <span class="op">=</span>
         <span class="op">|</span><span class="ident">input</span><span class="op">|</span> <span class="ident">satisfy</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">is_alphanumeric</span>(<span class="ident">c</span> <span class="kw">as</span> <span class="ident">u8</span>))(<span class="ident">input</span>).<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">x</span>)<span class="op">|</span> (<span class="ident">i</span>, <span class="ident">Layout</span>(<span class="ident">x</span>)));
@@ -925,13 +1004,16 @@
     <span class="ident">alt</span>((
         <span class="ident">alt</span>((
             <span class="ident">key_parse</span>(<span class="ident">Alt</span>, <span class="string">&quot;alt&quot;</span>),
+            <span class="comment">//TODO: proper lalt and ralt</span>
+            <span class="ident">key_parse</span>(<span class="ident">Alt</span>, <span class="string">&quot;lalt&quot;</span>),
+            <span class="ident">key_parse</span>(<span class="ident">Alt</span>, <span class="string">&quot;ralt&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">Backspace</span>, <span class="string">&quot;backspace&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">CapsLock</span>, <span class="string">&quot;capslock&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">Control</span>, <span class="string">&quot;Control&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">Delete</span>, <span class="string">&quot;Delete&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">DownArrow</span>, <span class="string">&quot;down&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">End</span>, <span class="string">&quot;End&quot;</span>),
-            <span class="ident">key_parse</span>(<span class="ident">Escape</span>, <span class="string">&quot;Escape&quot;</span>),
+            <span class="ident">key_parse</span>(<span class="ident">Escape</span>, <span class="string">&quot;Esc&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">F1</span>, <span class="string">&quot;F1&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">F10</span>, <span class="string">&quot;F10&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">F11</span>, <span class="string">&quot;F11&quot;</span>),
@@ -949,10 +1031,13 @@
             <span class="ident">key_parse</span>(<span class="ident">Home</span>, <span class="string">&quot;Home&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">LeftArrow</span>, <span class="string">&quot;left&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">Meta</span>, <span class="string">&quot;Meta&quot;</span>),
+            <span class="ident">key_parse</span>(<span class="ident">Meta</span>, <span class="string">&quot;Windows&quot;</span>),
+            <span class="ident">key_parse</span>(<span class="ident">Meta</span>, <span class="string">&quot;lWindows&quot;</span>),
+            <span class="ident">key_parse</span>(<span class="ident">Meta</span>, <span class="string">&quot;rWindows&quot;</span>),
             <span class="ident">key_parse</span>(<span class="prelude-ty">Option</span>, <span class="string">&quot;Option&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">PageDown</span>, <span class="string">&quot;PageDown&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">PageUp</span>, <span class="string">&quot;PageUp&quot;</span>),
-            <span class="ident">key_parse</span>(<span class="ident">Return</span>, <span class="string">&quot;Return&quot;</span>),
+            <span class="ident">key_parse</span>(<span class="ident">Return</span>, <span class="string">&quot;Enter&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">RightArrow</span>, <span class="string">&quot;right&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">Shift</span>, <span class="string">&quot;Shift&quot;</span>),
             <span class="ident">key_parse</span>(<span class="ident">Space</span>, <span class="string">&quot;Space&quot;</span>),
@@ -963,13 +1048,16 @@
     ))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">mousekey</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">enigo::MouseButton</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">mousekey</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">enigo::MouseButton</span><span class="op">&gt;</span> {
     <span class="kw">use</span> <span class="ident">enigo::MouseButton</span>::<span class="kw-2">*</span>;
     <span class="kw">let</span> <span class="ident">key_parse</span> <span class="op">=</span> <span class="op">|</span><span class="ident">key</span>, <span class="ident">tag</span><span class="op">|</span> <span class="ident">value</span>(<span class="ident">key</span>, <span class="ident">tag_no_case</span>(<span class="ident">tag</span>));
     <span class="ident">alt</span>((
         <span class="ident">key_parse</span>(<span class="ident">Left</span>, <span class="string">&quot;LMouse&quot;</span>),
         <span class="ident">key_parse</span>(<span class="ident">Middle</span>, <span class="string">&quot;MMouse&quot;</span>),
         <span class="ident">key_parse</span>(<span class="ident">Right</span>, <span class="string">&quot;RMouse&quot;</span>),
+        <span class="comment">// TODO: fix https://github.com/enigo-rs/enigo/issues/110</span>
+        <span class="ident">key_parse</span>(<span class="ident">Left</span>, <span class="string">&quot;BMouse&quot;</span>),
+        <span class="ident">key_parse</span>(<span class="ident">Left</span>, <span class="string">&quot;FMouse&quot;</span>),
         <span class="ident">key_parse</span>(<span class="ident">ScrollUp</span>, <span class="string">&quot;scrollup&quot;</span>),
         <span class="ident">key_parse</span>(<span class="ident">ScrollDown</span>, <span class="string">&quot;scrolldown&quot;</span>),
         <span class="ident">key_parse</span>(<span class="ident">ScrollLeft</span>, <span class="string">&quot;scrollleft&quot;</span>),
@@ -977,7 +1065,7 @@
     ))(<span class="ident">input</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">special</span>(<span class="ident">input</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">SpecialKey</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">special</span>(<span class="ident">input</span>: <span class="ident">Input</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IRes</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">SpecialKey</span><span class="op">&gt;</span> {
     <span class="kw">use</span> <span class="ident">SpecialKey</span>::<span class="kw-2">*</span>;
     <span class="kw">let</span> <span class="ident">parse</span> <span class="op">=</span> <span class="op">|</span><span class="ident">key</span>, <span class="ident">tag</span><span class="op">|</span> <span class="ident">value</span>(<span class="ident">key</span>, <span class="ident">tag_no_case</span>(<span class="ident">tag</span>));
     <span class="ident">alt</span>((

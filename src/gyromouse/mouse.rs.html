@@ -32,6 +32,35 @@
 <span id="30">30</span>
 <span id="31">31</span>
 <span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="ident">cgmath</span>::{<span class="ident">vec2</span>, <span class="ident">Vector2</span>, <span class="ident">Zero</span>};
 <span class="kw">use</span> <span class="ident">enigo</span>::{<span class="ident">Enigo</span>, <span class="ident">MouseControllable</span>};
@@ -40,6 +69,9 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Mouse</span> {
     <span class="ident">enigo</span>: <span class="ident">Enigo</span>,
     <span class="ident">error_accumulator</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
+    <span class="ident">calibration</span>: <span class="ident">f64</span>,
+    <span class="ident">game_sens</span>: <span class="ident">f64</span>,
+    <span class="ident">counter_os_speed</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Mouse</span> {
@@ -47,11 +79,24 @@
         <span class="ident">Mouse</span> {
             <span class="ident">enigo</span>: <span class="ident">Enigo::new</span>(),
             <span class="ident">error_accumulator</span>: <span class="ident">Vector2::zero</span>(),
+            <span class="ident">calibration</span>: <span class="number">1.</span>,
+            <span class="ident">game_sens</span>: <span class="number">1.</span>,
+            <span class="ident">counter_os_speed</span>: <span class="bool-val">false</span>,
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">Mouse</span> {
+            <span class="ident">calibration</span>: <span class="self">self</span>.<span class="ident">calibration</span>,
+            <span class="ident">game_sens</span>: <span class="self">self</span>.<span class="ident">game_sens</span>,
+            <span class="ident">counter_os_speed</span>: <span class="self">self</span>.<span class="ident">counter_os_speed</span>,
+            ..<span class="self">Self</span><span class="ident">::new</span>()
         }
     }
 
     <span class="comment">// mouse movement is pixel perfect, so we keep track of the error.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mouse_move_relative</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mouse_move_relative</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">offset</span>: <span class="ident">Vector2</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>) {
+        <span class="ident">offset</span> <span class="kw-2">*</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">calibration</span> <span class="op">*</span> <span class="self">self</span>.<span class="ident">game_sens</span>;
         <span class="kw">let</span> <span class="ident">sum</span> <span class="op">=</span> <span class="ident">offset</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">error_accumulator</span>;
         <span class="kw">let</span> <span class="ident">rounded</span> <span class="op">=</span> <span class="ident">vec2</span>(<span class="ident">sum</span>.<span class="ident">x</span>.<span class="ident">round</span>(), <span class="ident">sum</span>.<span class="ident">y</span>.<span class="ident">round</span>());
         <span class="self">self</span>.<span class="ident">error_accumulator</span> <span class="op">=</span> <span class="ident">sum</span> <span class="op">-</span> <span class="ident">rounded</span>;
@@ -63,6 +108,19 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enigo</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Enigo</span> {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">enigo</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_calibration</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">calibration</span>: <span class="ident">f64</span>) {
+        <span class="self">self</span>.<span class="ident">calibration</span> <span class="op">=</span> <span class="ident">calibration</span>;
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_game_sens</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">sens</span>: <span class="ident">f64</span>) {
+        <span class="self">self</span>.<span class="ident">game_sens</span> <span class="op">=</span> <span class="ident">sens</span>;
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_counter_os_speed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">counter</span>: <span class="ident">bool</span>) {
+        <span class="macro">println!</span>(<span class="string">&quot;Warning: counter os speed not supported&quot;</span>);
+        <span class="self">self</span>.<span class="ident">counter_os_speed</span> <span class="op">=</span> <span class="ident">counter</span>;
     }
 }
 </pre></div>
