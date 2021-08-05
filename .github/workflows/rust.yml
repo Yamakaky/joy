@@ -31,7 +31,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v7-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install cargo-vcpkg
         run: cargo vcpkg --version || cargo install cargo-vcpkg
@@ -49,8 +49,8 @@ jobs:
       - name: dbg sdl
         if: matrix.platform == 'linux'
         run: |
-          mv target/vcpkg/installed/x64-linux/debug/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
-          mv target/vcpkg/installed/x64-linux/debug/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
+          mv -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
+          mv -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
 
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
