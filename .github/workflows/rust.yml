@@ -44,7 +44,8 @@ jobs:
       # https://hg.libsdl.org/SDL/file/default/docs/README-linux.md
       - name: ⚙️ Install OS dependencies
         if: matrix.platform == 'linux'
-        run: sudo apt-get update && \
+        run: |
+          sudo apt-get update
           sudo apt-get install build-essential git make cmake autoconf automake \
           libtool pkg-config libasound2-dev libpulse-dev libaudio-dev libjack-dev \
           libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
