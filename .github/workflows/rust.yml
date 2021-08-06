@@ -31,7 +31,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v4-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v5-${{ hashFiles('**/Cargo.lock') }}
 
       - name: ⚙️ Install cargo-vcpkg
         run: cargo vcpkg --version || cargo install cargo-vcpkg
@@ -43,7 +43,7 @@ jobs:
 
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
-        run: sudo apt-get install libhidapi-dev
+        run: sudo apt-get install libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
 
       - name: 🔨 Build SDL
         uses: actions-rs/cargo@v1
