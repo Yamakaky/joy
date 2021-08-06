@@ -54,12 +54,12 @@ jobs:
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
         run: sudo apt-get install libhidapi-dev
-      #- name: dbg sdl
-      #  if: matrix.platform == 'linux'
-      #  run: |
-      #    cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
-      #    cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
-      #  continue-on-error: true
+      - name: dbg sdl
+        if: matrix.platform == 'linux'
+        run: |
+          cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
+          cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
+        continue-on-error: true
 
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
