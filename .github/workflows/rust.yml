@@ -23,58 +23,61 @@ jobs:
         with:
           toolchain: stable
       - uses: actions/cache@v2
-        id: cache
+        id: cache-cargo
         with:
           path: |
-            ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target
-          key: ${{ runner.os }}-cargo-v5-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/cache@v2
+        id: cache-cargo-bin
+        with:
+          path: |
+            ~/.cargo/bin/
+          key: ${{ runner.os }}-cargo-bin-v1
 
       - name: ⚙️ Install cargo-vcpkg
         run: cargo vcpkg --version || cargo install cargo-vcpkg
       # Ubuntu build deps for SDL
       # https://hg.libsdl.org/SDL/file/default/docs/README-linux.md
-      - name: ⚙️ Install SDL dependencies
+      - name: ⚙️ Install OS dependencies
         if: matrix.platform == 'linux'
-        run: sudo apt-get update && sudo apt-get install build-essential mercurial make cmake autoconf automake libtool libasound2-dev libpulse-dev libaudio-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxinerama-dev libxxf86vm-dev libxss-dev libgl1-mesa-dev libdbus-1-dev libudev-dev libgles2-mesa-dev libegl1-mesa-dev libibus-1.0-dev fcitx-libs-dev libsamplerate0-dev libwayland-dev libxkbcommon-dev
-
-      - name: ⚙️ Install dependencies
-        if: matrix.platform == 'linux'
-        run: sudo apt-get install libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
+        run: sudo apt-get update && \
+          sudo apt-get install build-essential git make cmake autoconf automake \
+          libtool pkg-config libasound2-dev libpulse-dev libaudio-dev libjack-dev \
+          libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
+          libxinerama-dev libxxf86vm-dev libxss-dev libgl1-mesa-dev libdbus-1-dev \
+          libudev-dev libgles2-mesa-dev libegl1-mesa-dev libibus-1.0-dev \
+          fcitx-libs-dev libsamplerate0-dev libsndio-dev libwayland-dev \
+          libxkbcommon-dev libdrm-dev libgbm-dev \
+          \
+          libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
 
       - name: 🔨 Build SDL
         uses: actions-rs/cargo@v1
         with:
           command: vcpkg
           args: --verbose build --manifest-path gyromouse/Cargo.toml
-      - name: find
-        if: matrix.platform == 'linux'
-        run: sudo find / -name hidapi
-
-      - name: ⚙️ Install dependencies
-        if: matrix.platform == 'linux'
-        run: sudo apt-get install libhidapi-dev
-      - name: dbg sdl
-        if: matrix.platform == 'linux'
-        run: |
-          cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
-          cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
-        continue-on-error: true
+      #- name: dbg sdl
+      #  if: matrix.platform == 'linux'
+      #  run: |
+      #    cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
+      #    cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
+      #  continue-on-error: true
 
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --verbose --bin gyromouse --no-default-features --features sdl2-static
+          args: --verbose --release --bin gyromouse --no-default-features --features sdl2-static
 
-      #- name: ⚙️ Run tests
-      #  uses: actions-rs/cargo@v1
-      #  with:
-      #    command: test
-      #    args: --workspace --exclude gyromouse --verbose
+      - name: ⚙️ Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --verbose --release --workspace --exclude gyromouse
 
       - name: ☁️ Upload gyromouse
         uses: actions/upload-artifact@v2
