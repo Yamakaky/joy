@@ -1,9 +1,7 @@
-use std::{any::Any, ops::Mul, time::Duration};
+use std::{ops::Mul, time::Duration};
 
-use anyhow::Result;
 use cgmath::{vec3, Deg, Euler, Vector2, Vector3};
 use enum_map::{Enum, EnumMap};
-use hidapi::{DeviceInfo, HidApi};
 
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum JoyKey {
@@ -136,15 +134,17 @@ impl From<Vector3<f64>> for Acceleration {
     }
 }
 
+#[cfg(feature = "gamepad-driver")]
 pub trait GamepadDriver {
     fn init(
         &self,
-        api: &HidApi,
-        device_info: &DeviceInfo,
-    ) -> Result<Option<Box<dyn GamepadDevice>>>;
+        api: &hidapi::HidApi,
+        device_info: &hidapi::DeviceInfo,
+    ) -> anyhow::Result<Option<Box<dyn GamepadDevice>>>;
 }
 
+#[cfg(feature = "gamepad-driver")]
 pub trait GamepadDevice {
-    fn recv(&mut self) -> Result<Report>;
-    fn as_any(&mut self) -> &mut dyn Any;
+    fn recv(&mut self) -> anyhow::Result<Report>;
+    fn as_any(&mut self) -> &mut dyn std::any::Any;
 }
