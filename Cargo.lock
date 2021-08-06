@@ -1109,7 +1109,7 @@ dependencies = [
  "enigo",
  "enum-map",
  "hid-gamepad",
- "hid-gamepad-sys",
+ "hid-gamepad-types",
  "joycon",
  "nom 6.1.2",
  "nom-supreme",
@@ -1177,7 +1177,16 @@ dependencies = [
  "anyhow",
  "cgmath",
  "enum-map",
+ "hid-gamepad-types",
  "hidapi",
+]
+
+[[package]]
+name = "hid-gamepad-types"
+version = "0.1.0"
+dependencies = [
+ "cgmath",
+ "enum-map",
 ]
 
 [[package]]

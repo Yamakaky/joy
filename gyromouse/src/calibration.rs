@@ -1,5 +1,5 @@
 use cgmath::{num_traits::zero, MetricSpace, Vector3};
-use hid_gamepad_sys::{Acceleration, Motion, RotationSpeed};
+use hid_gamepad_types::{Acceleration, Motion, RotationSpeed};
 use std::{
     collections::VecDeque,
     time::{Duration, Instant},

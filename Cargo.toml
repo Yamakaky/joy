@@ -4,6 +4,7 @@ members = [
     "crates/dualshock",
     "crates/hid-gamepad",
     "crates/hid-gamepad-sys",
+    "crates/hid-gamepad-types",
     "crates/joycon-sys",
     "crates/joycon",
     # removed for huge number of deps

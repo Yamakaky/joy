@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::Result;
 use cgmath::{vec2, vec3, Vector3};
-use hid_gamepad_sys::JoyKey;
+use hid_gamepad_types::JoyKey;
 use sdl2::{
     self,
     controller::{Axis, Button, GameController},

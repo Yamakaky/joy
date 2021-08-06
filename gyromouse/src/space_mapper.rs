@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use cgmath::{vec2, vec3, Deg, Euler, InnerSpace, Quaternion, Rotation, Vector2, Vector3};
-use hid_gamepad_sys::{Acceleration, Motion, RotationSpeed};
+use hid_gamepad_types::{Acceleration, Motion, RotationSpeed};
 
 pub fn map_input(
     motion: &Motion,

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use super::{settings::Settings, types::*};
 use cgmath::Deg;
-use hid_gamepad_sys::JoyKey;
+use hid_gamepad_types::JoyKey;
 use nom::{
     branch::alt,
     character::{

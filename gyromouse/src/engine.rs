@@ -6,7 +6,7 @@ use std::{
 use cgmath::{Vector2, Zero};
 use enigo::{KeyboardControllable, MouseControllable};
 use enum_map::EnumMap;
-use hid_gamepad_sys::{Acceleration, JoyKey, KeyStatus, Motion, Report, RotationSpeed};
+use hid_gamepad_types::{Acceleration, JoyKey, KeyStatus, Motion, Report, RotationSpeed};
 
 use crate::{
     calibration::Calibration,

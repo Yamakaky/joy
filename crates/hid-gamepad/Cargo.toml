@@ -11,7 +11,7 @@ anyhow = "1.0"
 cgmath = "0.18"
 dualshock = { path = "../dualshock/" }
 enum-map = "0.6"
-hid-gamepad-sys = { path = "../hid-gamepad-sys/", features = ["gamepad-driver"] }
+hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 joycon = { path = "../joycon/" }
 thiserror = "1.0"
