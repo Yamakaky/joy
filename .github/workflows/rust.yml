@@ -87,7 +87,9 @@ jobs:
           if-no-files-found: error
           path: |
             target/debug/gyromouse
+            target/release/gyromouse
             target/debug/gyromouse.exe
+            target/release/gyromouse.exe
 
       - name: 🔨 Build Documentation
         uses: actions-rs/cargo@v1
