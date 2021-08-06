@@ -50,6 +50,9 @@ jobs:
         with:
           command: vcpkg
           args: --verbose build --manifest-path gyromouse/Cargo.toml
+      - name: find
+        if: matrix.platform == 'linux'
+        run: sudo find / -name hidapi
 
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
