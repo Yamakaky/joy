@@ -44,6 +44,12 @@ jobs:
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
         run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
+      - name: patch
+        if: matrix.platform == 'linux'
+        run: |
+          sudo echo 1 > /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a
+          sudo echo 1 > /usr/lib/x86_64-linux-gnu/libhidapi-libusb.a
+        continue-on-error: true
 
       - name: 🔨 Build SDL
         uses: actions-rs/cargo@v1
