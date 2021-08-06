@@ -67,11 +67,11 @@ jobs:
           command: build
           args: --verbose --bin gyromouse --no-default-features --features sdl2-static
 
-      - name: ⚙️ Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --workspace --exclude gyromouse --verbose
+      #- name: ⚙️ Run tests
+      #  uses: actions-rs/cargo@v1
+      #  with:
+      #    command: test
+      #    args: --workspace --exclude gyromouse --verbose
 
       - name: ☁️ Upload gyromouse
         uses: actions/upload-artifact@v2
