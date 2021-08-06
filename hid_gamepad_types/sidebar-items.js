@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["JoyKey",""],["KeyStatus",""]],"struct":[["Acceleration","Uses the SDL convention."],["Motion",""],["Report",""],["RotationSpeed","Uses the SDL convention."]]});

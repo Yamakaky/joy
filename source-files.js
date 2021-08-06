@@ -1,9 +1,10 @@
 var N = null;var sourcesIndex = {};
 sourcesIndex["dualshock"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["dualshock_sys"] = {"name":"","files":["input.rs","lib.rs","output.rs"]};
-sourcesIndex["gyromouse"] = {"name":"","dirs":[{"name":"backend","files":["hidapi.rs","mod.rs","sdl.rs"]},{"name":"config","files":["mod.rs","parse.rs","settings.rs","types.rs"]}],"files":["calibration.rs","engine.rs","gyromouse.rs","joystick.rs","main.rs","mapping.rs","mouse.rs","opts.rs","space_mapper.rs"]};
+sourcesIndex["gyromouse"] = {"name":"","dirs":[{"name":"backend","files":["mod.rs","sdl.rs"]},{"name":"config","files":["mod.rs","parse.rs","settings.rs","types.rs"]}],"files":["calibration.rs","engine.rs","gyromouse.rs","joystick.rs","main.rs","mapping.rs","mouse.rs","opts.rs","space_mapper.rs"]};
 sourcesIndex["hid_gamepad"] = {"name":"","files":["error.rs","lib.rs"]};
 sourcesIndex["hid_gamepad_sys"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["hid_gamepad_types"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["joy_music"] = {"name":"","files":["main.rs"]};
 sourcesIndex["joycon"] = {"name":"","files":["calibration.rs","hid.rs","image.rs","imu_handler.rs","lib.rs"]};
 sourcesIndex["joycon_sys"] = {"name":"","dirs":[{"name":"input","files":["mod.rs","report.rs","values.rs"]},{"name":"mcu","files":["ir.rs","ir_register.rs","mod.rs"]},{"name":"output","files":["mod.rs","report.rs","rumble.rs"]}],"files":["accessory.rs","common.rs","imu.rs","lib.rs","light.rs","spi.rs"]};
