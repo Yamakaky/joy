@@ -43,27 +43,23 @@ jobs:
 
       - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
-        run: sudo apt-get install libhidapi-dev libusb-1.0-0-dev libxdo-dev libbluetooth-dev libudev-dev
-      - name: patch
-        if: matrix.platform == 'linux'
-        run: |
-          find / -name hid.c
-          echo 1 | sudo tee /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a
-          echo 1 | sudo tee /usr/lib/x86_64-linux-gnu/libhidapi-libusb.a
-          echo 1 | sudo tee /usr/include/hidapi/hidapi.h
-        continue-on-error: true
+        run: sudo apt-get install libhidapi-dev
 
       - name: 🔨 Build SDL
         uses: actions-rs/cargo@v1
         with:
           command: vcpkg
           args: --verbose build --manifest-path gyromouse/Cargo.toml
-      - name: dbg sdl
+
+      - name: ⚙️ Install dependencies
         if: matrix.platform == 'linux'
-        run: |
-          cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
-          cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
-        continue-on-error: true
+        run: sudo apt-get install libhidapi-dev
+      #- name: dbg sdl
+      #  if: matrix.platform == 'linux'
+      #  run: |
+      #    cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2d.a target/vcpkg/installed/x64-linux/lib/libSDL2.a
+      #    cp -f target/vcpkg/installed/x64-linux/*/lib/libSDL2maind.a target/vcpkg/installed/x64-linux/lib/libSDL2main.a
+      #  continue-on-error: true
 
       - name: 🔨 Build gyromouse
         uses: actions-rs/cargo@v1
