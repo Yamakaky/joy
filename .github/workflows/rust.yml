@@ -48,6 +48,7 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           ls /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a /usr/lib/x86_64-linux-gnu/libhidapi-libusb.a /usr/include/hidapi/hidapi.h
+          find / hid.c
           echo 1 | sudo tee /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a
           echo 1 | sudo tee /usr/lib/x86_64-linux-gnu/libhidapi-libusb.a
           echo 1 | sudo tee /usr/include/hidapi/hidapi.h
