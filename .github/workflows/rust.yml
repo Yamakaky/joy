@@ -47,8 +47,8 @@ jobs:
       - name: patch
         if: matrix.platform == 'linux'
         run: |
-          sudo echo 1 > /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a
-          sudo echo 1 > /usr/lib/x86_64-linux-gnu/libhidapi-libusb.a
+          echo 1 | sudo tee /usr/lib/x86_64-linux-gnu/libhidapi-hidraw.a
+          echo 1 | sudo tee /usr/lib/x86_64-linux-gnu/libhidapi-libusb.a
         continue-on-error: true
 
       - name: 🔨 Build SDL
