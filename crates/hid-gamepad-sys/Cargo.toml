@@ -5,7 +5,7 @@ authors = ["Yamakaky <yamakaky@yamaworld.fr>"]
 edition = "2018"
 
 [features]
-default = ["gamepad-driver"]
+default = []
 gamepad-driver = ["hidapi", "anyhow"]
 
 [dependencies]
