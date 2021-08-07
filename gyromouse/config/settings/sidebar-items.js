@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["AimStickSettings",""],["FlickStickSettings",""],["GyroSettings",""],["ScrollStickSettings",""],["Settings",""],["StickSettings",""]]});

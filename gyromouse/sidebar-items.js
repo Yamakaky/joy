@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["ClickType",""]],"fn":[["main",""]],"mod":[["backend",""],["calibration",""],["config",""],["engine",""],["gyromouse",""],["joystick",""],["mapping",""],["mouse",""],["opts",""],["space_mapper",""]]});

@@ -1,7 +1,6 @@
 var N = null;var sourcesIndex = {};
 sourcesIndex["dualshock"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["dualshock_sys"] = {"name":"","files":["input.rs","lib.rs","output.rs"]};
-sourcesIndex["gyromouse"] = {"name":"","dirs":[{"name":"backend","files":["mod.rs","sdl.rs"]},{"name":"config","files":["mod.rs","parse.rs","settings.rs","types.rs"]}],"files":["calibration.rs","engine.rs","gyromouse.rs","joystick.rs","main.rs","mapping.rs","mouse.rs","opts.rs","space_mapper.rs"]};
 sourcesIndex["hid_gamepad"] = {"name":"","files":["error.rs","lib.rs"]};
 sourcesIndex["hid_gamepad_sys"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["hid_gamepad_types"] = {"name":"","files":["lib.rs"]};

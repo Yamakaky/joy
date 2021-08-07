@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["dualshock","dualshock_sys","gyromouse","hid_gamepad","hid_gamepad_sys","hid_gamepad_types","joy_music","joycon","joycon_sys","joytk"];
+window.ALL_CRATES = ["dualshock","dualshock_sys","hid_gamepad","hid_gamepad_sys","hid_gamepad_types","joy_music","joycon","joycon_sys","joytk"];
