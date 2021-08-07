@@ -11,5 +11,4 @@ members = [
     #"joy-infrared",
     "joy-music",
     "joytk",
-    "gyromouse",
 ]
