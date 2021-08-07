@@ -33,6 +33,12 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-v1-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: ⚙️ Install OS dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install libusb-1.0-0-dev libbluetooth-dev libudev-dev
+
       - name: ⚙️ Run tests
         uses: actions-rs/cargo@v1
         with:
