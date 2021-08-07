@@ -43,7 +43,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --verbose --release --workspace --exclude gyromouse
+          args: --verbose --release --workspace
 
       - name: 🔨 Build Documentation
         uses: actions-rs/cargo@v1
