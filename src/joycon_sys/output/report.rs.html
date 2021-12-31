@@ -1,6 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/joycon-sys/src/output/report.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>report.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings"></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
-<link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../joycon_sys/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img src="../../../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img src="../../../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates&#x2F;joycon-sys&#x2F;src&#x2F;output&#x2F;report.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>report.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../joycon_sys/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -266,8 +264,7 @@
 <span id="264">264</span>
 <span id="265">265</span>
 <span id="266">266</span>
-</pre><pre class="rust">
-<span class="doccomment">//! Structs binary compatible with the HID output reports</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Structs binary compatible with the HID output reports</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! &lt;https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#output-reports&gt;</span>
 
@@ -301,7 +298,7 @@
 <span class="macro">raw_enum!</span> {
     <span class="attribute">#[<span class="ident">id</span>: <span class="ident">OutputReportId</span>]</span>
     <span class="attribute">#[<span class="ident">post_id</span> <span class="ident">rumble</span> <span class="ident">rumble_mut</span>: <span class="ident">Rumble</span>]</span>
-    <span class="attribute">#[<span class="ident">union</span>: <span class="ident">OutputReportUnion</span>]</span>
+    <span class="attribute">#[<span class="kw">union</span>: <span class="ident">OutputReportUnion</span>]</span>
     <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">OutputReport</span>]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">OutputReportEnum</span> {
         <span class="ident">rumble_subcmd</span> <span class="ident">rumble_subcmd_mut</span>: <span class="ident">RumbleAndSubcmd</span> <span class="op">=</span> <span class="ident">SubcommandRequest</span>,
@@ -319,15 +316,15 @@
 }
 
 <span class="kw">impl</span> <span class="ident">OutputReport</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">packet_counter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">u8</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">packet_counter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">u8</span> {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rumble</span>.<span class="ident">packet_counter</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_special</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_special</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">OutputReportId::RumbleOnly</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_registers</span>(<span class="ident">regs</span>: <span class="kw-2">&amp;</span>[<span class="ident">ir::Register</span>]) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">OutputReport</span>, <span class="kw-2">&amp;</span>[<span class="ident">ir::Register</span>]) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_registers</span>(<span class="ident">regs</span>: <span class="kw-2">&amp;</span>[<span class="ident">ir::Register</span>]) -&gt; (<span class="ident">OutputReport</span>, <span class="kw-2">&amp;</span>[<span class="ident">ir::Register</span>]) {
         <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="ident">regs</span>.<span class="ident">len</span>().<span class="ident">min</span>(<span class="number">9</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">regs_fixed</span> <span class="op">=</span> [<span class="ident">ir::Register::default</span>(); <span class="number">9</span>];
         <span class="ident">regs_fixed</span>[..<span class="ident">size</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">regs</span>[..<span class="ident">size</span>]);
@@ -338,12 +335,12 @@
         (<span class="ident">SubcommandRequest::from</span>(<span class="ident">mcu_cmd</span>).<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">regs</span>[<span class="ident">size</span>..])
     }
 
-    <span class="kw">fn</span> <span class="ident">ir_build</span>(<span class="ident">ack_request_packet</span>: <span class="ident">IRAckRequestPacket</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OutputReport</span> {
+    <span class="kw">fn</span> <span class="ident">ir_build</span>(<span class="ident">ack_request_packet</span>: <span class="ident">IRAckRequestPacket</span>) -&gt; <span class="ident">OutputReport</span> {
         <span class="kw">let</span> <span class="ident">mcu_request</span> <span class="op">=</span> <span class="ident">MCURequest::from</span>(<span class="ident">IRRequest::from</span>(<span class="ident">ack_request_packet</span>));
         <span class="ident">mcu_request</span>.<span class="ident">into</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ir_resend</span>(<span class="ident">packet_id</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OutputReport</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ir_resend</span>(<span class="ident">packet_id</span>: <span class="ident">u8</span>) -&gt; <span class="ident">OutputReport</span> {
         <span class="ident">OutputReport::ir_build</span>(<span class="ident">IRAckRequestPacket</span> {
             <span class="ident">packet_missing</span>: <span class="ident">Bool::True</span>.<span class="ident">into</span>(),
             <span class="ident">missed_packet_id</span>: <span class="ident">packet_id</span>,
@@ -351,7 +348,7 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ir_ack</span>(<span class="ident">packet_id</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OutputReport</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ir_ack</span>(<span class="ident">packet_id</span>: <span class="ident">u8</span>) -&gt; <span class="ident">OutputReport</span> {
         <span class="ident">OutputReport::ir_build</span>(<span class="ident">IRAckRequestPacket</span> {
             <span class="ident">packet_missing</span>: <span class="ident">Bool::False</span>.<span class="ident">into</span>(),
             <span class="ident">missed_packet_id</span>: <span class="number">0</span>,
@@ -359,55 +356,55 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_rumble</span>(<span class="ident">rumble_data</span>: <span class="ident">RumbleData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OutputReport</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_rumble</span>(<span class="ident">rumble_data</span>: <span class="ident">RumbleData</span>) -&gt; <span class="ident">OutputReport</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">report</span>: <span class="ident">OutputReport</span> <span class="op">=</span> <span class="ident">OutputReportEnum::RumbleOnly</span>(()).<span class="ident">into</span>();
         <span class="ident">report</span>.<span class="ident">rumble</span>.<span class="ident">rumble_data</span> <span class="op">=</span> <span class="ident">rumble_data</span>;
         <span class="ident">report</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">byte_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">byte_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">id</span>.<span class="ident">try_into</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::RumbleAndSubcmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">49</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::MCUFwUpdate</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unimplemented!</span>(),
-            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::RumbleOnly</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">10</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::RequestMCUData</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">48</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">size_of_val</span>(<span class="self">self</span>),
+            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::RumbleAndSubcmd</span>) =&gt; <span class="number">49</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::MCUFwUpdate</span>) =&gt; <span class="macro">unimplemented!</span>(),
+            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::RumbleOnly</span>) =&gt; <span class="number">10</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">OutputReportId::RequestMCUData</span>) =&gt; <span class="number">48</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="ident">size_of_val</span>(<span class="self">self</span>),
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] {
         <span class="kw">unsafe</span> { <span class="ident">std::slice::from_raw_parts</span>(<span class="self">self</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="kw">_</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>, <span class="self">self</span>.<span class="ident">byte_size</span>()) }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_bytes_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_bytes_mut</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>] {
         <span class="kw">unsafe</span> { <span class="ident">std::slice::from_raw_parts_mut</span>(<span class="self">self</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="kw">_</span> <span class="kw">as</span> <span class="kw-2">*</span><span class="kw-2">mut</span> <span class="ident">u8</span>, <span class="ident">size_of_val</span>(<span class="self">self</span>)) }
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_mcu_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">MCURequest</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_mcu_request</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">MCURequest</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">request_mcu_data</span>
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_mcu_cmd</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">MCUCommand</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">as_mcu_cmd</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">MCUCommand</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">u</span>.<span class="ident">rumble_subcmd</span>.<span class="ident">u</span>.<span class="ident">set_mcu_conf</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SubcommandRequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">OutputReport</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">subcmd</span>: <span class="ident">SubcommandRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">subcmd</span>: <span class="ident">SubcommandRequest</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">OutputReportEnum::RumbleAndSubcmd</span>(<span class="ident">subcmd</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SubcommandRequestEnum</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">OutputReport</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">subcmd</span>: <span class="ident">SubcommandRequestEnum</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">subcmd</span>: <span class="ident">SubcommandRequestEnum</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequest::from</span>(<span class="ident">subcmd</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">MCURequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">OutputReport</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">mcu_request</span>: <span class="ident">MCURequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">mcu_request</span>: <span class="ident">MCURequest</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">OutputReportEnum::RequestMCUData</span>(<span class="ident">mcu_request</span>).<span class="ident">into</span>()
     }
 }
@@ -415,7 +412,7 @@
 <span class="comment">//normal normal_mut: Normal = NormalInputReport,</span>
 <span class="macro">raw_enum!</span> {
     <span class="attribute">#[<span class="ident">id</span>: <span class="ident">SubcommandId</span>]</span>
-    <span class="attribute">#[<span class="ident">union</span>: <span class="ident">SubcommandRequestUnion</span>]</span>
+    <span class="attribute">#[<span class="kw">union</span>: <span class="ident">SubcommandRequestUnion</span>]</span>
     <span class="attribute">#[<span class="kw">struct</span>: <span class="ident">SubcommandRequest</span>]</span>
     <span class="attribute">#[<span class="ident">raw</span> [<span class="ident">u8</span>; <span class="number">38</span>]</span>]
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SubcommandRequestEnum</span> {
@@ -444,15 +441,15 @@
 }
 
 <span class="kw">impl</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">disable_shipment_mode</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">disable_shipment_mode</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SetShipmentMode</span>(<span class="ident">Bool::False</span>.<span class="ident">into</span>()).<span class="ident">into</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x59</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x59</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::Unknown0x59</span>(()).<span class="ident">into</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5a</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5a</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::Unknown0x5a</span>([
             <span class="number">4</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,
             <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,
@@ -460,11 +457,11 @@
         .<span class="ident">into</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5b</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5b</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::Unknown0x5b</span>(()).<span class="ident">into</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5c_0</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5c_0</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::Unknown0x5c</span>([
             <span class="number">0</span>, <span class="number">0</span>, <span class="number">150</span>, <span class="number">227</span>, <span class="number">28</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">236</span>, <span class="number">153</span>, <span class="number">172</span>, <span class="number">227</span>, <span class="number">28</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">243</span>, <span class="number">130</span>, <span class="number">241</span>, <span class="number">89</span>, <span class="number">46</span>,
             <span class="number">89</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">224</span>, <span class="number">88</span>, <span class="number">179</span>, <span class="number">227</span>, <span class="number">28</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">242</span>, <span class="number">5</span>, <span class="number">42</span>, <span class="number">1</span>, <span class="number">0</span>,
@@ -472,7 +469,7 @@
         .<span class="ident">into</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5c_6</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subcmd_0x5c_6</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::Unknown0x5c</span>([
             <span class="number">6</span>, <span class="number">3</span>, <span class="number">37</span>, <span class="number">6</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">236</span>, <span class="number">153</span>, <span class="number">172</span>, <span class="number">227</span>, <span class="number">28</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">105</span>, <span class="number">155</span>, <span class="number">22</span>, <span class="number">246</span>, <span class="number">93</span>, <span class="number">86</span>, <span class="number">0</span>,
             <span class="number">0</span>, <span class="number">4</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">144</span>, <span class="number">40</span>, <span class="number">161</span>, <span class="number">227</span>, <span class="number">28</span>, <span class="number">0</span>,
@@ -482,43 +479,43 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">MCUCommand</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">mcu_cmd</span>: <span class="ident">MCUCommand</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">mcu_cmd</span>: <span class="ident">MCUCommand</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SetMCUConf</span>(<span class="ident">mcu_cmd</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">AccessoryCommand</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">accessory_cmd</span>: <span class="ident">AccessoryCommand</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">accessory_cmd</span>: <span class="ident">AccessoryCommand</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::MaybeAccessory</span>(<span class="ident">accessory_cmd</span>).<span class="ident">into</span>()
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw">crate</span><span class="ident">::imu::Sensitivity</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">imu_sensitivity</span>: <span class="kw">crate</span><span class="ident">::imu::Sensitivity</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident"><span class="kw">crate</span>::imu::Sensitivity</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">imu_sensitivity</span>: <span class="ident"><span class="kw">crate</span>::imu::Sensitivity</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SetIMUSens</span>(<span class="ident">imu_sensitivity</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SPIReadRequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">spi_read</span>: <span class="ident">SPIReadRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">spi_read</span>: <span class="ident">SPIReadRequest</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SPIRead</span>(<span class="ident">spi_read</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SPIWriteRequest</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">spi_write</span>: <span class="ident">SPIWriteRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">spi_write</span>: <span class="ident">SPIWriteRequest</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SPIWrite</span>(<span class="ident">spi_write</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">light::PlayerLights</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">player_lights</span>: <span class="ident">light::PlayerLights</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">player_lights</span>: <span class="ident">light::PlayerLights</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SetPlayerLights</span>(<span class="ident">player_lights</span>).<span class="ident">into</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">light::HomeLight</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SubcommandRequest</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">home_light</span>: <span class="ident">light::HomeLight</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">home_light</span>: <span class="ident">light::HomeLight</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">SubcommandRequestEnum::SetHomeLight</span>(<span class="ident">home_light</span>).<span class="ident">into</span>()
     }
 }
@@ -533,5 +530,7 @@
         <span class="macro">assert_eq!</span>(<span class="number">49</span>, <span class="ident">std::mem::size_of_val</span>(<span class="kw-2">&amp;</span><span class="ident">report</span>));
     }
 }
-</pre></div>
-</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="joycon_sys" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>
+</code></pre></div>
+</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="joycon_sys" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
+    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script>
+</body></html>
