@@ -1,5 +1,6 @@
 [package]
 name = "joytk"
+license = "MIT"
 version = "0.1.0"
 authors = ["Mikaël Fourrier <mikael.fourrier@protonmail.com>"]
 edition = "2018"
