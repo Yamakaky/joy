@@ -2,6 +2,14 @@
 
 Suite of tools and libraries for interactions with the Nintendo Switch controllers.
 
+## External dependencies
+
+On Linux, you'll need `libusb`, `libbluetooth` and `libudev`. On Ubuntu, you can install these by running:
+
+```sh
+sudo apt-get install libusb-1.0-0-dev libbluetooth-dev libudev-dev
+```
+
 ## Tools
 
 The tools can be run with `cargo run --bin <tool>`.
