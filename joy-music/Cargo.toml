@@ -1,5 +1,6 @@
 [package]
 name = "joy-music"
+license = "MIT"
 version = "0.1.0"
 authors = ["Mikaël Fourrier <mikael.fourrier@pm.me>"]
 edition = "2018"

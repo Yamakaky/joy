@@ -1,5 +1,6 @@
 [package]
 name = "hid-gamepad-sys"
+license = "MIT"
 version = "0.1.0"
 authors = ["Yamakaky <yamakaky@yamaworld.fr>"]
 edition = "2018"
