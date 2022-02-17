@@ -149,7 +149,7 @@
 <span id="148">148</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
 
-<span class="kw">use</span> <span class="ident">clap::Clap</span>;
+<span class="kw">use</span> <span class="ident">clap::Parser</span>;
 
 <span class="doccomment">/// Access every feature of the Nintendo Switch controllers</span>
 <span class="doccomment">///</span>
@@ -164,7 +164,7 @@
 <span class="doccomment">/// - `LOG_PRETTY=1`: use a more verbose logging format</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// - `LOG_TIMING=1`: show timings</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Opts</span> {
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
     <span class="kw">pub</span> <span class="ident">subcmd</span>: <span class="ident">SubCommand</span>,
@@ -173,7 +173,7 @@
     <span class="kw">pub</span> <span class="ident">wait</span>: <span class="ident">bool</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SubCommand</span> {
     <span class="doccomment">/// Calibrate the controller</span>
     <span class="doccomment">///</span>
@@ -210,13 +210,13 @@
     <span class="ident">Camera</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Calibrate</span> {
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
     <span class="kw">pub</span> <span class="ident">subcmd</span>: <span class="ident">CalibrateE</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">CalibrateE</span> {
     <span class="doccomment">/// Calibrate the sticks</span>
     <span class="ident">Sticks</span>,
@@ -226,13 +226,13 @@
     <span class="ident">Reset</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Set</span> {
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
     <span class="kw">pub</span> <span class="ident">subcmd</span>: <span class="ident">SetE</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SetE</span> {
     <span class="doccomment">/// Change the color of the controller</span>
     <span class="doccomment">///</span>
@@ -240,7 +240,7 @@
     <span class="ident">Color</span>(<span class="ident">SetColor</span>),
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SetColor</span> {
     <span class="doccomment">/// Color of the body of the controller</span>
     <span class="kw">pub</span> <span class="ident">body</span>: <span class="ident">String</span>,
@@ -252,13 +252,13 @@
     <span class="kw">pub</span> <span class="ident">right_grip</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Ringcon</span> {
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
     <span class="kw">pub</span> <span class="ident">subcmd</span>: <span class="ident">RingconE</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">RingconE</span> {
     <span class="doccomment">/// Get the number of flex stored in the ringcon</span>
     <span class="ident">StoredFlex</span>,
@@ -268,7 +268,7 @@
     <span class="ident">Exp</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clap</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Relay</span> {
     <span class="doccomment">/// Bluetooth MAC address of the Switch</span>
     <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>, <span class="ident">validator</span>(<span class="ident">is_mac</span>))]</span>
