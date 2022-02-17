@@ -9,22 +9,22 @@ edition = "2018"
 interface = ["tui", "crossterm"]
 
 [dependencies]
-anyhow = "1.0"
-cgmath = "0.18"
-clap = "3.0.0-beta.2"
-colored = "2.0"
-hex = "0.4"
-image = "0.23.14"
+anyhow = "1.0.53"
+cgmath = "0.18.0"
+clap = { version = "3.1.0", features = ["derive"] }
+colored = "2.0.0"
+hex = "0.4.3"
+image = "0.24.0"
 joycon = { path = "../crates/joycon" }
-tracing = "0.1"
-tracing-subscriber = "0.2"
-crossterm = { version = "0.20", optional = true }
-tui = { version = "0.16", optional = true, default-features = false, features = ["crossterm"] }
-pixels = "0.5"
-winit = "0.25"
-winit_input_helper = "0.10"
+tracing = "0.1.31"
+tracing-subscriber = { version = "0.3.8", features = ["env-filter"] }
+crossterm = { version = "0.23.0", optional = true }
+tui = { version = "0.17.0", optional = true, default-features = false, features = ["crossterm"] }
+pixels = "0.9.0"
+winit = "0.26.1"
+winit_input_helper = "0.11.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-libc = "0.2"
-socket2 = "0.4"
-bluetooth-sys = "0.1"
+libc = "0.2.118"
+socket2 = "0.4.4"
+bluetooth-sys = "0.1.0"

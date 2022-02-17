@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::Clap;
+use clap::Parser;
 
 /// Access every feature of the Nintendo Switch controllers
 ///
@@ -15,7 +15,7 @@ use clap::Clap;
 /// - `LOG_PRETTY=1`: use a more verbose logging format
 ///
 /// - `LOG_TIMING=1`: show timings
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct Opts {
     #[clap(subcommand)]
     pub subcmd: SubCommand,
@@ -24,7 +24,7 @@ pub struct Opts {
     pub wait: bool,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub enum SubCommand {
     /// Calibrate the controller
     ///
@@ -61,13 +61,13 @@ pub enum SubCommand {
     Camera,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct Calibrate {
     #[clap(subcommand)]
     pub subcmd: CalibrateE,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub enum CalibrateE {
     /// Calibrate the sticks
     Sticks,
@@ -77,13 +77,13 @@ pub enum CalibrateE {
     Reset,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct Set {
     #[clap(subcommand)]
     pub subcmd: SetE,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub enum SetE {
     /// Change the color of the controller
     ///
@@ -91,7 +91,7 @@ pub enum SetE {
     Color(SetColor),
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct SetColor {
     /// Color of the body of the controller
     pub body: String,
@@ -103,13 +103,13 @@ pub struct SetColor {
     pub right_grip: Option<String>,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct Ringcon {
     #[clap(subcommand)]
     pub subcmd: RingconE,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub enum RingconE {
     /// Get the number of flex stored in the ringcon
     StoredFlex,
@@ -119,7 +119,7 @@ pub enum RingconE {
     Exp,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub struct Relay {
     /// Bluetooth MAC address of the Switch
     #[clap(short, long, validator(is_mac))]

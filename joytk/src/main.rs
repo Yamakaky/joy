@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use cgmath::{Deg, Euler, One, Quaternion, Vector3};
-use clap::Clap;
+use clap::Parser;
 use colored::Colorize;
 use joycon::{
     hidapi::HidApi,
