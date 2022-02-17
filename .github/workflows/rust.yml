@@ -1,6 +1,29 @@
 name: Build, test and doc
 
-on: [push, pull_request]
+on:
+# At the moment, this doesn’t work due to a bug with GitHub:
+# <https://github.community/t/support-for-yaml-anchors/16128>
+# Once that bug is fixed, this version should be used.
+  #push: &push_settings
+    #paths:
+      #- '**/Cargo.lock'
+      #- '**/Cargo.toml'
+      #- '**.rs'
+      #- '.github/workflows/rust.yml'
+  #pull_request: *push_settings
+# In the meantime, we can just repeat ourselves.
+  push:
+    paths:
+      - '**/Cargo.lock'
+      - '**/Cargo.toml'
+      - '**.rs'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - '**/Cargo.lock'
+      - '**/Cargo.toml'
+      - '**.rs'
+      - '.github/workflows/rust.yml'
 
 jobs:
   build:
