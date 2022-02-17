@@ -1,6 +1,6 @@
 # joy
 
-Suite of tools and libraries for interactions with the Nintendo Switch controllers.
+Suite of tools and libraries for interactions with Nintendo Switch and DualShock 4 controllers.
 
 ## External dependencies
 
