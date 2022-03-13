@@ -3,6 +3,7 @@
 //! <https://github.com/dekuNukem/Nintendo_Switch_Reverse_Engineering/blob/master/bluetooth_hid_notes.md#input-reports>
 
 use crate::{accessory::AccessoryResponse, common::*, imu, input::*, mcu::*, raw_enum, spi::*};
+use anyhow::{anyhow, Result};
 use std::{fmt, mem::size_of_val};
 
 raw_enum! {
@@ -248,6 +249,20 @@ pub enum WhichController {
     LeftJoyCon = 1,
     RightJoyCon = 2,
     ProController = 3,
+}
+
+impl WhichController {
+    /// You can use [`hidapi::DeviceInfo::product_id()`](https://docs.rs/hidapi/1.3.4/hidapi/struct.DeviceInfo.html#method.product_id)
+    /// to get an ID to pass to this function.
+    pub fn from_product_id(id: u16) -> Result<Self> {
+        match id {
+            JOYCON_L_BT => Ok(WhichController::LeftJoyCon),
+            JOYCON_R_BT => Ok(WhichController::RightJoyCon),
+            PRO_CONTROLLER => Ok(WhichController::ProController),
+            JOYCON_CHARGING_GRIP => Err(anyhow!("unsupported charging grip")),
+            _ => Err(anyhow!("unknown controller type")),
+        }
+    }
 }
 
 impl fmt::Display for WhichController {

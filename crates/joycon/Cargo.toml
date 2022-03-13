@@ -17,3 +17,4 @@ hid-gamepad-sys = { path = "../hid-gamepad-sys/" }
 enum-map = "0.6"
 tracing = "0.1"
 hex = "0.4"
+thiserror = "1.0.30"

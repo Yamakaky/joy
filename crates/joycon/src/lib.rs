@@ -2,6 +2,7 @@ mod calibration;
 mod hid;
 mod image;
 mod imu_handler;
+mod scan;
 
 pub use crate::image::*;
 use anyhow::Result;
@@ -12,6 +13,7 @@ use hid_gamepad_sys::{GamepadDevice, GamepadDriver, JoyKey, Motion};
 use hidapi::HidApi;
 pub use imu_handler::IMU;
 pub use joycon_sys;
+pub use scan::*;
 
 pub use hidapi;
 use joycon_sys::{imu::IMU_SAMPLES_PER_SECOND, NINTENDO_VENDOR_ID};
