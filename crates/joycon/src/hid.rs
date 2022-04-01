@@ -91,7 +91,7 @@ impl JoyCon {
     pub fn recv(&mut self) -> Result<InputReport> {
         let mut report = InputReport::new();
         let nb_read = self.device.read(report.as_bytes_mut())?;
-        assert_eq!(nb_read, report.len());
+        assert!(nb_read >= report.len(), "{} < {}", nb_read, report.len());
         Span::current()
             .record("special", &report.is_special())
             .record("report", &debug(report));
