@@ -1,6 +1,5 @@
 use std::convert::TryInto;
 
-use crate::image::Image;
 use crate::imu_handler;
 use anyhow::{bail, ensure, Context, Result};
 use cgmath::Vector2;
@@ -20,6 +19,7 @@ pub struct Report {
     pub right_stick: Vector2<f64>,
     pub buttons: ButtonsStatus,
     pub info: DeviceStatus,
+    #[cfg(feature = "ir")]
     pub image: Option<image::GrayImage>,
     pub imu: Option<[imu_handler::IMU; 3]>,
     pub raw: InputReport,
@@ -33,7 +33,8 @@ pub struct JoyCon {
     pub max_raw_accel: i16,
     left_stick_calib: LeftStickCalibration,
     right_stick_calib: RightStickCalibration,
-    image: Image,
+    #[cfg(feature = "ir")]
+    image: crate::image::Image,
     enable_ir_loop: bool,
     imu_handler: crate::imu_handler::Handler,
     device_type: WhichController,
@@ -57,7 +58,8 @@ impl JoyCon {
             max_raw_accel: 0,
             left_stick_calib: LeftStickCalibration::default(),
             right_stick_calib: RightStickCalibration::default(),
-            image: Image::new(),
+            #[cfg(feature = "ir")]
+            image: crate::image::Image::new(),
             enable_ir_loop: false,
             imu_handler: crate::imu_handler::Handler::new(
                 device_type,
@@ -100,6 +102,7 @@ impl JoyCon {
         if let Some(frames) = report.imu_frames() {
             self.imu_handler.handle_frames(frames);
         }
+        #[cfg(feature = "ir")]
         if let Some(mcu_report) = report.mcu_report() {
             if self.enable_ir_loop {
                 for packet in self.image.handle(mcu_report).iter_mut().flatten() {
@@ -131,6 +134,7 @@ impl JoyCon {
             right_stick,
             buttons: std_report.buttons,
             info: std_report.info,
+            #[cfg(feature = "ir")]
             image: self.image.last_image.take(),
             imu: report
                 .imu_frames()
@@ -384,6 +388,7 @@ impl JoyCon {
             .context("change_ir_resolution")?;
         self.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
             .context("change_ir_resolution enable")?;
+        #[cfg(feature = "ir")]
         self.image.change_resolution(resolution);
         Ok(())
     }

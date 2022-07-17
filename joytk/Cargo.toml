@@ -15,7 +15,7 @@ clap = { version = "3.1.0", features = ["derive"] }
 colored = "2.0.0"
 hex = "0.4.3"
 image = "0.24.0"
-joycon = { path = "../crates/joycon" }
+joycon = { path = "../crates/joycon", features = ["ir"] }
 tracing = "0.1.31"
 tracing-subscriber = { version = "0.3.8", features = ["env-filter"] }
 crossterm = { version = "0.23.0", optional = true }

@@ -44,6 +44,7 @@ impl std::error::Error for WrongRangeError {}
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
+#[allow(dead_code)]
 pub struct SPIReadRequest {
     offset: U32LE,
     size: u8,

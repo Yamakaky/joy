@@ -40,6 +40,7 @@ pub enum RingconItemId {
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
+#[allow(dead_code)]
 pub struct AccessoryCommand {
     id: RawId<AccessoryCommandId>,
     ty: RawId<AccessoryType>,
@@ -132,6 +133,7 @@ union AccessoryResponseUnion {
 
 #[repr(packed)]
 #[derive(Copy, Clone, Debug)]
+#[allow(dead_code)]
 pub struct OfflineSteps {
     pub steps: U16LE,
     unknown0x00: u8,

@@ -1,8 +1,10 @@
 mod calibration;
 mod hid;
+#[cfg(feature = "ir")]
 mod image;
 mod imu_handler;
 
+#[cfg(feature = "ir")]
 pub use crate::image::*;
 use anyhow::Result;
 pub use calibration::*;
