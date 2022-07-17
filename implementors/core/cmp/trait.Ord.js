@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["joycon_sys"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.59.0/core/cmp/trait.Ord.html\" title=\"trait core::cmp::Ord\">Ord</a> for <a class=\"enum\" href=\"joycon_sys/input/enum.BatteryLevel.html\" title=\"enum joycon_sys::input::BatteryLevel\">BatteryLevel</a>","synthetic":false,"types":["joycon_sys::input::values::BatteryLevel"]}];
+implementors["joycon_sys"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.62.0/core/cmp/trait.Ord.html\" title=\"trait core::cmp::Ord\">Ord</a> for <a class=\"enum\" href=\"joycon_sys/input/enum.BatteryLevel.html\" title=\"enum joycon_sys::input::BatteryLevel\">BatteryLevel</a>","synthetic":false,"types":["joycon_sys::input::values::BatteryLevel"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

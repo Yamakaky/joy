@@ -1,4 +1,4 @@
-var N = null;var sourcesIndex = {};
+var sourcesIndex = {};
 sourcesIndex["dualshock"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["dualshock_sys"] = {"name":"","files":["input.rs","lib.rs","output.rs"]};
 sourcesIndex["hid_gamepad"] = {"name":"","files":["error.rs","lib.rs"]};
