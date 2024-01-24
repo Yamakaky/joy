@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["calibrate_gyro",""],["calibrate_sticks",""],["decode",""],["dump",""],["get",""],["hid_main",""],["main",""],["monitor",""],["pulse_rate",""],["raw_sticks",""],["reset_calibration",""],["restore",""],["ringcon",""],["set_color",""]],"mod":[["camera",""],["opts",""],["relay",""]]});
+window.SIDEBAR_ITEMS = {"fn":["calibrate_gyro","calibrate_sticks","decode","dump","get","hid_main","main","monitor","pulse_rate","raw_sticks","reset_calibration","restore","ringcon","set_color"],"mod":["camera","opts","relay"]};

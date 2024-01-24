@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DS4",""],["DS4Driver",""]]});
+window.SIDEBAR_ITEMS = {"struct":["DS4","DS4Driver"]};

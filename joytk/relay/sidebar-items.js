@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["connect_switch",""],["create_sockaddr",""],["relay",""]]});
+window.SIDEBAR_ITEMS = {"fn":["connect_switch","create_sockaddr","relay"]};

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["PlayerLight",""]],"struct":[["HomeLight",""],["PlayerLights",""]]});
+window.SIDEBAR_ITEMS = {"enum":["PlayerLight"],"struct":["HomeLight","PlayerLights"]};

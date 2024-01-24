@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["dualshock"] = [{"text":"impl <a class=\"trait\" href=\"hid_gamepad_sys/trait.GamepadDriver.html\" title=\"trait hid_gamepad_sys::GamepadDriver\">GamepadDriver</a> for <a class=\"struct\" href=\"dualshock/struct.DS4Driver.html\" title=\"struct dualshock::DS4Driver\">DS4Driver</a>","synthetic":false,"types":["dualshock::DS4Driver"]}];
-implementors["joycon"] = [{"text":"impl <a class=\"trait\" href=\"hid_gamepad_sys/trait.GamepadDriver.html\" title=\"trait hid_gamepad_sys::GamepadDriver\">GamepadDriver</a> for <a class=\"struct\" href=\"joycon/struct.JoyconDriver.html\" title=\"struct joycon::JoyconDriver\">JoyconDriver</a>","synthetic":false,"types":["joycon::JoyconDriver"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["SCREEN_HEIGHT",""],["SCREEN_WIDTH",""]],"enum":[["Cmd",""]],"fn":[["create_window",""],["run",""]]});
+window.SIDEBAR_ITEMS = {"constant":["SCREEN_HEIGHT","SCREEN_WIDTH"],"enum":["Cmd"],"fn":["create_window","run"]};

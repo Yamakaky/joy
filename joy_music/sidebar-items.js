@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["hid_main",""],["main",""]]});
+window.SIDEBAR_ITEMS = {"fn":["hid_main","main"]};

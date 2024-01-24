@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["OutputReportEnum",""],["OutputReportId",""],["SubcommandRequestEnum",""]],"struct":[["OutputReport",""],["Rumble",""],["RumbleData",""],["RumbleSide",""],["SubcommandRequest",""]]});
+window.SIDEBAR_ITEMS = {"enum":["OutputReportEnum","OutputReportId","SubcommandRequestEnum"],"struct":["OutputReport","Rumble","RumbleData","RumbleSide","SubcommandRequest"]};

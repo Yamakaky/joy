@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Calibration",""],["IMU","Acceleration and gyroscope data for the controller."],["Image",""],["JoyCon",""],["JoyconDriver",""],["Report",""]]});
+window.SIDEBAR_ITEMS = {"struct":["Calibration","IMU","Image","JoyCon","JoyconDriver","Report"]};

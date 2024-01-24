@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["IMU_SAMPLES_PER_SECOND",""],["IMU_SAMPLE_DURATION",""]],"enum":[["AccAntiAliasing","Anti-aliasing setting of the accelerometer."],["AccSens","Sensitivity range of the accelerometer."],["GyroPerfRate",""],["GyroSens","Sensitivity range of the gyroscope."],["IMUMode",""]],"struct":[["Frame",""],["Sensitivity",""]]});
+window.SIDEBAR_ITEMS = {"constant":["IMU_SAMPLES_PER_SECOND","IMU_SAMPLE_DURATION"],"enum":["AccAntiAliasing","AccSens","GyroPerfRate","GyroSens","IMUMode"],"struct":["Frame","Sensitivity"]};

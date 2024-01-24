@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["hid_gamepad_types"] = [{"text":"impl&lt;V&gt; Enum&lt;V&gt; for <a class=\"enum\" href=\"hid_gamepad_types/enum.JoyKey.html\" title=\"enum hid_gamepad_types::JoyKey\">JoyKey</a>","synthetic":false,"types":["hid_gamepad_types::JoyKey"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
