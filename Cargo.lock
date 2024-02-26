@@ -993,6 +993,7 @@ dependencies = [
  "hidapi",
  "image",
  "joycon-sys",
+ "thiserror",
  "tracing",
 ]
 
@@ -1000,6 +1001,7 @@ dependencies = [
 name = "joycon-sys"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bitfield",
  "cgmath",
  "num",
