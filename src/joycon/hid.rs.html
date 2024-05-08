@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/joycon/src/hid.rs`."><title>hid.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="joycon" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `crates/joycon/src/hid.rs`."><title>hid.rs - source</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="joycon" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0 (9b00956e5 2024-04-29)" data-channel="1.78.0" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../joycon/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -569,7 +571,7 @@
     <span class="kw">pub </span>right_stick: Vector2&lt;f64&gt;,
     <span class="kw">pub </span>buttons: ButtonsStatus,
     <span class="kw">pub </span>info: DeviceStatus,
-    <span class="attr">#[cfg(feature = <span class="string">&quot;ir&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"ir"</span>)]
     </span><span class="kw">pub </span>image: <span class="prelude-ty">Option</span>&lt;image::GrayImage&gt;,
     <span class="kw">pub </span>imu: <span class="prelude-ty">Option</span>&lt;[imu_handler::IMU; <span class="number">3</span>]&gt;,
     <span class="kw">pub </span>raw: InputReport,
@@ -583,7 +585,7 @@
     <span class="kw">pub </span>max_raw_accel: i16,
     left_stick_calib: LeftStickCalibration,
     right_stick_calib: RightStickCalibration,
-    <span class="attr">#[cfg(feature = <span class="string">&quot;ir&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"ir"</span>)]
     </span>image: <span class="kw">crate</span>::image::Image,
     enable_ir_loop: bool,
     imu_handler: <span class="kw">crate</span>::imu_handler::Handler,
@@ -591,14 +593,14 @@
 }
 
 <span class="kw">impl </span>JoyCon {
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(device), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(device), err)]
     </span><span class="kw">pub fn </span>new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -&gt; <span class="prelude-ty">Result</span>&lt;JoyCon&gt; {
         <span class="kw">let </span>device_type = <span class="kw">match </span>info.product_id() {
             JOYCON_L_BT =&gt; WhichController::LeftJoyCon,
             JOYCON_R_BT =&gt; WhichController::RightJoyCon,
             PRO_CONTROLLER =&gt; WhichController::ProController,
-            JOYCON_CHARGING_GRIP =&gt; <span class="macro">panic!</span>(<span class="string">&quot;unsupported charging grip&quot;</span>),
-            <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;unknown controller type&quot;</span>),
+            JOYCON_CHARGING_GRIP =&gt; <span class="macro">panic!</span>(<span class="string">"unsupported charging grip"</span>),
+            <span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"unknown controller type"</span>),
         };
         <span class="kw">let </span><span class="kw-2">mut </span>joycon = JoyCon {
             device,
@@ -608,7 +610,7 @@
             max_raw_accel: <span class="number">0</span>,
             left_stick_calib: LeftStickCalibration::default(),
             right_stick_calib: RightStickCalibration::default(),
-            <span class="attr">#[cfg(feature = <span class="string">&quot;ir&quot;</span>)]
+            <span class="attr">#[cfg(feature = <span class="string">"ir"</span>)]
             </span>image: <span class="kw">crate</span>::image::Image::new(),
             enable_ir_loop: <span class="bool-val">false</span>,
             imu_handler: <span class="kw">crate</span>::imu_handler::Handler::new(
@@ -628,31 +630,31 @@
         <span class="self">self</span>.device_type == WhichController::RightJoyCon
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;trace&quot;</span>, skip(<span class="self">self</span>), fields(special))]
+    <span class="attr">#[instrument(level = <span class="string">"trace"</span>, skip(<span class="self">self</span>), fields(special))]
     </span><span class="kw">pub fn </span>send(<span class="kw-2">&amp;mut </span><span class="self">self</span>, report: <span class="kw-2">&amp;mut </span>OutputReport) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw-2">*</span>report.packet_counter() = <span class="self">self</span>.counter;
         <span class="self">self</span>.counter = (<span class="self">self</span>.counter + <span class="number">1</span>) &amp; <span class="number">0xf</span>;
-        Span::current().record(<span class="string">&quot;special&quot;</span>, <span class="kw-2">&amp;</span>report.is_special());
+        Span::current().record(<span class="string">"special"</span>, <span class="kw-2">&amp;</span>report.is_special());
         <span class="macro">trace!</span>(out_report = %hex::encode(report.as_bytes()));
         <span class="kw">let </span>nb_written = <span class="self">self</span>.device.write(report.as_bytes())<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(nb_written, report.byte_size());
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;trace&quot;</span>, skip(<span class="self">self</span>), fields(special, report))]
+    <span class="attr">#[instrument(level = <span class="string">"trace"</span>, skip(<span class="self">self</span>), fields(special, report))]
     </span><span class="kw">pub fn </span>recv(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;InputReport&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>report = InputReport::new();
         <span class="kw">let </span>nb_read = <span class="self">self</span>.device.read(report.as_bytes_mut())<span class="question-mark">?</span>;
-        <span class="macro">assert!</span>(nb_read &gt;= report.len(), <span class="string">&quot;{} &lt; {}&quot;</span>, nb_read, report.len());
+        <span class="macro">assert!</span>(nb_read &gt;= report.len(), <span class="string">"{} &lt; {}"</span>, nb_read, report.len());
         Span::current()
-            .record(<span class="string">&quot;special&quot;</span>, <span class="kw-2">&amp;</span>report.is_special())
-            .record(<span class="string">&quot;report&quot;</span>, <span class="kw-2">&amp;</span>debug(report));
+            .record(<span class="string">"special"</span>, <span class="kw-2">&amp;</span>report.is_special())
+            .record(<span class="string">"report"</span>, <span class="kw-2">&amp;</span>debug(report));
         <span class="macro">trace!</span>(in__report = %hex::encode(report.as_bytes()));
         report.validate();
         <span class="kw">if let </span><span class="prelude-val">Some</span>(frames) = report.imu_frames() {
             <span class="self">self</span>.imu_handler.handle_frames(frames);
         }
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ir&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"ir"</span>)]
         </span><span class="kw">if let </span><span class="prelude-val">Some</span>(mcu_report) = report.mcu_report() {
             <span class="kw">if </span><span class="self">self</span>.enable_ir_loop {
                 <span class="kw">for </span>packet <span class="kw">in </span><span class="self">self</span>.image.handle(mcu_report).iter_mut().flatten() {
@@ -670,7 +672,7 @@
 
     <span class="kw">pub fn </span>tick(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Report&gt; {
         <span class="kw">let </span>report = <span class="self">self</span>.recv()<span class="question-mark">?</span>;
-        <span class="kw">let </span>std_report = report.standard().expect(<span class="string">&quot;should be standard&quot;</span>);
+        <span class="kw">let </span>std_report = report.standard().expect(<span class="string">"should be standard"</span>);
 
         <span class="kw">let </span>left_stick = <span class="self">self
             </span>.left_stick_calib
@@ -684,7 +686,7 @@
             right_stick,
             buttons: std_report.buttons,
             info: std_report.info,
-            <span class="attr">#[cfg(feature = <span class="string">&quot;ir&quot;</span>)]
+            <span class="attr">#[cfg(feature = <span class="string">"ir"</span>)]
             </span>image: <span class="self">self</span>.image.last_image.take(),
             imu: report
                 .imu_frames()
@@ -717,25 +719,25 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>get_dev_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;DeviceInfo&gt; {
         <span class="kw">let </span>reply = <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::RequestDeviceInfo(()))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="kw-2">*</span>reply.device_info().unwrap())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>set_home_light(<span class="kw-2">&amp;mut </span><span class="self">self</span>, home_light: light::HomeLight) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(home_light)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>set_player_light(<span class="kw-2">&amp;mut </span><span class="self">self</span>, player_lights: light::PlayerLights) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(player_lights)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>set_report_mode_standard(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::SetInputReportMode(
             InputReportId::StandardFull.into(),
@@ -743,7 +745,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;debug&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"debug"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>call_subcmd_wait&lt;S: Into&lt;SubcommandRequest&gt; + std::fmt::Debug&gt;(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         subcmd: S,
@@ -756,23 +758,23 @@
             <span class="kw">let </span>in_report = <span class="self">self</span>.recv()<span class="question-mark">?</span>;
             <span class="kw">if let </span><span class="prelude-val">Some</span>(reply) = in_report.subcmd_reply() {
                 <span class="kw">if </span>reply.id() == subcmd.id() {
-                    <span class="macro">ensure!</span>(reply.ack().is_ok(), <span class="string">&quot;subcmd reply is nack&quot;</span>);
+                    <span class="macro">ensure!</span>(reply.ack().is_ok(), <span class="string">"subcmd reply is nack"</span>);
                     <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="kw-2">*</span>reply);
                 }
             }
         }
 
-        <span class="macro">bail!</span>(<span class="string">&quot;Timeout while waiting for subcommand&quot;</span>);
+        <span class="macro">bail!</span>(<span class="string">"Timeout while waiting for subcommand"</span>);
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>read_spi&lt;S: SPI&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;S&gt; {
         <span class="kw">let </span>reply = <span class="self">self</span>.call_subcmd_wait(SPIReadRequest::new(S::range()))<span class="question-mark">?</span>;
         <span class="kw">let </span>result = reply.spi_read_result().unwrap();
         <span class="prelude-val">Ok</span>((<span class="kw-2">*</span>result).try_into()<span class="question-mark">?</span>)
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>read_spi_raw(<span class="kw-2">&amp;mut </span><span class="self">self</span>, range: SPIRange) -&gt; <span class="prelude-ty">Result</span>&lt;[u8; <span class="number">0x1D</span>]&gt; {
         <span class="kw">let </span>reply = <span class="self">self</span>.call_subcmd_wait(SPIReadRequest::new(range))<span class="question-mark">?</span>;
         <span class="kw">let </span>result = reply.spi_read_result().unwrap();
@@ -780,7 +782,7 @@
         <span class="prelude-val">Ok</span>(result.raw())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>write_spi&lt;S: SPI + Into&lt;SPIWriteRequest&gt; + std::fmt::Debug&gt;(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         value: S,
@@ -789,7 +791,7 @@
         <span class="prelude-val">Ok</span>(reply.is_spi_write_success().unwrap())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub unsafe fn </span>write_spi_raw(<span class="kw-2">&amp;mut </span><span class="self">self</span>, range: SPIRange, data: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
         <span class="kw">let </span>reply = <span class="self">self</span>.call_subcmd_wait(SPIWriteRequest::new(range, data))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(reply.is_spi_write_success().unwrap())
@@ -798,7 +800,7 @@
 
 <span class="doccomment">/// MCU handling (infrared camera and NFC reader)
 </span><span class="kw">impl </span>JoyCon {
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>enable_ir(<span class="kw-2">&amp;mut </span><span class="self">self</span>, resolution: Resolution) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.enable_mcu()<span class="question-mark">?</span>;
         <span class="self">self</span>.set_mcu_mode_ir()<span class="question-mark">?</span>;
@@ -806,7 +808,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>disable_mcu(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.enable_ir_loop = <span class="bool-val">false</span>;
         <span class="self">self</span>.set_report_mode_standard()<span class="question-mark">?</span>;
@@ -814,7 +816,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>enable_pulserate(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.enable_mcu()<span class="question-mark">?</span>;
         <span class="self">self</span>.set_mcu_mode_ir()<span class="question-mark">?</span>;
@@ -827,16 +829,16 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>enable_mcu(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.set_report_mode_mcu()<span class="question-mark">?</span>;
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Standby.into()))<span class="question-mark">?</span>;
         <span class="self">self</span>.wait_mcu_status(MCUMode::Standby)
-            .context(<span class="string">&quot;enable_mcu&quot;</span>)<span class="question-mark">?</span>;
+            .context(<span class="string">"enable_mcu"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>set_report_mode_mcu(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::SetInputReportMode(
             InputReportId::StandardFullMCU.into(),
@@ -844,16 +846,16 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>set_mcu_mode_ir(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(MCUCommand::set_mcu_mode(MCUMode::IR))<span class="question-mark">?</span>;
         <span class="self">self</span>.wait_mcu_status(MCUMode::IR)
-            .context(<span class="string">&quot;set_mcu_mode_ir&quot;</span>)<span class="question-mark">?</span>;
+            .context(<span class="string">"set_mcu_mode_ir"</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.enable_ir_loop = <span class="bool-val">true</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>set_ir_image_mode(<span class="kw-2">&amp;mut </span><span class="self">self</span>, ir_mode: MCUIRMode, frags: u8) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>mcu_fw_version = Default::default();
         <span class="self">self</span>.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
@@ -876,11 +878,11 @@
                 .map(|status| <span class="macro">dbg!</span>(status.ir_mode) == ir_mode)
                 .unwrap_or(<span class="bool-val">false</span>)
         })
-        .context(<span class="string">&quot;check sensor state&quot;</span>)<span class="question-mark">?</span>;
+        .context(<span class="string">"check sensor state"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>get_ir_registers(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Register&gt;&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>registers = <span class="macro">vec!</span>[];
         <span class="kw">for </span>page <span class="kw">in </span><span class="number">0</span>..=<span class="number">4 </span>{
@@ -902,8 +904,8 @@
                         <span class="bool-val">false
                     </span>}
                 })
-                .context(<span class="string">&quot;get IR registers slice&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">let </span>reg_slice = mcu_report.ir_registers().expect(<span class="string">&quot;already validated above&quot;</span>);
+                .context(<span class="string">"get IR registers slice"</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>reg_slice = mcu_report.ir_registers().expect(<span class="string">"already validated above"</span>);
             registers.extend(Register::decode_raw(
                 page,
                 offset,
@@ -913,7 +915,7 @@
         <span class="prelude-val">Ok</span>(registers)
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>set_ir_registers(<span class="kw-2">&amp;mut </span><span class="self">self</span>, regs: <span class="kw-2">&amp;</span>[ir::Register]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>regs_mut = regs;
         <span class="kw">while </span>!regs_mut.is_empty() {
@@ -926,24 +928,24 @@
                 </span>std::thread::sleep(std::time::Duration::from_millis(<span class="number">15</span>));
             }
         }
-        <span class="comment">// TODO reg value doesn&#39;t change until next frame
+        <span class="comment">// TODO reg value doesn't change until next frame
         </span><span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>change_ir_resolution(<span class="kw-2">&amp;mut </span><span class="self">self</span>, resolution: Resolution) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.set_ir_wait_conf()
-            .context(<span class="string">&quot;change_ir_resolution reset&quot;</span>)<span class="question-mark">?</span>;
+            .context(<span class="string">"change_ir_resolution reset"</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.set_ir_registers(<span class="kw-2">&amp;</span>[Register::resolution(resolution), Register::finish()])
-            .context(<span class="string">&quot;change_ir_resolution&quot;</span>)<span class="question-mark">?</span>;
+            .context(<span class="string">"change_ir_resolution"</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.set_ir_image_mode(MCUIRMode::ImageTransfer, resolution.max_fragment_id())
-            .context(<span class="string">&quot;change_ir_resolution enable&quot;</span>)<span class="question-mark">?</span>;
-        <span class="attr">#[cfg(feature = <span class="string">&quot;ir&quot;</span>)]
+            .context(<span class="string">"change_ir_resolution enable"</span>)<span class="question-mark">?</span>;
+        <span class="attr">#[cfg(feature = <span class="string">"ir"</span>)]
         </span><span class="self">self</span>.image.change_resolution(resolution);
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>set_ir_wait_conf(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>mcu_fw_version = Default::default();
         <span class="self">self</span>.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |r| {
@@ -966,18 +968,18 @@
                 .map(|status| status.ir_mode == MCUIRMode::WaitingForConfigurationMaybe)
                 .unwrap_or(<span class="bool-val">false</span>)
         })
-        .context(<span class="string">&quot;check sensor state&quot;</span>)<span class="question-mark">?</span>;
+        .context(<span class="string">"check sensor state"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;debug&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"debug"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>send_mcu_subcmd(<span class="kw-2">&amp;mut </span><span class="self">self</span>, mcu_subcmd: MCURequest) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>out_report = mcu_subcmd.into();
         <span class="self">self</span>.send(<span class="kw-2">&amp;mut </span>out_report)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;debug&quot;</span>, skip(<span class="self">self</span>, f), err)]
+    <span class="attr">#[instrument(level = <span class="string">"debug"</span>, skip(<span class="self">self</span>, f), err)]
     </span><span class="kw">fn </span>wait_mcu_cond&lt;R: Into&lt;MCURequest&gt; + std::fmt::Debug&gt;(
         <span class="kw-2">&amp;mut </span><span class="self">self</span>,
         mcu_subcmd: R,
@@ -996,10 +998,10 @@
                 }
             }
         }
-        <span class="macro">bail!</span>(<span class="string">&quot;error getting the MCU status: timeout&quot;</span>);
+        <span class="macro">bail!</span>(<span class="string">"error getting the MCU status: timeout"</span>);
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;debug&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"debug"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">fn </span>wait_mcu_status(<span class="kw-2">&amp;mut </span><span class="self">self</span>, mode: MCUMode) -&gt; <span class="prelude-ty">Result</span>&lt;MCUReport&gt; {
         <span class="self">self</span>.wait_mcu_cond(MCURequestEnum::GetMCUStatus(()), |report| {
             report
@@ -1012,14 +1014,14 @@
 
 <span class="doccomment">/// IMU handling (gyroscope and accelerometer)
 </span><span class="kw">impl </span>JoyCon {
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>enable_imu(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::SetIMUMode(IMUMode::GyroAccel.into()))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="comment">// TODO: needed?
-    </span><span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    </span><span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>set_imu_sens(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span>gyro_sens = imu::GyroSens::DPS2000;
         <span class="kw">let </span>accel_sens = imu::AccSens::G8;
@@ -1038,7 +1040,7 @@
 
 <span class="doccomment">/// Ringcon handling
 </span><span class="kw">impl </span>JoyCon {
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>enable_ringcon(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::SetMCUState(MCUMode::Standby.into()))<span class="question-mark">?</span>;
         <span class="kw">loop </span>{
@@ -1061,7 +1063,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;info&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"info"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>disable_ringcon(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequest::subcmd_0x5b())<span class="question-mark">?</span>;
         <span class="self">self</span>.call_subcmd_wait(SubcommandRequestEnum::SetIMUMode(
@@ -1076,7 +1078,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="attr">#[instrument(level = <span class="string">&quot;debug&quot;</span>, skip(<span class="self">self</span>), err)]
+    <span class="attr">#[instrument(level = <span class="string">"debug"</span>, skip(<span class="self">self</span>), err)]
     </span><span class="kw">pub fn </span>mcu_wait_not_busy(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; anyhow::Result&lt;()&gt; {
         <span class="kw">loop </span>{
             <span class="kw">let </span>report = <span class="self">self</span>.recv()<span class="question-mark">?</span>;
@@ -1091,10 +1093,10 @@
 
 <span class="kw">impl </span>std::fmt::Debug <span class="kw">for </span>JoyCon {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-        f.debug_struct(<span class="string">&quot;JoyCon&quot;</span>)
-            .field(<span class="string">&quot;manufacturer&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.info.manufacturer_string())
-            .field(<span class="string">&quot;product&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.info.product_string())
-            .field(<span class="string">&quot;serial&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.info.serial_number())
+        f.debug_struct(<span class="string">"JoyCon"</span>)
+            .field(<span class="string">"manufacturer"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.info.manufacturer_string())
+            .field(<span class="string">"product"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.info.product_string())
+            .field(<span class="string">"serial"</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.info.serial_number())
             .finish()
     }
 }

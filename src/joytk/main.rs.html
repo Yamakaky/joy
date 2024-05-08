@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `joytk/src/main.rs`."><title>main.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="joytk" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `joytk/src/main.rs`."><title>main.rs - source</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="joytk" data-themes="" data-resource-suffix="" data-rustdoc-version="1.78.0 (9b00956e5 2024-04-29)" data-channel="1.78.0" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../joytk/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -548,23 +550,23 @@
 <span class="kw">use </span>tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};
 
 <span class="kw">mod </span>camera;
-<span class="attr">#[cfg(feature = <span class="string">&quot;interface&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"interface"</span>)]
 </span><span class="kw">mod </span>interface;
 <span class="kw">mod </span>opts;
-<span class="attr">#[cfg(target_os = <span class="string">&quot;linux&quot;</span>)]
+<span class="attr">#[cfg(target_os = <span class="string">"linux"</span>)]
 </span><span class="kw">mod </span>relay;
 
 <span class="kw">use </span>opts::<span class="kw-2">*</span>;
 
 <span class="kw">fn </span>main() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>formatter = tracing_subscriber::fmt()
-        .with_span_events(<span class="kw">if </span>std::env::var(<span class="string">&quot;LOG_TIMING&quot;</span>).is_ok() {
+        .with_span_events(<span class="kw">if </span>std::env::var(<span class="string">"LOG_TIMING"</span>).is_ok() {
             FmtSpan::CLOSE
         } <span class="kw">else </span>{
             FmtSpan::NONE
         })
         .with_env_filter(EnvFilter::from_default_env());
-    <span class="kw">if </span>std::env::var(<span class="string">&quot;LOG_PRETTY&quot;</span>).is_ok() {
+    <span class="kw">if </span>std::env::var(<span class="string">"LOG_PRETTY"</span>).is_ok() {
         formatter.pretty().init();
     } <span class="kw">else </span>{
         formatter.init();
@@ -576,7 +578,7 @@
         <span class="kw">return </span>decode();
     }
 
-    <span class="attr">#[cfg(feature = <span class="string">&quot;interface&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"interface"</span>)]
     </span><span class="kw">if let </span>SubCommand::Tui = opts.subcmd {
         <span class="kw">return </span>interface::run();
     }
@@ -589,26 +591,26 @@
         {
             <span class="kw">let </span>device = device_info
                 .open_device(<span class="kw-2">&amp;</span>api)
-                .with_context(|| <span class="macro">format!</span>(<span class="string">&quot;error opening the HID device {:?}&quot;</span>, device_info))<span class="question-mark">?</span>;
+                .with_context(|| <span class="macro">format!</span>(<span class="string">"error opening the HID device {:?}"</span>, device_info))<span class="question-mark">?</span>;
 
             <span class="kw">if let </span>SubCommand::Relay(<span class="kw-2">ref </span>r) = opts.subcmd {
-                <span class="attr">#[cfg(target_os = <span class="string">&quot;linux&quot;</span>)]
+                <span class="attr">#[cfg(target_os = <span class="string">"linux"</span>)]
                 </span>{
-                    relay::relay(device, r).context(<span class="string">&quot;error during the relay&quot;</span>)<span class="question-mark">?</span>;
+                    relay::relay(device, r).context(<span class="string">"error during the relay"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="attr">#[cfg(not(target_os = <span class="string">&quot;linux&quot;</span>))]
+                <span class="attr">#[cfg(not(target_os = <span class="string">"linux"</span>))]
                 </span>{
-                    <span class="macro">anyhow::bail!</span>(<span class="string">&quot;relaying only works on linux&quot;</span>);
+                    <span class="macro">anyhow::bail!</span>(<span class="string">"relaying only works on linux"</span>);
                 }
             } <span class="kw">else </span>{
                 <span class="kw">let </span>joycon = JoyCon::new(device, device_info.clone())<span class="question-mark">?</span>;
 
-                hid_main(joycon, <span class="kw-2">&amp;</span>opts).context(<span class="string">&quot;error running the command&quot;</span>)<span class="question-mark">?</span>;
+                hid_main(joycon, <span class="kw-2">&amp;</span>opts).context(<span class="string">"error running the command"</span>)<span class="question-mark">?</span>;
             }
 
             <span class="kw">break</span>;
         } <span class="kw">else if </span>!opts.wait {
-            <span class="macro">eprintln!</span>(<span class="string">&quot;No device found&quot;</span>);
+            <span class="macro">eprintln!</span>(<span class="string">"No device found"</span>);
             <span class="kw">break</span>;
         } <span class="kw">else </span>{
             sleep(Duration::from_millis(<span class="number">200</span>));
@@ -654,7 +656,7 @@
         SubCommand::Ringcon(<span class="kw-2">ref </span>cmd) =&gt; ringcon(<span class="kw-2">&amp;mut </span>joycon, cmd)<span class="question-mark">?</span>,
         SubCommand::Decode | SubCommand::Relay(<span class="kw">_</span>) =&gt; <span class="macro">unreachable!</span>(),
         SubCommand::PulseRate =&gt; pulse_rate(<span class="kw-2">&amp;mut </span>joycon)<span class="question-mark">?</span>,
-        <span class="attr">#[cfg(feature = <span class="string">&quot;interface&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"interface"</span>)]
         </span>SubCommand::Tui =&gt; <span class="macro">unreachable!</span>(),
         SubCommand::Camera =&gt; camera::run(joycon)<span class="question-mark">?</span>,
     }
@@ -663,7 +665,7 @@
 
 <span class="kw">fn </span>pulse_rate(joycon: <span class="kw-2">&amp;mut </span>JoyCon) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     joycon.enable_pulserate()<span class="question-mark">?</span>;
-    <span class="macro">println!</span>(<span class="string">&quot;pote&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"pote"</span>);
     <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
     <span class="kw">loop </span>{
         <span class="kw">let </span>report = joycon.recv()<span class="question-mark">?</span>;
@@ -672,7 +674,7 @@
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(img) =
                     image::GrayImage::from_raw(<span class="number">11</span>, <span class="number">27</span>, frame.img_fragment[<span class="number">0</span>..<span class="number">11 </span>* <span class="number">27</span>].to_vec())
                 {
-                    img.save(<span class="macro">format!</span>(<span class="string">&quot;/tmp/pulse{:05}.png&quot;</span>, i))<span class="question-mark">?</span>;
+                    img.save(<span class="macro">format!</span>(<span class="string">"/tmp/pulse{:05}.png"</span>, i))<span class="question-mark">?</span>;
                     i += <span class="number">1</span>;
                 }
             }
@@ -690,7 +692,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>out = OpenOptions::new()
         .write(<span class="bool-val">true</span>)
         .truncate(<span class="bool-val">true</span>)
-        .open(<span class="string">&quot;/tmp/out.raw&quot;</span>)<span class="question-mark">?</span>;
+        .open(<span class="string">"/tmp/out.raw"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>offset = <span class="number">0</span>;
     <span class="kw">let </span>size = <span class="number">0x1D</span>;
     <span class="comment">// TODO: why value
@@ -698,7 +700,7 @@
     <span class="kw">while </span>offset + (size <span class="kw">as </span>u32) &lt; <span class="number">0x80000 </span>{
         <span class="kw">let </span>percent = offset * <span class="number">100 </span>/ <span class="number">0x80000</span>;
         <span class="kw">if </span>last_percent != percent {
-            <span class="macro">println!</span>(<span class="string">&quot;{}%&quot;</span>, percent);
+            <span class="macro">println!</span>(<span class="string">"{}%"</span>, percent);
             last_percent = percent;
         }
         <span class="kw">let </span>slice = joycon.read_spi_raw(<span class="kw">unsafe </span>{ SPIRange::new(offset, size) })<span class="question-mark">?</span>;
@@ -717,13 +719,13 @@
 
 <span class="kw">fn </span>calibrate_gyro(joycon: <span class="kw-2">&amp;mut </span>JoyCon) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     joycon.enable_imu()<span class="question-mark">?</span>;
-    <span class="macro">println!</span>(<span class="string">&quot;Don&#39;t move the controller...&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Don't move the controller..."</span>);
     sleep(Duration::from_secs(<span class="number">1</span>));
 
     <span class="kw">let </span><span class="kw-2">mut </span>gyro_reports = Vec::new();
     <span class="kw">let </span><span class="kw-2">mut </span>acc_reports = Vec::new();
     <span class="kw">for </span>i <span class="kw">in </span>(<span class="number">0</span>..<span class="number">10</span>).rev() {
-        <span class="macro">print!</span>(<span class="string">&quot;{}, &quot;</span>, i);
+        <span class="macro">print!</span>(<span class="string">"{}, "</span>, i);
         std::io::stdout().flush()<span class="question-mark">?</span>;
         <span class="kw">let </span>now = Instant::now();
         <span class="kw">while </span>now.elapsed() &lt; Duration::from_secs(<span class="number">1</span>) {
@@ -754,18 +756,18 @@
     <span class="kw">let </span><span class="kw-2">mut </span>calib = user.calib().unwrap_or(factory);
     calib.set_gyro_offset(gyro_avg);
 
-    <span class="macro">println!</span>(<span class="string">&quot;Writing calibration data {:x?}&quot;</span>, calib);
+    <span class="macro">println!</span>(<span class="string">"Writing calibration data {:x?}"</span>, calib);
     joycon.write_spi(UserSensorCalibration::from(calib))<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(())
 }
 
 <span class="kw">fn </span>calibrate_sticks(joycon: <span class="kw-2">&amp;mut </span>JoyCon) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="macro">println!</span>(<span class="string">&quot;Don&#39;t move the sticks...&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Don't move the sticks..."</span>);
     sleep(Duration::from_secs(<span class="number">1</span>));
     <span class="kw">let </span>(left_neutral, right_neutral) = raw_sticks(joycon)<span class="question-mark">?</span>;
 
-    <span class="macro">println!</span>(<span class="string">&quot;Move the sticks then press A...&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Move the sticks then press A..."</span>);
     <span class="kw">let </span><span class="kw-2">mut </span>l_x_min = left_neutral.x();
     <span class="kw">let </span><span class="kw-2">mut </span>l_x_max = left_neutral.x();
     <span class="kw">let </span><span class="kw-2">mut </span>l_y_min = left_neutral.y();
@@ -802,102 +804,102 @@
 
 <span class="kw">fn </span>raw_sticks(joycon: <span class="kw-2">&amp;mut </span>JoyCon) -&gt; <span class="prelude-ty">Result</span>&lt;(Stick, Stick)&gt; {
     <span class="kw">let </span>report = joycon.recv()<span class="question-mark">?</span>;
-    <span class="kw">let </span>std_report = report.standard().expect(<span class="string">&quot;should be standard&quot;</span>);
+    <span class="kw">let </span>std_report = report.standard().expect(<span class="string">"should be standard"</span>);
     <span class="prelude-val">Ok</span>((std_report.left_stick, std_report.right_stick))
 }
 
 <span class="kw">fn </span>get(joycon: <span class="kw-2">&amp;mut </span>JoyCon) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>dev_info = joycon.get_dev_info()<span class="question-mark">?</span>;
     <span class="macro">println!</span>(
-        <span class="string">&quot;{}, MAC {}, firmware version {}&quot;</span>,
+        <span class="string">"{}, MAC {}, firmware version {}"</span>,
         dev_info.which_controller, dev_info.mac_address, dev_info.firmware_version
     );
     <span class="macro">println!</span>();
 
-    <span class="macro">println!</span>(<span class="string">&quot;Controller color:&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Controller color:"</span>);
     <span class="kw">let </span>color: ControllerColor = joycon.read_spi()<span class="question-mark">?</span>;
-    <span class="macro">println!</span>(<span class="string">&quot;  body: {}&quot;</span>, color.body);
-    <span class="macro">println!</span>(<span class="string">&quot;  buttons: {}&quot;</span>, color.buttons);
+    <span class="macro">println!</span>(<span class="string">"  body: {}"</span>, color.body);
+    <span class="macro">println!</span>(<span class="string">"  buttons: {}"</span>, color.buttons);
     <span class="kw">if </span>dev_info.use_spi_colors == UseSPIColors::IncludingGrip {
-        <span class="macro">println!</span>(<span class="string">&quot;  left grip: {}&quot;</span>, color.left_grip);
-        <span class="macro">println!</span>(<span class="string">&quot;  right grip: {}&quot;</span>, color.right_grip);
+        <span class="macro">println!</span>(<span class="string">"  left grip: {}"</span>, color.left_grip);
+        <span class="macro">println!</span>(<span class="string">"  right grip: {}"</span>, color.right_grip);
     }
     <span class="macro">println!</span>();
 
     <span class="kw">let </span>imu_factory_settings: SensorCalibration = joycon.read_spi()<span class="question-mark">?</span>;
     <span class="kw">let </span>imu_user_settings: UserSensorCalibration = joycon.read_spi()<span class="question-mark">?</span>;
 
-    <span class="macro">println!</span>(<span class="string">&quot;Gyroscope calibration data:&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Gyroscope calibration data:"</span>);
     <span class="macro">println!</span>(
-        <span class="string">&quot;  factory: offset ({:?}), factor ({:?})&quot;</span>,
+        <span class="string">"  factory: offset ({:?}), factor ({:?})"</span>,
         imu_factory_settings.gyro_offset().cast::&lt;i16&gt;().unwrap(),
         imu_factory_settings.gyro_factor().cast::&lt;u16&gt;().unwrap(),
     );
     <span class="kw">if let </span><span class="prelude-val">Some</span>(settings) = imu_user_settings.calib() {
         <span class="macro">println!</span>(
-            <span class="string">&quot;  user: offset ({:?}), factor ({:?})&quot;</span>,
+            <span class="string">"  user: offset ({:?}), factor ({:?})"</span>,
             settings.gyro_offset().cast::&lt;i16&gt;().unwrap(),
             settings.gyro_factor().cast::&lt;u16&gt;().unwrap(),
         );
     } <span class="kw">else </span>{
-        <span class="macro">println!</span>(<span class="string">&quot;  no user&quot;</span>);
+        <span class="macro">println!</span>(<span class="string">"  no user"</span>);
     }
-    <span class="macro">println!</span>(<span class="string">&quot;&quot;</span>);
-    <span class="macro">println!</span>(<span class="string">&quot;Accelerometer calibration data:&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">""</span>);
+    <span class="macro">println!</span>(<span class="string">"Accelerometer calibration data:"</span>);
     <span class="macro">println!</span>(
-        <span class="string">&quot;  factory: offset ({:?}), factor ({:?})&quot;</span>,
+        <span class="string">"  factory: offset ({:?}), factor ({:?})"</span>,
         imu_factory_settings.acc_offset().cast::&lt;i16&gt;().unwrap(),
         imu_factory_settings.acc_factor().cast::&lt;u16&gt;().unwrap(),
     );
     <span class="kw">if let </span><span class="prelude-val">Some</span>(settings) = imu_user_settings.calib() {
         <span class="macro">println!</span>(
-            <span class="string">&quot;  user: offset ({:?}), factor ({:?})&quot;</span>,
+            <span class="string">"  user: offset ({:?}), factor ({:?})"</span>,
             settings.acc_offset().cast::&lt;i16&gt;().unwrap(),
             settings.acc_factor().cast::&lt;u16&gt;().unwrap(),
         );
     } <span class="kw">else </span>{
-        <span class="macro">println!</span>(<span class="string">&quot;  no user&quot;</span>);
+        <span class="macro">println!</span>(<span class="string">"  no user"</span>);
     }
-    <span class="macro">println!</span>(<span class="string">&quot;&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">""</span>);
 
     <span class="kw">let </span>sticks_factory_settings: SticksCalibration = joycon.read_spi()<span class="question-mark">?</span>;
     <span class="kw">let </span>sticks_user_settings: UserSticksCalibration = joycon.read_spi()<span class="question-mark">?</span>;
-    <span class="macro">println!</span>(<span class="string">&quot;Left stick calibration data&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Left stick calibration data"</span>);
     <span class="macro">println!</span>(
-        <span class="string">&quot;  factory: min {:x?}, center {:x?}, max {:x?}&quot;</span>,
+        <span class="string">"  factory: min {:x?}, center {:x?}, max {:x?}"</span>,
         sticks_factory_settings.left.min(),
         sticks_factory_settings.left.center(),
         sticks_factory_settings.left.max()
     );
     <span class="kw">if let </span><span class="prelude-val">Some</span>(left) = sticks_user_settings.left.calib() {
         <span class="macro">println!</span>(
-            <span class="string">&quot;  user: min {:x?}, center {:x?}, max {:x?}&quot;</span>,
+            <span class="string">"  user: min {:x?}, center {:x?}, max {:x?}"</span>,
             left.min(),
             left.center(),
             left.max()
         );
     } <span class="kw">else </span>{
-        <span class="macro">println!</span>(<span class="string">&quot;  no user&quot;</span>);
+        <span class="macro">println!</span>(<span class="string">"  no user"</span>);
     }
-    <span class="macro">println!</span>(<span class="string">&quot;&quot;</span>);
-    <span class="macro">println!</span>(<span class="string">&quot;Right stick calibration data&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">""</span>);
+    <span class="macro">println!</span>(<span class="string">"Right stick calibration data"</span>);
     <span class="macro">println!</span>(
-        <span class="string">&quot;  factory: min {:x?}, center {:x?}, max {:x?}&quot;</span>,
+        <span class="string">"  factory: min {:x?}, center {:x?}, max {:x?}"</span>,
         sticks_factory_settings.right.min(),
         sticks_factory_settings.right.center(),
         sticks_factory_settings.right.max()
     );
     <span class="kw">if let </span><span class="prelude-val">Some</span>(right) = sticks_user_settings.right.calib() {
         <span class="macro">println!</span>(
-            <span class="string">&quot;  user: min {:x?}, center {:x?}, max {:x?}&quot;</span>,
+            <span class="string">"  user: min {:x?}, center {:x?}, max {:x?}"</span>,
             right.min(),
             right.center(),
             right.max()
         );
     } <span class="kw">else </span>{
-        <span class="macro">println!</span>(<span class="string">&quot;  no user&quot;</span>);
+        <span class="macro">println!</span>(<span class="string">"  no user"</span>);
     }
-    <span class="macro">println!</span>(<span class="string">&quot;&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">""</span>);
 
     <span class="prelude-val">Ok</span>(())
 }
@@ -919,12 +921,12 @@
                 joycon.write_spi(UseSPIColors::IncludingGrip)<span class="question-mark">?</span>;
             }
         } <span class="kw">else </span>{
-            <span class="macro">panic!</span>(<span class="string">&quot;grips can only be set on pro controller&quot;</span>);
+            <span class="macro">panic!</span>(<span class="string">"grips can only be set on pro controller"</span>);
         }
     }
-    <span class="macro">println!</span>(<span class="string">&quot;Setting controller colors to {:x?}&quot;</span>, colors);
+    <span class="macro">println!</span>(<span class="string">"Setting controller colors to {:x?}"</span>, colors);
     joycon.write_spi(colors)<span class="question-mark">?</span>;
-    <span class="macro">println!</span>(<span class="string">&quot;Reconnect your controller&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Reconnect your controller"</span>);
     <span class="prelude-val">Ok</span>(())
 }
 
@@ -949,18 +951,18 @@
         }
         <span class="kw">if </span>now.elapsed() &gt; Duration::from_millis(<span class="number">100</span>) {
             now = Instant::now();
-            <span class="macro">println!</span>(<span class="string">&quot;Clicked: {}&quot;</span>, report.buttons);
+            <span class="macro">println!</span>(<span class="string">"Clicked: {}"</span>, report.buttons);
 
             <span class="kw">let </span>euler_rot = Euler::from(orientation);
             <span class="kw">let </span>pitch = Deg::from(euler_rot.x);
             <span class="kw">let </span>yaw = Deg::from(euler_rot.y);
             <span class="kw">let </span>roll = Deg::from(euler_rot.z);
             <span class="macro">println!</span>(
-                <span class="string">&quot;Rotation: pitch {:?}, yaw {:?}, roll {:?}&quot;</span>,
+                <span class="string">"Rotation: pitch {:?}, yaw {:?}, roll {:?}"</span>,
                 pitch, yaw, roll
             );
-            <span class="macro">println!</span>(<span class="string">&quot;Rotation speed: {:#?}&quot;</span>, last_rot);
-            <span class="macro">println!</span>(<span class="string">&quot;Acceleration: {:?}&quot;</span>, last_acc);
+            <span class="macro">println!</span>(<span class="string">"Rotation speed: {:#?}"</span>, last_rot);
+            <span class="macro">println!</span>(<span class="string">"Acceleration: {:?}"</span>, last_acc);
         }
     }
 }
@@ -971,25 +973,25 @@
     image.change_resolution(Resolution::R320x240);
     <span class="kw">for </span>line <span class="kw">in </span>stdin.lock().lines() {
         <span class="kw">let </span>line = line<span class="question-mark">?</span>;
-        <span class="kw">let </span>fragments: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = line.split(<span class="string">&quot; &quot;</span>).collect();
+        <span class="kw">let </span>fragments: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = line.split(<span class="string">" "</span>).collect();
         <span class="kw">let </span>side = fragments[<span class="number">0</span>];
         <span class="kw">let </span>time = fragments[<span class="number">1</span>];
         <span class="kw">let </span>hex = hex::decode(<span class="kw-2">&amp;</span>fragments[<span class="number">2</span>][<span class="number">2</span>..])<span class="question-mark">?</span>;
-        <span class="kw">if </span>side == <span class="string">&quot;&gt;&quot; </span>{
+        <span class="kw">if </span>side == <span class="string">"&gt;" </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>report = InputReport::new();
             <span class="kw">let </span>raw_report = report.as_bytes_mut();
             <span class="kw">let </span>len = raw_report.len().min(hex.len());
             raw_report[..len].copy_from_slice(<span class="kw-2">&amp;</span>hex[..len]);
             <span class="kw">match </span>InputReportEnum::try_from(report) {
                 <span class="prelude-val">Ok</span>(InputReportEnum::StandardAndSubcmd((<span class="kw">_</span>, subcmd))) =&gt; {
-                    <span class="macro">println!</span>(<span class="string">&quot;{} {}&quot;</span>, time.blue(), <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, subcmd).green());
+                    <span class="macro">println!</span>(<span class="string">"{} {}"</span>, time.blue(), <span class="macro">format!</span>(<span class="string">"{:?}"</span>, subcmd).green());
                 }
                 <span class="prelude-val">Ok</span>(InputReportEnum::StandardFullMCU((<span class="kw">_</span>, <span class="kw">_</span>, mcu))) =&gt; {
-                    <span class="macro">println!</span>(<span class="string">&quot;{} {:?}&quot;</span>, time.blue(), mcu);
+                    <span class="macro">println!</span>(<span class="string">"{} {:?}"</span>, time.blue(), mcu);
                     image.handle(<span class="kw-2">&amp;</span>mcu);
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(img) = image.last_image.take() {
-                        img.save(<span class="string">&quot;/tmp/out.png&quot;</span>)<span class="question-mark">?</span>;
-                        <span class="macro">dbg!</span>(<span class="string">&quot;new image&quot;</span>);
+                        img.save(<span class="string">"/tmp/out.png"</span>)<span class="question-mark">?</span>;
+                        <span class="macro">dbg!</span>(<span class="string">"new image"</span>);
                     }
                 }
                 <span class="kw">_ </span>=&gt; {}
@@ -1001,10 +1003,10 @@
             raw_report[..len].copy_from_slice(<span class="kw-2">&amp;</span>hex[..len]);
             <span class="kw">match </span>OutputReportEnum::try_from(report) {
                 <span class="prelude-val">Ok</span>(OutputReportEnum::RumbleAndSubcmd(subcmd)) =&gt; {
-                    <span class="macro">println!</span>(<span class="string">&quot;{} {}&quot;</span>, time.blue(), <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, subcmd).red());
+                    <span class="macro">println!</span>(<span class="string">"{} {}"</span>, time.blue(), <span class="macro">format!</span>(<span class="string">"{:?}"</span>, subcmd).red());
                 }
                 <span class="prelude-val">Ok</span>(OutputReportEnum::RequestMCUData(mcu)) =&gt; {
-                    <span class="macro">println!</span>(<span class="string">&quot;{} {}&quot;</span>, time.blue(), <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, mcu).yellow());
+                    <span class="macro">println!</span>(<span class="string">"{} {}"</span>, time.blue(), <span class="macro">format!</span>(<span class="string">"{:?}"</span>, mcu).yellow());
                 }
                 <span class="kw">_ </span>=&gt; {}
             }
@@ -1015,12 +1017,12 @@
 }
 
 <span class="kw">fn </span>ringcon(joycon: <span class="kw-2">&amp;mut </span>JoyCon, cmd: <span class="kw-2">&amp;</span>Ringcon) -&gt; anyhow::Result&lt;()&gt; {
-    <span class="macro">println!</span>(<span class="string">&quot;Ringcon initialisation...&quot;</span>);
+    <span class="macro">println!</span>(<span class="string">"Ringcon initialisation..."</span>);
     joycon.enable_ringcon()<span class="question-mark">?</span>;
     <span class="kw">match </span>cmd.subcmd {
         RingconE::StoredFlex =&gt; {
             <span class="macro">println!</span>(
-                <span class="string">&quot;Stored steps: {}&quot;</span>,
+                <span class="string">"Stored steps: {}"</span>,
                 joycon
                     .call_subcmd_wait(AccessoryCommand::get_offline_steps())<span class="question-mark">?
                     </span>.maybe_accessory()
@@ -1032,7 +1034,7 @@
         RingconE::Monitor =&gt; <span class="kw">loop </span>{
             <span class="kw">let </span>report = joycon.recv()<span class="question-mark">?</span>;
             <span class="kw">let </span>frames = report.imu_frames().unwrap();
-            <span class="macro">println!</span>(<span class="string">&quot;Flex value: {}&quot;</span>, frames[<span class="number">2</span>].raw_ringcon());
+            <span class="macro">println!</span>(<span class="string">"Flex value: {}"</span>, frames[<span class="number">2</span>].raw_ringcon());
         },
         RingconE::Exp =&gt; {}
     }
