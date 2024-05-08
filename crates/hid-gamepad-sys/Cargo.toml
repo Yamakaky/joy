@@ -7,7 +7,7 @@ edition = "2018"
 
 
 [dependencies]
-enum-map = "0.6"
+enum-map = "2.7"
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
 cgmath = { version = "0.18", default-features = false }
 anyhow = "1.0"
