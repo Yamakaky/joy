@@ -3,6 +3,7 @@ mod hid;
 #[cfg(feature = "ir")]
 mod image;
 mod imu_handler;
+mod scan;
 
 #[cfg(feature = "ir")]
 pub use crate::image::*;
@@ -14,6 +15,7 @@ use hid_gamepad_sys::{GamepadDevice, GamepadDriver, JoyKey, Motion};
 use hidapi::HidApi;
 pub use imu_handler::IMU;
 pub use joycon_sys;
+pub use scan::*;
 
 pub use hidapi;
 use joycon_sys::{imu::IMU_SAMPLES_PER_SECOND, NINTENDO_VENDOR_ID};

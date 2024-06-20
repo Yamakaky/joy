@@ -43,13 +43,7 @@ pub struct JoyCon {
 impl JoyCon {
     #[instrument(level = "info", skip(device), err)]
     pub fn new(device: hidapi::HidDevice, info: hidapi::DeviceInfo) -> Result<JoyCon> {
-        let device_type = match info.product_id() {
-            JOYCON_L_BT => WhichController::LeftJoyCon,
-            JOYCON_R_BT => WhichController::RightJoyCon,
-            PRO_CONTROLLER => WhichController::ProController,
-            JOYCON_CHARGING_GRIP => panic!("unsupported charging grip"),
-            _ => panic!("unknown controller type"),
-        };
+        let device_type = WhichController::from_product_id(info.product_id())?;
         let mut joycon = JoyCon {
             device,
             info,
